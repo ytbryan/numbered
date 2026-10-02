@@ -1,6 +1,7 @@
 package com.numbered.app.data
 
 import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * Every schema step the app has ever taken, oldest first.
@@ -10,4 +11,15 @@ import androidx.room.migration.Migration
  * adding its migration here, pinning its hash in MigrationTest, and covering it with a test that
  * starts from the previous version's data.
  */
-internal val MIGRATIONS: Array<Migration> = arrayOf()
+internal val MIGRATIONS: Array<Migration> = arrayOf(
+    // Version 2 adds life chapters.
+    object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `chapters` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`title` TEXT NOT NULL, `startWeek` INTEGER NOT NULL, `endWeek` INTEGER, `createdAt` INTEGER NOT NULL)",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_chapters_startWeek` ON `chapters` (`startWeek`)")
+        }
+    },
+)

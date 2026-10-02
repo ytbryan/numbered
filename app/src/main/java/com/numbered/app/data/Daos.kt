@@ -88,6 +88,33 @@ interface SomedayDao {
 }
 
 @Dao
+interface ChapterDao {
+    @Query("SELECT * FROM chapters ORDER BY startWeek, id")
+    fun observeAll(): Flow<List<Chapter>>
+
+    @Query("SELECT * FROM chapters ORDER BY startWeek, id")
+    suspend fun all(): List<Chapter>
+
+    @Query("SELECT * FROM chapters WHERE id = :id")
+    suspend fun get(id: Long): Chapter?
+
+    @Insert
+    suspend fun insert(chapter: Chapter): Long
+
+    @Insert
+    suspend fun insertAll(chapters: List<Chapter>)
+
+    @Update
+    suspend fun update(chapter: Chapter)
+
+    @Query("DELETE FROM chapters WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM chapters")
+    suspend fun deleteAll()
+}
+
+@Dao
 interface WeekReviewDao {
     @Query("SELECT * FROM week_reviews WHERE weekStart = :weekStart")
     fun observe(weekStart: LocalDate): Flow<WeekReview?>

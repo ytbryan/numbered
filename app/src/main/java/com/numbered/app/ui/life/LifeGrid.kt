@@ -14,7 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -38,6 +40,8 @@ fun LifeGrid(
     tones: List<WeekTone>,
     decadeRows: List<Pair<Int, Int>>,
     selectedIndex: Int,
+    /** Squares marked with a dot, where a chapter begins. */
+    marks: Set<Int>,
     onSelect: (Int) -> Unit,
     description: String,
     previousLabel: String,
@@ -47,6 +51,8 @@ fun LifeGrid(
     val colors = LocalWeekColors.current
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val selectionColor = MaterialTheme.colorScheme.onSurface
+    val markOnLight = Color(0xFF1F1C18)
+    val markOnDark = Color(0xFFFFFFFF)
     val labelStyle = MaterialTheme.typography.labelSmall.copy(color = labelColor)
     val measurer = rememberTextMeasurer()
     val labels = remember(decadeRows, labelStyle, measurer) {
@@ -113,6 +119,19 @@ fun LifeGrid(
                     topLeft = Offset(labelWidth + column * pitch, inset + row * pitch),
                     size = square,
                     cornerRadius = corner,
+                )
+            }
+            // A dot that reads on both dark and light squares.
+            marks.forEach { index ->
+                if (index !in tones.indices) return@forEach
+                val fill = colors.of(tones[index])
+                drawCircle(
+                    color = if (fill.luminance() > 0.5f) markOnLight else markOnDark,
+                    radius = square.width * 0.24f,
+                    center = Offset(
+                        labelWidth + (index % WEEKS_PER_ROW) * pitch + square.width / 2,
+                        inset + (index / WEEKS_PER_ROW) * pitch + square.height / 2,
+                    ),
                 )
             }
             labels.forEach { (row, layout) ->

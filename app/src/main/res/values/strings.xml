@@ -136,6 +136,30 @@
     <string name="status_before_numbered">Before Numbered</string>
     <string name="status_nothing_planned">Nothing planned</string>
 
+    <!-- Chapters -->
+    <string name="chapters_title">Chapters</string>
+    <string name="chapters_empty">Name a stretch of your life, like a move, a job, or a season. Open any week to start one there.</string>
+    <string name="chapter_span">%1$s – %2$s</string>
+    <string name="chapter_span_ongoing">%1$s – now</string>
+    <string name="chapter_age_span">Age %1$d · %2$s</string>
+    <string name="legend_chapter">Chapter starts</string>
+    <string name="chapter_new">New chapter</string>
+    <string name="chapter_edit">Edit chapter</string>
+    <string name="chapter_help">A chapter names a stretch of your life on the grid.</string>
+    <string name="chapter_name">Name</string>
+    <string name="chapter_placeholder">Moved to Singapore</string>
+    <string name="chapter_starts">Starts</string>
+    <string name="chapter_ends">Ends</string>
+    <string name="chapter_last_week">Last week of it</string>
+    <string name="chapter_week_of">Week of %1$s</string>
+    <string name="chapter_end_same">In the same week</string>
+    <string name="chapter_end_later">In a later week</string>
+    <string name="chapter_end_ongoing">Still going</string>
+    <string name="chapter_delete_title">Delete this chapter?</string>
+    <string name="chapter_delete_body">It leaves the grid. The weeks themselves stay as they are.</string>
+    <string name="action_start_chapter">Start a chapter here</string>
+    <string name="a11y_delete_chapter">Delete chapter</string>
+
     <!-- Lines -->
     <string name="lines_title">Your lines</string>
     <string name="lines_search">Search your lines</string>

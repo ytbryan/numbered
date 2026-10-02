@@ -5,6 +5,8 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import com.numbered.app.data.Chapter
+import com.numbered.app.data.MIGRATIONS
 import com.numbered.app.data.NumberedDatabase
 import com.numbered.app.domain.CommitmentStatus
 import java.io.File
@@ -47,6 +49,14 @@ class MigrationTest {
         assertEquals(FROZEN_SCHEMAS.keys.max(), NumberedDatabase.VERSION)
     }
 
+    /** Each migration step, checked by Room against the exported schema it should produce. */
+    @Test fun version1MigratesToVersion2() {
+        val name = "migration-1-2.db"
+        helper.createDatabase(name, 1).use(::seedVersion1)
+        helper.runMigrationsAndValidate(name, 2, true, *MIGRATIONS).close()
+        context.deleteDatabase(name)
+    }
+
     /** Data written by the first release opens, with every migration applied, in the current app. */
     @Test fun version1DataOpensInTheCurrentApp() {
         val name = "migration-from-1.db"
@@ -63,6 +73,10 @@ class MigrationTest {
                 assertEquals(listOf(CommitmentStatus.Carried, CommitmentStatus.Done), week.map { it.status })
                 assertEquals("A steady week.", db.reviews().observe(WEEK).first()!!.note)
                 assertEquals(listOf("Learn to sail"), db.someday().observeWaiting().first().map { it.title })
+                // Version 2 adds an empty chapters table that takes new rows.
+                assertEquals(emptyList<Any>(), db.chapters().all())
+                db.chapters().insert(Chapter(title = "Moved to Singapore", startWeek = WEEK, endWeek = null, createdAt = 4))
+                assertEquals(listOf("Moved to Singapore"), db.chapters().all().map { it.title })
             }
             // Room validates every table against the current schema when the database opens.
             db.openHelper.writableDatabase
@@ -97,6 +111,7 @@ class MigrationTest {
         /** Released schema versions and their identity hashes. Never edit an entry once released. */
         val FROZEN_SCHEMAS = mapOf(
             1 to "23828907e852728555f8f59d986c2f97",
+            2 to "b8169d580e770840a3abf439edef752a",
         )
     }
 }

@@ -26,6 +26,7 @@ class NumberedRepository(
     private val commitments = db.commitments()
     private val someday = db.someday()
     private val reviews = db.reviews()
+    private val chapters = db.chapters()
 
     fun profile(): Flow<Profile?> = profiles.observe()
 
@@ -59,6 +60,34 @@ class NumberedRepository(
     fun reviews(): Flow<Map<LocalDate, WeekReview>> = reviews.observeAll().map { all -> all.associateBy(WeekReview::weekStart) }
 
     fun somedayWaiting(): Flow<List<SomedayItem>> = someday.observeWaiting()
+
+    fun chapters(): Flow<List<Chapter>> = chapters.observeAll()
+
+    suspend fun chapter(id: Long): Chapter? = chapters.get(id)
+
+    /** Adds a chapter, or renames and moves the one with [id]. An end before the start becomes the start. */
+    suspend fun saveChapter(id: Long?, title: String, startWeek: LocalDate, endWeek: LocalDate?): PlanResult {
+        val clean = title.cleanTitle() ?: return PlanResult.Blank
+        val end = endWeek?.let { maxOf(it, startWeek) }
+        return db.withTransaction {
+            if (id == null) {
+                chapters.insert(Chapter(title = clean, startWeek = startWeek, endWeek = end, createdAt = clock.millis()))
+            } else {
+                val existing = chapters.get(id) ?: return@withTransaction PlanResult.Missing
+                chapters.update(existing.copy(title = clean, startWeek = startWeek, endWeek = end))
+            }
+            PlanResult.Ok
+        }
+    }
+
+    /** Removes a chapter. Returns it so the caller can offer Undo. */
+    suspend fun deleteChapter(id: Long): Chapter? = db.withTransaction {
+        chapters.get(id)?.also { chapters.delete(id) }
+    }
+
+    suspend fun restoreChapter(chapter: Chapter) {
+        chapters.insert(chapter)
+    }
 
     fun somedayLetGo(): Flow<List<SomedayItem>> = someday.observeLetGo()
 
@@ -204,7 +233,7 @@ class NumberedRepository(
     /** Everything stored, read in one transaction so the copy is consistent. Null before setup. */
     suspend fun snapshot(): Snapshot? = db.withTransaction {
         profiles.get()?.let { profile ->
-            Snapshot(profile, commitments.all(), someday.all(), reviews.all(), savedAt = clock.millis())
+            Snapshot(profile, commitments.all(), someday.all(), reviews.all(), chapters.all(), savedAt = clock.millis())
         }
     }
 
@@ -214,10 +243,12 @@ class NumberedRepository(
             commitments.deleteAll()
             someday.deleteAll()
             reviews.deleteAll()
+            chapters.deleteAll()
             profiles.upsert(snapshot.profile)
             commitments.insertAll(snapshot.commitments)
             someday.insertAll(snapshot.someday)
             reviews.insertAll(snapshot.reviews)
+            chapters.insertAll(snapshot.chapters)
         }
     }
 

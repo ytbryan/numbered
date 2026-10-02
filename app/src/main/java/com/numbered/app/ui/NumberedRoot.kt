@@ -44,6 +44,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.numbered.app.R
+import com.numbered.app.ui.chapter.ChapterScreen
+import com.numbered.app.ui.chapter.ChapterViewModel
 import com.numbered.app.ui.close.CatchUpScreen
 import com.numbered.app.ui.close.CloseWeekScreen
 import com.numbered.app.ui.life.LifeScreen
@@ -85,6 +87,9 @@ fun closeWeekDeepLink(weekStart: LocalDate): Uri = "$CLOSE_WEEK_DEEP_LINK/${week
 @Serializable data object CatchUpRoute
 
 @Serializable data object LinesRoute
+
+/** [id] is [ChapterViewModel.NEW] for a chapter starting in the week of [startEpochDay]. */
+@Serializable data class ChapterRoute(val id: Long, val startEpochDay: Long)
 
 private class Tab(val route: Any, val routeClass: KClass<*>, @param:StringRes val label: Int, val icon: ImageVector)
 
@@ -182,6 +187,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
             composable<LifeRoute> {
                 LifeScreen(
                     onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
+                    onOpenChapter = { id -> nav.navigate(ChapterRoute(id, 0)) },
                     onOpenLines = { nav.navigate(LinesRoute) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                 )
@@ -193,6 +199,15 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     weekStart = LocalDate.ofEpochDay(route.epochDay),
                     onBack = { nav.popBackStack() },
                     onCloseWeek = { nav.navigate(CloseWeekRoute(it.toEpochDay())) },
+                    onOpenChapter = { id, start -> nav.navigate(ChapterRoute(id ?: ChapterViewModel.NEW, start.toEpochDay())) },
+                )
+            }
+            composable<ChapterRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<ChapterRoute>()
+                ChapterScreen(
+                    id = route.id.takeIf { it != ChapterViewModel.NEW },
+                    startWeek = LocalDate.ofEpochDay(route.startEpochDay),
+                    onDone = { nav.popBackStack() },
                 )
             }
             composable<CloseWeekRoute>(deepLinks = listOf(navDeepLink<CloseWeekRoute>(basePath = CLOSE_WEEK_DEEP_LINK))) { backStackEntry ->

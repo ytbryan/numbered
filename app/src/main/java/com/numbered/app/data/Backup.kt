@@ -16,6 +16,7 @@ data class Snapshot(
     val commitments: List<Commitment>,
     val someday: List<SomedayItem>,
     val reviews: List<WeekReview>,
+    val chapters: List<Chapter> = emptyList(),
     /** When the copy was taken, for files read back in. */
     val savedAt: Long = 0,
 )
@@ -51,7 +52,8 @@ sealed interface BackupRead {
  */
 object BackupFormat {
     const val NAME = "numbered"
-    const val VERSION = 1
+    /** 2 added chapters. */
+    const val VERSION = 2
 
     /** Larger than decades of weekly use, and small enough to refuse a wrongly picked video. */
     const val MAX_BYTES = 16 * 1024 * 1024
@@ -111,6 +113,9 @@ object BackupFormat {
             },
             someday = snapshot.someday.map { SomedayJson(it.id, it.title, it.createdAt, it.keptAt, it.letGoAt) },
             weekNotes = snapshot.reviews.map { WeekNoteJson(it.weekStart.toString(), it.note, it.closedAt) },
+            chapters = snapshot.chapters.map {
+                ChapterJson(it.id, it.title, it.startWeek.toString(), it.endWeek?.toString(), it.createdAt)
+            },
         ),
     )
 
@@ -164,6 +169,9 @@ object BackupFormat {
         },
         someday = someday.map { SomedayItem(it.id, it.title, it.createdAt, it.keptAt, it.letGoAt) },
         reviews = weekNotes.map { WeekReview(LocalDate.parse(it.weekStart), it.note, it.closedAt) },
+        chapters = chapters.map {
+            Chapter(it.id, it.title, LocalDate.parse(it.startWeek), it.endWeek?.let(LocalDate::parse), it.createdAt)
+        },
         savedAt = savedAt,
     )
 
@@ -183,7 +191,12 @@ object BackupFormat {
             someday.all { it.title.isCleanTitle() } &&
             someday.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
             reviews.all { it.weekStart.startsWeek() } &&
-            reviews.map { it.weekStart }.let { weeks -> weeks.toSet().size == weeks.size }
+            reviews.map { it.weekStart }.let { weeks -> weeks.toSet().size == weeks.size } &&
+            chapters.all { chapter ->
+                chapter.title.isCleanTitle() && chapter.startWeek.startsWeek() &&
+                    chapter.endWeek.let { it == null || (it.startsWeek() && it >= chapter.startWeek) }
+            } &&
+            chapters.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size }
     }
 
     private fun String.isCleanTitle() = cleanTitle() == this
@@ -223,6 +236,8 @@ private class BackupJson(
     val commitments: List<CommitmentJson>,
     val someday: List<SomedayJson>,
     val weekNotes: List<WeekNoteJson>,
+    /** Added in version 2, so absent from version 1 files. */
+    val chapters: List<ChapterJson> = emptyList(),
 )
 
 @Serializable
@@ -252,6 +267,15 @@ private class SomedayJson(
     val createdAt: Long,
     val keptAt: Long? = null,
     val letGoAt: Long? = null,
+)
+
+@Serializable
+private class ChapterJson(
+    val id: Long,
+    val title: String,
+    val startWeek: String,
+    val endWeek: String? = null,
+    val createdAt: Long,
 )
 
 @Serializable

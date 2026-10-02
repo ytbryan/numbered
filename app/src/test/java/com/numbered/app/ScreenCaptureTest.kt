@@ -284,6 +284,35 @@ class ScreenCaptureTest {
         awaitText("Weeks start on Monday")
     }
 
+    @Test fun aChapterFromStartToGrid() {
+        tap("Life")
+        scrollTo("Chapters")
+        awaitText("Open any week to start one there.")
+        tap("Week 1,923 · age 36")
+        tap("Start a chapter here")
+        awaitText("New chapter")
+        compose.onNode(hasSetTextAction()).performTextInput("Moved to Singapore")
+        tap("Still going")
+        capture("chapter-new")
+        tap("Save")
+        awaitGone("New chapter")
+        awaitText("Start a chapter here")
+        compose.onNodeWithText("Moved to Singapore").assertIsDisplayed()
+        capture("week-detail-chapter")
+        compose.onNodeWithContentDescription("Back").performClick()
+        scrollTo("Moved to Singapore")
+        compose.onNodeWithText("Age 36 · Sep 2026 – now").assertIsDisplayed()
+        capture("life-chapters")
+
+        tap("Moved to Singapore")
+        awaitText("Edit chapter")
+        compose.onNodeWithContentDescription("Delete chapter").performClick()
+        tap("Delete")
+        awaitText("Your life")
+        scrollTo("Chapters")
+        compose.onAllNodesWithText("Moved to Singapore").assertCountEquals(0)
+    }
+
     @Test fun linesGatherEveryWeeklyNote() {
         tap("Life")
         compose.onNodeWithContentDescription("Your lines").performClick()

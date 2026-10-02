@@ -1,5 +1,6 @@
 package com.numbered.app.ui.life
 
+import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -30,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,28 +41,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
 import com.numbered.app.domain.WeekTone
+import com.numbered.app.ui.components.CardShape
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
 import com.numbered.app.ui.locale
 import com.numbered.app.ui.pluralString
+import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.theme.LocalWeekColors
 import com.numbered.app.ui.weekRange
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
-fun LifeScreen(onOpenWeek: (LocalDate) -> Unit, onOpenLines: () -> Unit, onOpenSettings: () -> Unit) {
+fun LifeScreen(
+    onOpenWeek: (LocalDate) -> Unit,
+    onOpenChapter: (Long) -> Unit,
+    onOpenLines: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val viewModel = containerViewModel { LifeViewModel(it) }
     val grid by viewModel.grid.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
@@ -106,6 +117,7 @@ fun LifeScreen(onOpenWeek: (LocalDate) -> Unit, onOpenLines: () -> Unit, onOpenS
                 tones = state.tones,
                 decadeRows = state.decadeRows,
                 selectedIndex = selected?.index ?: state.currentIndex,
+                marks = state.chapterStarts,
                 onSelect = viewModel::select,
                 description = stringResource(
                     R.string.a11y_life_grid,
@@ -125,6 +137,7 @@ fun LifeScreen(onOpenWeek: (LocalDate) -> Unit, onOpenLines: () -> Unit, onOpenS
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Chapters(state, onOpenChapter)
         }
         selected?.let { week ->
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -162,6 +175,72 @@ private fun Legend() {
         LegendItem(colors.current, stringResource(R.string.legend_this_week))
         LegendItem(colors.pinned, stringResource(R.string.legend_planned))
         LegendItem(colors.ahead, stringResource(R.string.legend_ahead))
+        LegendMark(stringResource(R.string.legend_chapter))
+    }
+}
+
+/** The legend entry for the dot that marks where a chapter begins. */
+@Composable
+private fun LegendMark(label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(LocalWeekColors.current.allDone),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(Color.White),
+            )
+        }
+        Spacer(Modifier.width(6.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Every chapter, oldest first, each opening for editing. */
+@Composable
+private fun Chapters(state: LifeGridState, onOpen: (Long) -> Unit) {
+    Spacer(Modifier.height(20.dp))
+    Text(stringResource(R.string.chapters_title), style = MaterialTheme.typography.titleSmall)
+    if (state.chapters.isEmpty()) {
+        Text(
+            stringResource(R.string.chapters_empty),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        return
+    }
+    val locale = locale()
+    val monthYear = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMM"), locale)
+    Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        state.chapters.forEach { chapter ->
+            val span = when (chapter.endWeek) {
+                null -> stringResource(R.string.chapter_span_ongoing, chapter.startWeek.format(monthYear))
+                chapter.startWeek -> shortDate(chapter.startWeek, state.today)
+                else -> stringResource(R.string.chapter_span, chapter.startWeek.format(monthYear), chapter.endWeek.format(monthYear))
+            }
+            Surface(
+                onClick = { onOpen(chapter.id) },
+                shape = CardShape,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(chapter.title, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        stringResource(R.string.chapter_age_span, state.calendar.ageOn(chapter.startWeek), span),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -213,6 +292,15 @@ private fun SelectedWeekPanel(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (week.chapters.isNotEmpty()) {
+                Text(
+                    text = week.chapters.joinToString(" · "),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             val detail = week.note?.let { stringResource(R.string.quoted, it) }
                 ?: week.commitments.takeIf { it.isNotEmpty() }?.joinToString(" · ") { it.title }
             if (detail != null) {

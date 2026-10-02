@@ -2,6 +2,7 @@ package com.numbered.app.ui.life
 
 import androidx.lifecycle.viewModelScope
 import com.numbered.app.AppContainer
+import com.numbered.app.data.Chapter
 import com.numbered.app.data.Commitment
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.LifeCalendar
@@ -33,6 +34,10 @@ data class LifeGridState(
     val gentle: Boolean,
     val calendar: LifeCalendar,
     val startedWeek: LocalDate,
+    /** Oldest first. */
+    val chapters: List<Chapter>,
+    /** Squares where a chapter begins. */
+    val chapterStarts: Set<Int>,
 )
 
 data class SelectedWeek(
@@ -44,6 +49,8 @@ data class SelectedWeek(
     val commitments: List<Commitment>,
     val note: String?,
     val beforeStart: Boolean,
+    /** Titles of the chapters this week belongs to. */
+    val chapters: List<String>,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -55,7 +62,8 @@ class LifeViewModel(container: AppContainer) : NoticeViewModel() {
         repository.profile().filterNotNull(),
         container.today.value,
         repository.summaries(),
-    ) { profile, today, summaries ->
+        repository.chapters(),
+    ) { profile, today, summaries, chapters ->
         val calendar = profile.calendar()
         val currentIndex = calendar.indexOf(today)
         val visible = calendar.visibleWeeks(currentIndex, profile.gentle)
@@ -70,6 +78,8 @@ class LifeViewModel(container: AppContainer) : NoticeViewModel() {
             gentle = profile.gentle,
             calendar = calendar,
             startedWeek = calendar.weekStartOf(profile.startedOn),
+            chapters = chapters,
+            chapterStarts = chapters.map { calendar.indexOf(it.startWeek) }.filter { it in 0 until visible }.toSet(),
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -87,6 +97,7 @@ class LifeViewModel(container: AppContainer) : NoticeViewModel() {
                 commitments = commitments,
                 note = review?.note?.takeIf { it.isNotBlank() },
                 beforeStart = start < grid.startedWeek,
+                chapters = grid.chapters.filter { it.covers(start, grid.calendar.weekStart(grid.currentIndex)) }.map { it.title },
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

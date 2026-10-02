@@ -73,7 +73,7 @@ class BackupTest {
         val text = BackupFormat.encode(seeded())
         listOf(
             "\"format\": \"numbered\"",
-            "\"version\": 1",
+            "\"version\": 2",
             "\"birthDate\": \"1989-12-02\"",
             "\"firstDayOfWeek\": \"monday\"",
             "\"status\": \"carried\"",
@@ -111,7 +111,7 @@ class BackupTest {
     }
 
     @Test fun newerFilesAreRefusedWithoutGuessing() {
-        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 2, "somethingNew": true}"""))
+        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 3, "somethingNew": true}"""))
     }
 
     @Test fun damagedFilesChangeNothing() {
@@ -211,5 +211,26 @@ class BackupTest {
         }
         assertEquals(R.string.notice_export_interrupted, notice.message)
         assertEquals(0L, file.length())
+    }
+
+    @Test fun chaptersTravelAndVersion1FilesStillRead() = runBlocking {
+        val base = seeded()
+        repository.saveChapter(null, "Moved to Singapore", lastWeek, null)
+        repository.saveChapter(null, "Grant season", lastWeek.minusWeeks(4), lastWeek)
+        val snapshot = repository.snapshot()!!
+        assertEquals(2, snapshot.chapters.size)
+        assertEquals(BackupRead.Ok(snapshot), BackupFormat.decode(BackupFormat.encode(snapshot)))
+
+        // A file from before chapters existed: version 1, no chapters key.
+        val version1 = BackupFormat.encode(base)
+            .replace("\"version\": 2", "\"version\": 1")
+            .replace(Regex(",\\s*\"chapters\": \\[\\s*]"), "")
+        assertTrue(!version1.contains("chapters"))
+        assertEquals(BackupRead.Ok(base.copy(chapters = emptyList())), BackupFormat.decode(version1))
+
+        // A chapter ending before it starts breaks the rules.
+        val moved = snapshot.chapters.single { it.title == "Moved to Singapore" }
+        val backwards = snapshot.copy(chapters = listOf(moved.copy(endWeek = lastWeek.minusWeeks(1))))
+        assertEquals(BackupRead.Damaged, BackupFormat.decode(BackupFormat.encode(backwards)))
     }
 }

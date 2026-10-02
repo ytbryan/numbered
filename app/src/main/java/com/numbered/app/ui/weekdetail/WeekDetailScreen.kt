@@ -3,6 +3,7 @@ package com.numbered.app.ui.weekdetail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -18,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -25,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,8 +44,8 @@ import com.numbered.app.ui.components.CommitmentCard
 import com.numbered.app.ui.components.EmptySquare
 import com.numbered.app.ui.components.MenuAction
 import com.numbered.app.ui.components.RenameDialog
-import com.numbered.app.ui.components.commitmentSubtitle
 import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.components.commitmentSubtitle
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
 import com.numbered.app.ui.pluralString
@@ -53,6 +58,7 @@ fun WeekDetailScreen(
     weekStart: LocalDate,
     onBack: () -> Unit,
     onCloseWeek: (LocalDate) -> Unit,
+    onOpenChapter: (id: Long?, startWeek: LocalDate) -> Unit,
 ) {
     val viewModel = containerViewModel { WeekDetailViewModel(it, weekStart) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -89,6 +95,35 @@ fun WeekDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+            item(key = "chapters") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    current.chapters.forEach { chapter ->
+                        Surface(
+                            onClick = { onOpenChapter(chapter.id, chapter.startWeek) },
+                            shape = CardShape,
+                            // Neutral, so a chapter never reads as a finished commitment.
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Icon(Icons.Outlined.Bookmark, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Text(chapter.title, style = MaterialTheme.typography.titleSmall)
+                            }
+                        }
+                    }
+                    TextButton(
+                        onClick = { onOpenChapter(null, current.weekStart) },
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.BookmarkAdd, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(stringResource(R.string.action_start_chapter))
+                    }
                 }
             }
             current.note?.let { note ->

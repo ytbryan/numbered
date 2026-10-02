@@ -3,6 +3,7 @@ package com.numbered.app.ui.weekdetail
 import androidx.lifecycle.viewModelScope
 import com.numbered.app.AppContainer
 import com.numbered.app.R
+import com.numbered.app.data.Chapter
 import com.numbered.app.data.Commitment
 import com.numbered.app.data.PlanResult
 import com.numbered.app.data.SomedayItem
@@ -35,6 +36,8 @@ data class WeekDetailState(
     val beforeStart: Boolean,
     val currentWeekStart: LocalDate,
     val someday: List<SomedayItem>,
+    /** The chapters this week belongs to. */
+    val chapters: List<Chapter>,
 ) {
     val occupied: Int get() = commitments.count { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
     val squaresLeft: Int get() = MAX_COMMITMENTS_PER_WEEK - occupied
@@ -51,7 +54,8 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
         repository.week(weekStart),
         repository.review(weekStart),
         repository.somedayWaiting(),
-    ) { (profile, today), commitments, review, someday ->
+        repository.chapters(),
+    ) { (profile, today), commitments, review, someday, chapters ->
         val calendar = profile.calendar()
         val currentWeek = calendar.weekStartOf(today)
         WeekDetailState(
@@ -71,6 +75,7 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
             beforeStart = weekStart < calendar.weekStartOf(profile.startedOn),
             currentWeekStart = currentWeek,
             someday = someday,
+            chapters = chapters.filter { it.covers(weekStart, currentWeek) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

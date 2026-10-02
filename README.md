@@ -13,6 +13,10 @@ It shares these rules and the export file, so a copy moves between the two.
 - **Life**: every week of your life, 52 to a row, coloured by what you finished. Tap or drag to inspect a week.
 - **Someday**: ideas without dates. Items untouched for 12 weeks ask whether they still deserve a square.
 - **Close week**: decide what happens to each unfinished commitment (done, carry, Someday, or let go) and write one line.
+- **Catch up**: after time away, close every open past week at once.
+- **Your lines**: every weekly line, grouped by year with what each year held, and searchable.
+- **Chapters**: name a stretch of life, like a move or a job. Chapters mark the grid and the weeks they cover.
+- **Reminders**: optional nudges to plan the week and to close it, set in Settings.
 
 ## Rules worth knowing
 

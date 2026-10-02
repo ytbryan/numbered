@@ -57,5 +57,23 @@ data class WeekReview(
     val closedAt: Long,
 )
 
+/**
+ * A labelled stretch of life, such as a move or a new job, drawn onto the grid.
+ * Weeks are keyed by their start date, like everything else, so a chapter never shifts.
+ */
+@Entity(tableName = "chapters", indices = [Index("startWeek")])
+data class Chapter(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val startWeek: LocalDate,
+    /** The last week, inclusive. Null while the chapter is still going. */
+    val endWeek: LocalDate?,
+    val createdAt: Long,
+) {
+    /** Whether the chapter covers the week starting [weekStart], counting an open one up to [currentWeek]. */
+    fun covers(weekStart: LocalDate, currentWeek: LocalDate): Boolean =
+        weekStart >= startWeek && weekStart <= (endWeek ?: maxOf(currentWeek, startWeek))
+}
+
 /** A lightweight projection used to colour every square of the life grid. */
 data class WeekStatusRow(val weekStart: LocalDate, val status: CommitmentStatus)
