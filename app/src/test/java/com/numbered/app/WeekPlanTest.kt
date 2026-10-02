@@ -15,6 +15,7 @@ import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import com.numbered.app.ui.lines.matching
 import org.junit.Test
 
 class WeekPlanTest {
@@ -83,5 +84,28 @@ class WeekPlanTest {
         val current = LocalDate.of(2026, 9, 28)
         val summaries = mapOf(current.minusWeeks(4) to WeekSummary.of(listOf(Done)))
         assertTrue(ThisWeekViewModel.unclosedWeeks(summaries, emptySet(), current).isEmpty())
+    }
+
+    @Test fun linesGroupByTheYearHoldingMostOfTheWeek() {
+        val calendar = com.numbered.app.domain.LifeCalendar(LocalDate.of(1989, 12, 2), 80, java.time.DayOfWeek.MONDAY)
+        // Monday 29 December 2025 to Sunday 4 January 2026 is mostly in 2026.
+        val newYear = LocalDate.of(2025, 12, 29)
+        val december = LocalDate.of(2025, 12, 22)
+        val reviews = listOf(
+            com.numbered.app.data.WeekReview(newYear, "Fireworks from the roof.", 1),
+            com.numbered.app.data.WeekReview(december, "  ", 1),
+        )
+        val summaries = mapOf(newYear to WeekSummary.of(listOf(Done, Done)), december to WeekSummary.of(listOf(Done, Open)))
+        val years = com.numbered.app.ui.lines.linesByYear(calendar, reviews, summaries)
+        assertEquals(listOf(2026, 2025), years.map { it.year })
+        assertEquals(listOf("Fireworks from the roof."), years[0].lines.map { it.note })
+        assertEquals(2, years[0].thingsDone)
+        // A closed week with a blank line still counts as closed, but has no line to show.
+        assertEquals(1, years[1].weeksClosed)
+        assertTrue(years[1].lines.isEmpty())
+        // Search ignores case, and years without a match drop out.
+        assertEquals(listOf(2026), years.matching("  FIREWORKS ").map { it.year })
+        assertTrue(years.matching("osaka").isEmpty())
+        assertEquals(years, years.matching(" "))
     }
 }

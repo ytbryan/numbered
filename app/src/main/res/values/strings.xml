@@ -136,6 +136,26 @@
     <string name="status_before_numbered">Before Numbered</string>
     <string name="status_nothing_planned">Nothing planned</string>
 
+    <!-- Lines -->
+    <string name="lines_title">Your lines</string>
+    <string name="lines_search">Search your lines</string>
+    <string name="lines_empty">Your weekly lines gather here. Close a week with one line to write the first.</string>
+    <string name="lines_no_match">No lines mention “%1$s”.</string>
+    <string name="lines_year_summary">%1$s · %2$s · %3$s</string>
+    <plurals name="lines_weeks_closed">
+        <item quantity="one">%s\u00A0week closed</item>
+        <item quantity="other">%s\u00A0weeks closed</item>
+    </plurals>
+    <plurals name="lines_things_done">
+        <item quantity="one">%s\u00A0thing done</item>
+        <item quantity="other">%s\u00A0things done</item>
+    </plurals>
+    <plurals name="lines_count">
+        <item quantity="one">%s\u00A0line</item>
+        <item quantity="other">%s\u00A0lines</item>
+    </plurals>
+    <string name="a11y_clear_search">Clear search</string>
+
     <!-- Week detail -->
     <string name="age_and_time">Age %1$d · %2$s</string>
     <string name="time_this_week">This week</string>

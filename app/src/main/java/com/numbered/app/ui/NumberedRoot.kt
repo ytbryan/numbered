@@ -47,6 +47,7 @@ import com.numbered.app.R
 import com.numbered.app.ui.close.CatchUpScreen
 import com.numbered.app.ui.close.CloseWeekScreen
 import com.numbered.app.ui.life.LifeScreen
+import com.numbered.app.ui.lines.LinesScreen
 import com.numbered.app.ui.profile.DataViewModel
 import com.numbered.app.ui.profile.ImportDialog
 import com.numbered.app.ui.profile.OnboardingScreen
@@ -82,6 +83,8 @@ fun closeWeekDeepLink(weekStart: LocalDate): Uri = "$CLOSE_WEEK_DEEP_LINK/${week
 @Serializable data object SettingsRoute
 
 @Serializable data object CatchUpRoute
+
+@Serializable data object LinesRoute
 
 private class Tab(val route: Any, val routeClass: KClass<*>, @param:StringRes val label: Int, val icon: ImageVector)
 
@@ -179,6 +182,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
             composable<LifeRoute> {
                 LifeScreen(
                     onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
+                    onOpenLines = { nav.navigate(LinesRoute) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                 )
             }
@@ -204,6 +208,9 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                         }
                     },
                 )
+            }
+            composable<LinesRoute> {
+                LinesScreen(onBack = { nav.popBackStack() }, onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) })
             }
             composable<CatchUpRoute> {
                 CatchUpScreen(

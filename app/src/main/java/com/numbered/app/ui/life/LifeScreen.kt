@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -58,7 +59,7 @@ import java.text.NumberFormat
 import java.time.LocalDate
 
 @Composable
-fun LifeScreen(onOpenWeek: (LocalDate) -> Unit, onOpenSettings: () -> Unit) {
+fun LifeScreen(onOpenWeek: (LocalDate) -> Unit, onOpenLines: () -> Unit, onOpenSettings: () -> Unit) {
     val viewModel = containerViewModel { LifeViewModel(it) }
     val grid by viewModel.grid.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
@@ -93,6 +94,9 @@ fun LifeScreen(onOpenWeek: (LocalDate) -> Unit, onOpenSettings: () -> Unit) {
                         .weight(1f)
                         .semantics { heading() },
                 )
+                IconButton(onClick = onOpenLines) {
+                    Icon(Icons.Outlined.FormatQuote, contentDescription = stringResource(R.string.lines_title))
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
                 }

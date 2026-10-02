@@ -84,6 +84,22 @@ annotation class AwayFor(val weeks: Int)
 @Config(sdk = [34], qualifiers = "w366dp-h813dp-xxhdpi", fontScale = 1.45f)
 class ScreenCaptureTest {
     private val zone = ZoneId.of("Asia/Singapore")
+
+    private companion object {
+        /** Weekly lines for the seeded history, in order. */
+        val SEED_LINES = listOf(
+            "A steady week.",
+            "Quiet week. Slept well.",
+            "Booked the Osaka trip at last.",
+            "Mum's checkup went fine.",
+            "Shipped the grant outline.",
+            "Too many meetings, still finished the draft.",
+            "Long walk by the reservoir on Sunday.",
+            "Started planning Osaka with Mei.",
+            "Hard week, but kept the three.",
+            "Osaka hotel sorted.",
+        )
+    }
     private val defaultToday = LocalDate.of(2026, 10, 1)
 
     private fun clockOn(today: LocalDate) = Clock.fixed(today.atTime(LocalTime.of(10, 0)).atZone(zone).toInstant(), zone)
@@ -163,7 +179,7 @@ class ScreenCaptureTest {
                 2 -> add(week, "Past goal $n-a", Done)
                 6 -> Unit
             }
-            if (n % 7 != 6) db.reviews().upsert(WeekReview(week, if (n % 2 == 0) "A steady week." else "", millis(week.plusDays(6), 20)))
+            if (n % 7 != 6) db.reviews().upsert(WeekReview(week, if (n % 2 == 0) SEED_LINES[n / 2 % SEED_LINES.size] else "", millis(week.plusDays(6), 20)))
             week = week.plusWeeks(1)
             n++
         }
@@ -266,6 +282,21 @@ class ScreenCaptureTest {
         tap("Life")
         compose.onNodeWithContentDescription("Settings").performClick()
         awaitText("Weeks start on Monday")
+    }
+
+    @Test fun linesGatherEveryWeeklyNote() {
+        tap("Life")
+        compose.onNodeWithContentDescription("Your lines").performClick()
+        awaitText("2026")
+        capture("lines")
+        compose.onNodeWithText("32\u00A0weeks closed · 77\u00A0things done · 16\u00A0lines").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performTextInput("osaka")
+        awaitText("4\u00A0lines")
+        compose.onAllNodesWithText("Quiet week. Slept well.").assertCountEquals(0)
+        capture("lines-search")
+        compose.onAllNodesWithText("Osaka", substring = true).onFirst().performClick()
+        awaitText("Age 36")
+        capture("lines-open-week")
     }
 
     @Test fun thisWeek() {
