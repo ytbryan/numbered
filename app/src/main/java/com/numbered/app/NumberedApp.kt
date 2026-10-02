@@ -6,6 +6,7 @@ import androidx.annotation.VisibleForTesting
 import com.numbered.app.data.NumberedDatabase
 import com.numbered.app.data.NumberedRepository
 import com.numbered.app.reminders.Reminders
+import com.numbered.app.widget.keepWidgetsCurrent
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -27,6 +28,7 @@ class NumberedApp : Application() {
         container = AppContainer(this, NumberedDatabase.open(this), DeviceClock())
         container.reminders.createChannel()
         container.scope.launch { container.reminders.reschedule() }
+        container.scope.launch { keepWidgetsCurrent(this@NumberedApp, container) }
     }
 
     @VisibleForTesting

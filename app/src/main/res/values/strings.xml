@@ -244,6 +244,15 @@
     <string name="week_starts_on">Weeks start on %1$s</string>
     <string name="week_starts_help">Set when you started, so saved weeks never shift.</string>
 
+    <!-- Widget -->
+    <string name="widget_name">This week</string>
+    <string name="widget_description">Your commitments for the week, ticked off from the home screen.</string>
+    <string name="widget_setup">Open Numbered to choose this week\'s three.</string>
+    <string name="widget_add_first">+ Add something</string>
+    <string name="widget_add">+ Add another</string>
+    <string name="widget_close">Close the week →</string>
+    <string name="widget_week_and_days">Week %1$s · %2$s</string>
+
     <!-- Reminders -->
     <string name="reminders_title">Reminders</string>
     <string name="reminders_help">A nudge at the start and end of each week, skipped when there is nothing to do.</string>

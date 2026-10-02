@@ -172,7 +172,8 @@ class ReminderTest {
         listOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_MY_PACKAGE_REPLACED)
             .forEach { action ->
                 val receivers = app.packageManager.queryBroadcastReceivers(Intent(action).setPackage(app.packageName), 0)
-                assertEquals(action, listOf(RescheduleReceiver::class.java.name), receivers.map { it.activityInfo.name })
+                // Libraries such as Glance may listen too, so only ours is required.
+                assertTrue(action, RescheduleReceiver::class.java.name in receivers.map { it.activityInfo.name })
             }
     }
 

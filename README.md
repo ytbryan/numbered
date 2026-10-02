@@ -17,6 +17,7 @@ It shares these rules and the export file, so a copy moves between the two.
 - **Your lines**: every weekly line, grouped by year with what each year held, and searchable.
 - **Chapters**: name a stretch of life, like a move or a job. Chapters mark the grid and the weeks they cover.
 - **Reminders**: optional nudges to plan the week and to close it, set in Settings.
+- **Widget**: this week on the home screen. Tick commitments off, add one, or close the week near its end.
 
 ## Rules worth knowing
 

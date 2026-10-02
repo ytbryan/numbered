@@ -19,7 +19,7 @@ import com.numbered.app.domain.WeekTone
  * Numbered keeps a fixed palette instead of dynamic colour, because the life grid's colours carry
  * meaning and must read the same on every phone.
  */
-private val LightColors = lightColorScheme(
+internal val LightColors = lightColorScheme(
     primary = Color(0xFF0F6E56),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFCDEEE2),
@@ -47,7 +47,7 @@ private val LightColors = lightColorScheme(
     outlineVariant = Color(0xFFDDD6CB),
 )
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = Color(0xFF6FD3B0),
     onPrimary = Color(0xFF003828),
     primaryContainer = Color(0xFF0B5443),
