@@ -1,0 +1,146 @@
+package com.numbered.app.ui.week
+
+import androidx.lifecycle.viewModelScope
+import com.numbered.app.AppContainer
+import com.numbered.app.R
+import com.numbered.app.data.Commitment
+import com.numbered.app.data.PlanResult
+import com.numbered.app.data.SomedayItem
+import com.numbered.app.data.calendar
+import com.numbered.app.domain.CommitmentStatus
+import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
+import com.numbered.app.domain.WeekSummary
+import com.numbered.app.domain.isStale
+import com.numbered.app.ui.Notice
+import com.numbered.app.ui.NoticeViewModel
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+
+/** A past week that still needs closing, because it has unfinished commitments or no review. */
+data class UnclosedWeek(val weekStart: LocalDate, val weekNumber: Int, val open: Int)
+
+data class ThisWeekState(
+    val today: LocalDate,
+    val zone: ZoneId,
+    val weekStart: LocalDate,
+    val weekNumber: Int,
+    /** Null in gentle mode, which never mentions the horizon. */
+    val horizonWeeks: Int?,
+    val daysLeft: Int,
+    val commitments: List<Commitment>,
+    val unclosed: UnclosedWeek?,
+    val closedNote: String?,
+    val isClosed: Boolean,
+    val nextWeekStart: LocalDate,
+    val nextWeekPlanned: Int,
+    val staleSomeday: Int,
+    val someday: List<SomedayItem>,
+) {
+    val squaresLeft: Int get() = MAX_COMMITMENTS_PER_WEEK - commitments.size
+    val doneCount: Int get() = commitments.count { it.status == CommitmentStatus.Done }
+
+    /** The weekly close is offered in the last three days, and whenever it has already begun. */
+    val offerClose: Boolean get() = !isClosed && daysLeft <= CLOSE_OFFER_DAYS
+
+    companion object {
+        const val CLOSE_OFFER_DAYS = 3
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel() {
+    private val repository = container.repository
+
+    val state: StateFlow<ThisWeekState?> = combine(repository.profile().filterNotNull(), container.today.value) { profile, today ->
+        profile to today
+    }.flatMapLatest { (profile, today) ->
+        val calendar = profile.calendar()
+        val weekStart = calendar.weekStartOf(today)
+        val currentIndex = calendar.indexOf(today)
+        val nextWeekStart = weekStart.plusWeeks(1)
+        combine(
+            repository.week(weekStart),
+            repository.summaries(),
+            repository.reviews(),
+            repository.somedayWaiting(),
+        ) { week, summaries, reviews, someday ->
+            val now = container.today.nowMillis()
+            ThisWeekState(
+                today = today,
+                zone = container.clock.zone,
+                weekStart = weekStart,
+                weekNumber = currentIndex + 1,
+                horizonWeeks = calendar.horizonWeeks.takeUnless { profile.gentle },
+                daysLeft = ChronoUnit.DAYS.between(today, weekStart.plusDays(6)).toInt() + 1,
+                commitments = week.filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done },
+                unclosed = findUnclosed(summaries, reviews.keys, weekStart)?.let { start ->
+                    UnclosedWeek(start, calendar.indexOf(start) + 1, summaries[start]?.open ?: 0)
+                },
+                closedNote = reviews[weekStart]?.note,
+                isClosed = weekStart in reviews,
+                nextWeekStart = nextWeekStart,
+                nextWeekPlanned = summaries[nextWeekStart]?.occupied ?: 0,
+                staleSomeday = someday.count { isStale(it.createdAt, it.keptAt, now) },
+                someday = someday,
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun add(title: String) = launchWrite {
+        val weekStart = state.value?.weekStart ?: return@launchWrite
+        report(repository.addCommitment(weekStart, title))
+    }
+
+    fun addFromSomeday(item: SomedayItem) = launchWrite {
+        val weekStart = state.value?.weekStart ?: return@launchWrite
+        report(repository.schedule(item.id, weekStart))
+    }
+
+    fun setDone(commitment: Commitment, done: Boolean) = launchWrite {
+        repository.setDone(commitment.id, done)
+    }
+
+    fun rename(commitment: Commitment, title: String) = launchWrite {
+        report(repository.rename(commitment.id, title))
+    }
+
+    fun moveToNextWeek(commitment: Commitment) = launchWrite {
+        val next = state.value?.nextWeekStart ?: return@launchWrite
+        val result = repository.carry(commitment.id, next)
+        if (result == PlanResult.Ok) notify(Notice(R.string.notice_moved_next_week)) else report(result)
+    }
+
+    fun returnToSomeday(commitment: Commitment) = launchWrite {
+        val result = repository.returnToSomeday(commitment.id)
+        if (result == PlanResult.Ok) notify(Notice(R.string.notice_returned_to_someday)) else report(result)
+    }
+
+    fun remove(commitment: Commitment) = launchWrite {
+        val removed = repository.remove(commitment.id) ?: return@launchWrite
+        notify(Notice(R.string.notice_removed, listOf(removed.title)) { launchWrite { report(repository.restore(removed)) } })
+    }
+
+    companion object {
+        /**
+         * The oldest past week with unfinished commitments and no review, or else last week if it
+         * had commitments and was never closed. Only one week is offered at a time.
+         */
+        fun findUnclosed(
+            summaries: Map<LocalDate, WeekSummary>,
+            closed: Set<LocalDate>,
+            currentWeekStart: LocalDate,
+        ): LocalDate? {
+            val unclosed = summaries.filterKeys { it < currentWeekStart && it !in closed }
+            return unclosed.filterValues { it.open > 0 }.keys.minOrNull()
+                ?: currentWeekStart.minusWeeks(1).takeIf { (unclosed[it]?.planned ?: 0) > 0 }
+        }
+    }
+}

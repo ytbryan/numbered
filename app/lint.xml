@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- These upgrades need compileSdk 37 and AGP 9.1. See the note in gradle/libs.versions.toml. -->
+<lint>
+    <issue id="AndroidGradlePluginVersion">
+        <ignore regexp="com.android.application than 8.13.2" />
+    </issue>
+    <issue id="GradleDependency">
+        <ignore regexp="compose-bom|lifecycle-runtime-compose|lifecycle-viewmodel-compose|navigation-compose" />
+    </issue>
+</lint>

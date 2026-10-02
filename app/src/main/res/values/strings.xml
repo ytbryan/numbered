@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Numbered</string>
+
+    <!-- Navigation -->
+    <string name="tab_this_week">This week</string>
+    <string name="tab_life">Life</string>
+    <string name="tab_someday">Someday</string>
+    <string name="settings">Settings</string>
+
+    <!-- Actions -->
+    <string name="action_add">Add</string>
+    <string name="action_back">Back</string>
+    <string name="action_back_to_someday">Back to Someday</string>
+    <string name="action_bring_back">Bring back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_close_this_week">Close this week</string>
+    <string name="action_close_week">Close week</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_done">Done</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_export">Export</string>
+    <string name="action_edit_close">Edit the weekly note</string>
+    <string name="action_keep">Keep</string>
+    <string name="action_let_go">Let go</string>
+    <string name="action_move_next_week">Move to next week</string>
+    <string name="action_move_this_week">Move to this week</string>
+    <string name="action_plan">Plan</string>
+    <string name="action_put_next_week">Put in next week</string>
+    <string name="action_put_this_week">Put in this week</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_replace">Replace</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_restore_from_file">Restore from a file</string>
+    <string name="action_review">Review</string>
+    <string name="action_save">Save</string>
+    <string name="action_start">Start</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_unlock">Unlock</string>
+
+    <!-- Shared formats -->
+    <string name="quoted">“%1$s”</string>
+    <string name="week_number">Week %1$s</string>
+    <string name="week_of_horizon">Week %1$s of %2$s</string>
+    <string name="years_decimal">%1$s years</string>
+
+    <!-- This week -->
+    <string name="this_week">This week</string>
+    <string name="range_and_days_left">%1$s · %2$s</string>
+    <string name="last_day">Last day</string>
+    <plurals name="days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <string name="add_first">Add something that matters</string>
+    <string name="add_another">Add another</string>
+    <string name="add_ahead">Plan something for this week</string>
+    <plurals name="squares_left">
+        <item quantity="one">%d square left</item>
+        <item quantity="other">%d squares left</item>
+    </plurals>
+    <string name="add_heading_this_week">What deserves this week?</string>
+    <string name="add_heading_week">Add to %1$s</string>
+    <string name="add_placeholder">Book the dentist</string>
+    <string name="add_from_someday">From Someday</string>
+    <string name="rename_title">Edit</string>
+    <string name="done_on">Done %1$s</string>
+    <string name="carried_from">Carried from the week of %1$s</string>
+    <string name="carried_from_last_week">Carried from last week</string>
+    <string name="unclosed_title">Week %1$s is still open</string>
+    <plurals name="unclosed_body_open">
+        <item quantity="one">%d unfinished. Decide what happens to it and write one line.</item>
+        <item quantity="other">%d unfinished. Decide what happens to them and write one line.</item>
+    </plurals>
+    <string name="unclosed_body_note">Everything is settled. Write one line to close it.</string>
+    <string name="close_prompt_title">Close the week</string>
+    <string name="close_prompt_body">About three minutes. Settle what is unfinished and write one line.</string>
+    <string name="closed_title">Week closed</string>
+    <string name="next_week">Next week</string>
+    <string name="next_week_body">%1$s · %2$d of 3 planned</string>
+    <plurals name="stale_title">
+        <item quantity="one">%d thing in Someday is 12+ weeks old</item>
+        <item quantity="other">%d things in Someday are 12+ weeks old</item>
+    </plurals>
+    <string name="stale_body">Keep them, or let them go.</string>
+
+    <!-- Commitment status -->
+    <string name="status_open">Open</string>
+    <string name="status_done">Done</string>
+    <string name="status_carried">Carried to a later week</string>
+    <string name="status_returned">Returned to Someday</string>
+    <string name="status_let_go">Let go</string>
+
+    <!-- Life -->
+    <string name="your_life">Your life</string>
+    <string name="life_lived">%1$s · %2$s weeks lived</string>
+    <string name="life_horizon_note">The grid runs to age %1$d. You can change this in Settings.</string>
+    <string name="legend_all_done">All done</string>
+    <string name="legend_some_done">Some done</string>
+    <string name="legend_lived">Lived</string>
+    <string name="legend_this_week">This week</string>
+    <string name="legend_planned">Planned</string>
+    <string name="legend_ahead">Ahead</string>
+    <string name="week_and_age">Week %1$s · age %2$d</string>
+    <string name="range_and_status">%1$s · %2$s</string>
+    <string name="status_this_week_done" tools:ignore="PluralsCandidate">%1$d of %2$d done so far</string>
+    <string name="status_this_week_empty">Nothing planned yet</string>
+    <plurals name="status_planned">
+        <item quantity="one">%d planned</item>
+        <item quantity="other">%d planned</item>
+    </plurals>
+    <string name="status_unwritten">Unwritten</string>
+    <string name="status_done_of" tools:ignore="PluralsCandidate">%1$d of %2$d done</string>
+    <string name="status_plans_changed">Plans changed</string>
+    <string name="status_before_numbered">Before Numbered</string>
+    <string name="status_nothing_planned">Nothing planned</string>
+
+    <!-- Week detail -->
+    <string name="age_and_time">Age %1$d · %2$s</string>
+    <string name="time_this_week">This week</string>
+    <string name="time_ahead">Ahead</string>
+    <string name="time_before_numbered">Before Numbered</string>
+    <string name="time_closed">Closed</string>
+    <string name="time_not_closed">Not closed</string>
+    <string name="week_before_numbered">This week was lived before you started Numbered.</string>
+    <string name="week_nothing_planned">Nothing was planned for this week.</string>
+
+    <!-- Close week -->
+    <string name="close_title">Close week %1$s</string>
+    <string name="close_intro">Decide what happens to each unfinished commitment, then write one line about the week.</string>
+    <string name="close_intro_note_only">Everything is settled. Write one line about the week.</string>
+    <string name="close_finished">Finished</string>
+    <string name="close_unfinished">Unfinished</string>
+    <string name="close_choose_one">Choose what happens to this</string>
+    <string name="close_next_week_full">Next week is full, so this cannot be carried there.</string>
+    <string name="close_this_week_full">This week is full, so this cannot be carried into it.</string>
+    <string name="close_note_label">What mattered this week?</string>
+    <string name="close_note_label_past">What mattered that week?</string>
+    <string name="close_note_placeholder">One line is enough</string>
+    <plurals name="close_undecided">
+        <item quantity="one">Choose what happens to %d unfinished commitment.</item>
+        <item quantity="other">Choose what happens to %d unfinished commitments.</item>
+    </plurals>
+    <string name="choice_done">Done</string>
+    <string name="choice_next_week">Next week</string>
+    <string name="choice_this_week">This week</string>
+    <string name="choice_someday">Someday</string>
+    <string name="choice_let_go">Let go</string>
+
+    <!-- Someday -->
+    <string name="someday_intro">No dates and no pressure. Pull something into a week when it is ready.</string>
+    <string name="someday_placeholder">Learn to sail</string>
+    <string name="stale_heading">Still worth a square?</string>
+    <string name="stale_explainer">These have waited 12 weeks or more. Keeping one is fine. Letting go is a decision, not a failure.</string>
+    <string name="waiting_heading">Waiting · %1$d</string>
+    <string name="waiting_empty">Nothing waiting. Ideas you are not ready to schedule belong here.</string>
+    <string name="let_go_heading">Let go · %1$d</string>
+    <string name="added_this_week">Added this week</string>
+    <plurals name="added_weeks_ago">
+        <item quantity="one">Added a week ago</item>
+        <item quantity="other">Added %d weeks ago</item>
+    </plurals>
+
+    <!-- Onboarding and settings -->
+    <string name="onboarding_hook">About 4,000 weeks. Spend this one on purpose.</string>
+    <string name="onboarding_body">Choose up to three things each week. Close the week with one line. Watch your life fill in, one square at a time.</string>
+    <string name="birth_date">Birth date</string>
+    <string name="birth_date_choose">Choose your birth date</string>
+    <string name="birth_date_required">Choose your birth date to place this week on your grid.</string>
+    <string name="horizon_label">Years on the grid</string>
+    <string name="horizon_years">%1$d</string>
+    <string name="horizon_help">How many years the grid shows. It is a canvas, not a prediction.</string>
+    <string name="gentle_label">Gentle mode</string>
+    <string name="gentle_help">Hide the weeks ahead. The grid shows only the years you have lived.</string>
+    <string name="start_week">Start week %1$s</string>
+    <string name="data_title">Your data</string>
+    <string name="privacy_note">Your weeks stay on this phone and in your device backups. No account needed.</string>
+    <string name="name_origin">Named after Psalm 90:12. “So teach us to number our days, that we may apply our hearts unto wisdom.”</string>
+    <string name="week_starts_on">Weeks start on %1$s</string>
+    <string name="week_starts_help">Set when you started, so saved weeks never shift.</string>
+
+    <!-- Export and import -->
+    <string name="export_title">Export a copy</string>
+    <string name="export_body">Every week, note, and Someday item in one file you keep, with an optional passphrase.</string>
+    <string name="export_dialog_body">Anyone who opens the file can read your weeks and notes. A passphrase keeps it private.</string>
+    <string name="export_passphrase_warning">You will need this passphrase to import the file. It cannot be recovered if you forget it.</string>
+    <string name="passphrase_optional">Passphrase (optional)</string>
+    <string name="passphrase_repeat">Repeat passphrase</string>
+    <string name="passphrase_too_short">Use at least 8 characters</string>
+    <string name="passphrase_mismatch">The passphrases do not match</string>
+    <string name="passphrase_label">Passphrase</string>
+    <string name="passphrase_wrong">That passphrase does not open this file</string>
+    <string name="unlock_title">This copy is protected</string>
+    <string name="unlock_body">Enter the passphrase chosen when it was exported.</string>
+    <string name="unlocking">Unlocking…</string>
+    <string name="import_title">Import a copy</string>
+    <string name="import_body">Bring back a file you exported. It replaces what is here.</string>
+    <string name="import_replace_title">Replace everything here?</string>
+    <string name="import_replace_body">The copy saved on %1$s will replace everything on this phone. Export first if you want to keep what is here.</string>
+    <string name="import_restore_title">Restore your weeks?</string>
+    <string name="import_restore_body">This copy was saved on %1$s.</string>
+    <string name="import_contents">%1$s · %2$s · %3$s</string>
+    <plurals name="import_weeks_planned">
+        <item quantity="one">%s week planned</item>
+        <item quantity="other">%s weeks planned</item>
+    </plurals>
+    <plurals name="import_weeks_closed">
+        <item quantity="one">%s week closed</item>
+        <item quantity="other">%s weeks closed</item>
+    </plurals>
+    <plurals name="import_someday">
+        <item quantity="one">%s waiting in Someday</item>
+        <item quantity="other">%s waiting in Someday</item>
+    </plurals>
+
+    <!-- Notices -->
+    <string name="notice_week_full">That week already has three. Finish, move, or let one go first.</string>
+    <string name="notice_changed_elsewhere">That item has already changed. Try again.</string>
+    <string name="notice_moved_next_week">Moved to next week</string>
+    <string name="notice_moved_this_week">Moved to this week</string>
+    <string name="notice_returned_to_someday">Returned to Someday</string>
+    <string name="notice_removed">Removed “%1$s”</string>
+    <string name="notice_deleted">Deleted “%1$s”</string>
+    <string name="notice_let_go">Let go of “%1$s”</string>
+    <string name="notice_added_this_week">Added to this week: %1$s</string>
+    <string name="notice_added_next_week">Added to next week: %1$s</string>
+    <string name="notice_week_closed">Week %1$s closed</string>
+    <string name="notice_exported">Exported a copy of your weeks</string>
+    <string name="notice_exported_protected">Exported a protected copy of your weeks</string>
+    <string name="notice_export_interrupted">The export was interrupted, so nothing was saved. Try again.</string>
+    <string name="notice_export_failed">Could not save to that file. Try another place.</string>
+    <string name="notice_import_unreadable">Could not open that file.</string>
+    <string name="notice_import_not_backup">That file is not a Numbered export.</string>
+    <string name="notice_import_too_new">That file is from a newer version of Numbered. Update the app, then try again.</string>
+    <string name="notice_import_damaged">That file is damaged or incomplete, so nothing was changed.</string>
+    <string name="notice_imported">Imported your weeks</string>
+    <string name="notice_no_file_picker">This phone has no file picker to use.</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_life_grid">Life grid. %1$s of %2$s weeks shown have been lived. Tap a square to select a week.</string>
+    <string name="a11y_mark_done">%1$s</string>
+    <string name="a11y_more_for">More options for %1$s</string>
+    <string name="a11y_open_week">Open week</string>
+    <string name="a11y_previous_week">Previous week</string>
+    <string name="a11y_next_week">Next week</string>
+    <string name="a11y_expanded">Expanded</string>
+    <string name="a11y_collapsed">Collapsed</string>
+    <string name="a11y_show_passphrase">Show passphrase</string>
+    <string name="a11y_hide_passphrase">Hide passphrase</string>
+</resources>

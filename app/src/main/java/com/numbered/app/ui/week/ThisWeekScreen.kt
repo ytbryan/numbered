@@ -1,0 +1,207 @@
+package com.numbered.app.ui.week
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.numbered.app.R
+import com.numbered.app.data.Commitment
+import com.numbered.app.domain.CommitmentStatus
+import com.numbered.app.ui.NoticeEffect
+import com.numbered.app.ui.components.AddCommitmentSheet
+import com.numbered.app.ui.components.CommitmentCard
+import com.numbered.app.ui.components.EmptySquare
+import com.numbered.app.ui.components.MenuAction
+import com.numbered.app.ui.components.PromptCard
+import com.numbered.app.ui.components.RenameDialog
+import com.numbered.app.ui.components.commitmentSubtitle
+import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.containerViewModel
+import com.numbered.app.ui.formatCount
+import com.numbered.app.ui.pluralString
+import com.numbered.app.ui.weekRange
+import java.time.LocalDate
+
+@Composable
+fun ThisWeekScreen(
+    onOpenWeek: (LocalDate) -> Unit,
+    onCloseWeek: (LocalDate) -> Unit,
+    onOpenSomeday: () -> Unit,
+) {
+    val viewModel = containerViewModel { ThisWeekViewModel(it) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    NoticeEffect(viewModel.notices)
+    val current = state ?: return
+    var adding by rememberSaveable { mutableStateOf(false) }
+    var renamingId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars),
+        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, top = 24.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item(key = "header") { WeekHeader(current) }
+        current.unclosed?.let { unclosed ->
+            item(key = "unclosed") {
+                PromptCard(
+                    title = stringResource(R.string.unclosed_title, formatCount(unclosed.weekNumber)),
+                    body = if (unclosed.open > 0) {
+                        pluralString(R.plurals.unclosed_body_open, unclosed.open, unclosed.open)
+                    } else {
+                        stringResource(R.string.unclosed_body_note)
+                    },
+                    action = stringResource(R.string.action_close),
+                    onClick = { onCloseWeek(unclosed.weekStart) },
+                )
+            }
+        }
+        items(current.commitments, key = Commitment::id) { commitment ->
+            CommitmentCard(
+                commitment = commitment,
+                subtitle = commitmentSubtitle(commitment, current.zone, current.today),
+                onToggleDone = { done -> viewModel.setDone(commitment, done) },
+                actions = buildList {
+                    add(MenuAction(stringResource(R.string.action_edit)) { renamingId = commitment.id })
+                    if (commitment.status == CommitmentStatus.Open) {
+                        add(MenuAction(stringResource(R.string.action_move_next_week)) { viewModel.moveToNextWeek(commitment) })
+                        add(MenuAction(stringResource(R.string.action_back_to_someday)) { viewModel.returnToSomeday(commitment) })
+                    }
+                    add(MenuAction(stringResource(R.string.action_remove)) { viewModel.remove(commitment) })
+                },
+                modifier = Modifier.animateItem(),
+            )
+        }
+        if (current.squaresLeft > 0) {
+            item(key = "empty") {
+                EmptySquare(
+                    title = stringResource(if (current.commitments.isEmpty()) R.string.add_first else R.string.add_another),
+                    subtitle = pluralString(R.plurals.squares_left, current.squaresLeft, current.squaresLeft),
+                    onClick = { adding = true },
+                    modifier = Modifier.animateItem(),
+                )
+            }
+        }
+        item(key = "gap") { Spacer(Modifier.height(6.dp)) }
+        if (current.offerClose) {
+            item(key = "close") {
+                PromptCard(
+                    title = stringResource(R.string.close_prompt_title),
+                    body = stringResource(R.string.close_prompt_body),
+                    action = stringResource(R.string.action_close_week),
+                    onClick = { onCloseWeek(current.weekStart) },
+                    container = MaterialTheme.colorScheme.primaryContainer,
+                    content = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        } else if (current.isClosed) {
+            item(key = "closed") {
+                PromptCard(
+                    title = stringResource(R.string.closed_title),
+                    body = current.closedNote?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.quoted, it) },
+                    action = stringResource(R.string.action_edit),
+                    onClick = { onCloseWeek(current.weekStart) },
+                    container = MaterialTheme.colorScheme.surfaceContainer,
+                    content = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+        item(key = "next") {
+            PromptCard(
+                title = stringResource(R.string.next_week),
+                body = stringResource(
+                    R.string.next_week_body,
+                    weekRange(current.nextWeekStart, current.today),
+                    current.nextWeekPlanned,
+                ),
+                action = stringResource(R.string.action_plan),
+                onClick = { onOpenWeek(current.nextWeekStart) },
+                container = MaterialTheme.colorScheme.surfaceContainer,
+                content = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        if (current.staleSomeday > 0) {
+            item(key = "stale") {
+                PromptCard(
+                    title = pluralString(R.plurals.stale_title, current.staleSomeday, current.staleSomeday),
+                    body = stringResource(R.string.stale_body),
+                    action = stringResource(R.string.action_review),
+                    onClick = onOpenSomeday,
+                    container = MaterialTheme.colorScheme.surfaceContainer,
+                    content = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+    }
+
+    if (adding) {
+        AddCommitmentSheet(
+            heading = stringResource(R.string.add_heading_this_week),
+            someday = current.someday,
+            onAdd = viewModel::add,
+            onPick = viewModel::addFromSomeday,
+            onDismiss = { adding = false },
+        )
+    }
+    renamingId?.let { id ->
+        val commitment = current.commitments.firstOrNull { it.id == id }
+        if (commitment == null) {
+            renamingId = null
+        } else {
+            RenameDialog(
+                initial = commitment.title,
+                onSave = { viewModel.rename(commitment, it) },
+                onDismiss = { renamingId = null },
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeekHeader(state: ThisWeekState) {
+    Column(Modifier.padding(bottom = 10.dp)) {
+        Text(
+            text = state.horizonWeeks?.let {
+                stringResource(R.string.week_of_horizon, formatCount(state.weekNumber), formatCount(it))
+            } ?: stringResource(R.string.week_number, formatCount(state.weekNumber)),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.this_week),
+            style = MaterialTheme.typography.headlineLarge,
+            modifier = Modifier.semantics { heading() },
+        )
+        Text(
+            text = stringResource(
+                R.string.range_and_days_left,
+                weekRange(state.weekStart, state.today),
+                if (state.daysLeft == 1) stringResource(R.string.last_day) else pluralString(R.plurals.days_left, state.daysLeft, state.daysLeft),
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
