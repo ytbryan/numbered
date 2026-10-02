@@ -39,6 +39,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val viewModel = containerViewModel { SettingsViewModel(it) }
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
+    val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
     val data = containerViewModel { DataViewModel(it, resolver) }
     NoticeEffect(data.notices)
@@ -73,6 +74,13 @@ fun SettingsScreen(onBack: () -> Unit) {
             HorizonField(current.horizonYears, current.birthDate, today, viewModel::setHorizon)
             GentleField(current.gentle, viewModel::setGentle)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            RemindersSection(
+                settings = reminders,
+                firstDay = current.firstDayOfWeek,
+                canNotify = viewModel::canNotify,
+                onToggle = viewModel::setReminder,
+                onTime = viewModel::setReminderTime,
+            )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     stringResource(R.string.week_starts_on, current.firstDayOfWeek.getDisplayName(TextStyle.FULL, locale())),

@@ -1,5 +1,6 @@
 package com.numbered.app.ui
 
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -39,6 +41,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.numbered.app.R
 import com.numbered.app.ui.close.CloseWeekScreen
@@ -69,6 +72,11 @@ import kotlinx.serialization.Serializable
 @Serializable data class WeekRoute(val epochDay: Long)
 
 @Serializable data class CloseWeekRoute(val epochDay: Long)
+
+/** Opens the close of a week. Only explicit intents to MainActivity can carry it. */
+private const val CLOSE_WEEK_DEEP_LINK = "numbered://close"
+
+fun closeWeekDeepLink(weekStart: LocalDate): Uri = "$CLOSE_WEEK_DEEP_LINK/${weekStart.toEpochDay()}".toUri()
 
 @Serializable data object SettingsRoute
 
@@ -179,7 +187,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     onCloseWeek = { nav.navigate(CloseWeekRoute(it.toEpochDay())) },
                 )
             }
-            composable<CloseWeekRoute> { backStackEntry ->
+            composable<CloseWeekRoute>(deepLinks = listOf(navDeepLink<CloseWeekRoute>(basePath = CLOSE_WEEK_DEEP_LINK))) { backStackEntry ->
                 val route = backStackEntry.toRoute<CloseWeekRoute>()
                 CloseWeekScreen(
                     weekStart = LocalDate.ofEpochDay(route.epochDay),

@@ -180,6 +180,19 @@
     <string name="week_starts_on">Weeks start on %1$s</string>
     <string name="week_starts_help">Set when you started, so saved weeks never shift.</string>
 
+    <!-- Reminders -->
+    <string name="reminders_title">Reminders</string>
+    <string name="reminders_help">A nudge at the start and end of each week, skipped when there is nothing to do.</string>
+    <string name="reminder_plan_title">Plan the week</string>
+    <string name="reminder_when">%1$s at %2$s</string>
+    <string name="reminder_time_title">Remind me at</string>
+    <string name="reminders_blocked">Notifications are off for Numbered, so reminders cannot appear.</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="notification_channel_name">Weekly reminders</string>
+    <string name="notification_channel_description">A nudge to plan each week and to close it.</string>
+    <string name="notification_plan_text">Week %1$s has begun. Choose up to three things.</string>
+    <string name="a11y_change_time">Change the time for %1$s</string>
+
     <!-- Export and import -->
     <string name="export_title">Export a copy</string>
     <string name="export_body">Every week, note, and Someday item in one file you keep, with an optional passphrase.</string>

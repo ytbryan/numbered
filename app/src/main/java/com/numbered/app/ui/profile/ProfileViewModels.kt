@@ -4,9 +4,12 @@ import androidx.lifecycle.viewModelScope
 import com.numbered.app.AppContainer
 import com.numbered.app.data.Profile
 import com.numbered.app.domain.LifeCalendar
+import com.numbered.app.reminders.Reminder
+import com.numbered.app.reminders.ReminderSettings
 import com.numbered.app.ui.NoticeViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -45,6 +48,19 @@ class SettingsViewModel(private val container: AppContainer) : NoticeViewModel()
     fun setHorizon(years: Int) = update { it.copy(horizonYears = years) }
 
     fun setGentle(gentle: Boolean) = update { it.copy(gentle = gentle) }
+
+    val reminders: StateFlow<ReminderSettings> = container.reminders.store.settings
+
+    fun canNotify(): Boolean = container.reminders.canNotify()
+
+    fun setReminder(reminder: Reminder, on: Boolean) = updateReminders { it.with(reminder, on = on) }
+
+    fun setReminderTime(reminder: Reminder, at: LocalTime) = updateReminders { it.with(reminder, at = at) }
+
+    private fun updateReminders(change: (ReminderSettings) -> ReminderSettings) = launchWrite {
+        container.reminders.store.update(change)
+        container.reminders.reschedule()
+    }
 
     private fun update(change: (Profile) -> Profile) = launchWrite {
         val current = profile.value ?: return@launchWrite

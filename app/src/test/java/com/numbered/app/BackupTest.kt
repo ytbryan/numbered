@@ -191,7 +191,7 @@ class BackupTest {
 
     @Test fun anInterruptedExportWritesNothing() {
         val app = ApplicationProvider.getApplicationContext<android.app.Application>()
-        val viewModel = DataViewModel(AppContainer(db, clock), app.contentResolver)
+        val viewModel = DataViewModel(AppContainer(app, db, clock), app.contentResolver)
         val file = File.createTempFile("numbered", ".json").apply { deleteOnExit() }
         runBlocking { repository.saveProfile(LocalDate.of(1989, 12, 2), 80, gentle = false, firstDayOfWeek = DayOfWeek.MONDAY) }
 

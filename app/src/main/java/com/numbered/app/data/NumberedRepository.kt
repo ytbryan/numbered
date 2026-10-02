@@ -26,6 +26,8 @@ class NumberedRepository(
 
     fun profile(): Flow<Profile?> = profiles.observe()
 
+    suspend fun currentProfile(): Profile? = profiles.get()
+
     /** Creates the profile, or updates the personal details while keeping the week layout fixed. */
     suspend fun saveProfile(birthDate: LocalDate, horizonYears: Int, gentle: Boolean, firstDayOfWeek: DayOfWeek) {
         db.withTransaction {

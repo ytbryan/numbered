@@ -1,6 +1,8 @@
 package com.numbered.app
 
+import android.Manifest
 import android.app.Activity
+import android.app.AlarmManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -97,7 +99,7 @@ class ScreenCaptureTest {
             val clock = clockOn(today)
             val app = RuntimeEnvironment.getApplication() as NumberedApp
             database = NumberedDatabase.inMemory(app)
-            app.replaceContainer(AppContainer(database, clock))
+            app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
                 runBlocking { seed(database, today, gentle = description.getAnnotation(Gentle::class.java) != null) }
             }
@@ -405,6 +407,20 @@ class ScreenCaptureTest {
         tap("Replace")
         awaitText("Imported your weeks")
         awaitGone("Replace everything here?")
+    }
+
+    @Test fun turningOnTheCloseReminder() {
+        shadowOf(RuntimeEnvironment.getApplication()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        openSettings()
+        scrollTo("Reminders")
+        compose.onNodeWithContentDescription("Close the week").performClick()
+        awaitText("Sunday at 7:00")
+        val alarms = shadowOf(RuntimeEnvironment.getApplication().getSystemService(AlarmManager::class.java))
+        compose.waitUntil(5_000) { alarms.scheduledAlarms.isNotEmpty() }
+        capture("settings-reminders")
+        compose.onNodeWithContentDescription("Change the time for Close the week").performClick()
+        awaitText("Remind me at")
+        capture("reminder-time")
     }
 
     @Test fun importRefusesOtherFiles() {
