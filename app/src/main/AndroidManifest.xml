@@ -23,6 +23,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".CaptureActivity"
+            android:exported="true"
+            android:label="@string/capture_title"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".widget.ThisWeekWidgetReceiver"
             android:exported="true"

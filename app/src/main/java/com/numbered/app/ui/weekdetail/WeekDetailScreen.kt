@@ -58,6 +58,7 @@ fun WeekDetailScreen(
     weekStart: LocalDate,
     onBack: () -> Unit,
     onCloseWeek: (LocalDate) -> Unit,
+    onHistory: (Long) -> Unit,
     onOpenChapter: (id: Long?, startWeek: LocalDate) -> Unit,
 ) {
     val viewModel = containerViewModel { WeekDetailViewModel(it, weekStart) }
@@ -151,7 +152,12 @@ fun WeekDetailScreen(
                     commitment = commitment,
                     subtitle = commitmentSubtitle(commitment, current.zone, current.today),
                     onToggleDone = { done -> viewModel.setDone(commitment, done) },
-                    actions = actionsFor(commitment, current, viewModel, onRename = { renamingId = commitment.id }),
+                    actions = buildList {
+                        if (commitment.carriedFrom != null || commitment.status == CommitmentStatus.Carried) {
+                            add(MenuAction(stringResource(R.string.carry_history)) { onHistory(commitment.id) })
+                        }
+                        addAll(actionsFor(commitment, current, viewModel, onRename = { renamingId = commitment.id }))
+                    },
                     modifier = Modifier.animateItem(),
                 )
             }

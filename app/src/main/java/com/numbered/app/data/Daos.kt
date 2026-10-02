@@ -28,6 +28,9 @@ interface CommitmentDao {
     @Query("SELECT * FROM commitments WHERE weekStart = :weekStart ORDER BY id")
     suspend fun week(weekStart: LocalDate): List<Commitment>
 
+    @Query("SELECT * FROM commitments ORDER BY weekStart DESC, id")
+    fun observeAll(): Flow<List<Commitment>>
+
     @Query("SELECT weekStart, status FROM commitments")
     fun observeStatuses(): Flow<List<WeekStatusRow>>
 
@@ -59,6 +62,9 @@ interface CommitmentDao {
 
 @Dao
 interface SomedayDao {
+    @Query("SELECT * FROM someday ORDER BY createdAt DESC, id")
+    fun observeAll(): Flow<List<SomedayItem>>
+
     @Query("SELECT * FROM someday WHERE letGoAt IS NULL ORDER BY createdAt DESC, id DESC")
     fun observeWaiting(): Flow<List<SomedayItem>>
 

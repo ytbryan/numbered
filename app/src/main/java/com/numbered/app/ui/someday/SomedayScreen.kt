@@ -18,9 +18,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,11 +67,17 @@ import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.theme.card
 
 @Composable
-fun SomedayScreen() {
+fun SomedayScreen(initialQuery: String = "") {
     val viewModel = containerViewModel { SomedayViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     NoticeEffect(viewModel.notices)
-    val current = state ?: return
+    val source = state ?: return
+    var query by rememberSaveable { mutableStateOf(initialQuery) }
+    var searching by rememberSaveable { mutableStateOf(initialQuery.isNotBlank()) }
+    var sort by rememberSaveable { mutableStateOf(SomedaySort.Oldest) }
+    var sorting by rememberSaveable { mutableStateOf(false) }
+    val current = source.matching(query, sort)
+    val filtering = query.isNotBlank()
     var draft by rememberSaveable { mutableStateOf("") }
     var showLetGo by rememberSaveable { mutableStateOf(false) }
     val submit = {
@@ -82,11 +96,31 @@ fun SomedayScreen() {
     ) {
         item(key = "header") {
             Column(Modifier.padding(bottom = 8.dp)) {
-                Text(
-                    stringResource(R.string.tab_someday),
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.semantics { heading() },
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.tab_someday),
+                        style = MaterialTheme.typography.headlineLarge,
+                        modifier = Modifier.weight(1f).semantics { heading() },
+                    )
+                    IconButton(onClick = { searching = !searching; query = "" }) {
+                        Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.someday_search))
+                    }
+                    Box {
+                        val orderLabel = stringResource(sort.label())
+                        IconButton(onClick = { sorting = true }, modifier = Modifier.semantics { stateDescription = orderLabel }) {
+                            Icon(Icons.AutoMirrored.Outlined.Sort, contentDescription = stringResource(R.string.someday_sort))
+                        }
+                        DropdownMenu(expanded = sorting, onDismissRequest = { sorting = false }) {
+                            SomedaySort.entries.forEach { choice ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(choice.label())) },
+                                    onClick = { sort = choice; sorting = false },
+                                    trailingIcon = { if (sort == choice) Icon(Icons.Outlined.Check, contentDescription = null) },
+                                )
+                            }
+                        }
+                    }
+                }
                 Text(
                     stringResource(R.string.someday_intro),
                     style = MaterialTheme.typography.bodyMedium,
@@ -94,7 +128,23 @@ fun SomedayScreen() {
                 )
             }
         }
-        item(key = "add") {
+        if (searching) {
+            item(key = "search") {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text(stringResource(R.string.someday_search)) },
+                    singleLine = true,
+                    trailingIcon = {
+                        if (query.isNotEmpty()) IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.someday_clear_search))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+        if (!searching) item(key = "add") {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = draft,
@@ -109,6 +159,9 @@ fun SomedayScreen() {
                     Text(stringResource(R.string.action_add))
                 }
             }
+        }
+        if (filtering && current.stale.isEmpty() && current.waiting.isEmpty() && current.letGo.isEmpty()) {
+            item(key = "no-matches") { Text(stringResource(R.string.someday_no_matches), Modifier.padding(vertical = 16.dp)) }
         }
         if (current.stale.isNotEmpty()) {
             item(key = "stale-label") {
@@ -125,13 +178,13 @@ fun SomedayScreen() {
                 StaleCard(row, onKeep = { viewModel.keep(row.item) }, onLetGo = { viewModel.letGo(row.item) }, modifier = Modifier.animateItem())
             }
         }
-        item(key = "waiting-label") {
+        if (!filtering || current.waiting.isNotEmpty()) item(key = "waiting-label") {
             SectionLabel(
                 stringResource(R.string.waiting_heading, current.waiting.size),
                 Modifier.padding(top = 12.dp),
             )
         }
-        if (current.waiting.isEmpty()) {
+        if (!filtering && current.waiting.isEmpty()) {
             item(key = "waiting-empty") {
                 Text(
                     stringResource(R.string.waiting_empty),
@@ -154,13 +207,13 @@ fun SomedayScreen() {
         }
         if (current.letGo.isNotEmpty()) {
             item(key = "let-go-label") {
-                val expandedLabel = stringResource(if (showLetGo) R.string.a11y_expanded else R.string.a11y_collapsed)
+                val expandedLabel = stringResource(if (showLetGo || filtering) R.string.a11y_expanded else R.string.a11y_collapsed)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp)
                         .heightIn(min = 48.dp)
-                        .clickable(role = Role.Button) { showLetGo = !showLetGo }
+                        .clickable(enabled = !filtering, role = Role.Button) { showLetGo = !showLetGo }
                         .semantics { stateDescription = expandedLabel },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -171,13 +224,13 @@ fun SomedayScreen() {
                         modifier = Modifier.weight(1f),
                     )
                     Icon(
-                        if (showLetGo) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                        if (showLetGo || filtering) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            if (showLetGo) {
+            if (showLetGo || filtering) {
                 items(current.letGo, key = { "let-go-${it.id}" }) { item ->
                     LetGoRow(item, onBringBack = { viewModel.bringBack(item) }, modifier = Modifier.animateItem())
                 }
@@ -270,3 +323,9 @@ private fun LetGoRow(item: SomedayItem, onBringBack: () -> Unit, modifier: Modif
 @Composable
 private fun waitingText(weeks: Int): String =
     if (weeks == 0) stringResource(R.string.added_this_week) else pluralString(R.plurals.added_weeks_ago, weeks, weeks)
+
+private fun SomedaySort.label(): Int = when (this) {
+    SomedaySort.Oldest -> R.string.someday_oldest
+    SomedaySort.Newest -> R.string.someday_newest
+    SomedaySort.RecentlyKept -> R.string.someday_recently_kept
+}

@@ -90,6 +90,10 @@ class CatchUpViewModel(private val container: AppContainer) : NoticeViewModel() 
         choices.value = choices.value + (commitment.id to choice)
     }
 
+    fun draft(week: LocalDate): String? = container.drafts.read(week)
+
+    fun saveDraft(week: LocalDate, note: String) = container.drafts.save(week, note)
+
     /** Settles everything still undecided the same way. Carrying is chosen one by one, as room allows. */
     fun chooseRemaining(choice: CloseChoice) {
         require(choice != CloseChoice.Carry)
@@ -104,12 +108,15 @@ class CatchUpViewModel(private val container: AppContainer) : NoticeViewModel() 
         val closings = current.weeks.map { week ->
             WeekClosing(
                 weekStart = week.weekStart,
-                note = notes[week.weekStart].orEmpty(),
+                note = notes[week.weekStart] ?: draft(week.weekStart).orEmpty(),
                 choices = current.choices.filterKeys { id -> week.open.any { it.id == id } },
             )
         }
         when (val result = repository.closeWeeks(closings, current.currentWeek)) {
-            PlanResult.Ok -> closedChannel.trySend(closings.size)
+            PlanResult.Ok -> {
+                closings.forEach { container.drafts.clear(it.weekStart) }
+                closedChannel.trySend(closings.size)
+            }
             else -> report(result)
         }
     }

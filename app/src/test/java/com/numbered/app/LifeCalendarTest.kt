@@ -16,6 +16,32 @@ class LifeCalendarTest {
         assertEquals(LocalDate.of(1989, 11, 26), LifeCalendar(birth, 80, DayOfWeek.SUNDAY).firstWeekStart)
     }
 
+    @Test fun calendarWeeksFollowTheChosenWeekStartAndHandle53WeekYears() {
+        val friday = LocalDate.of(2026, 10, 2)
+        assertEquals(com.numbered.app.domain.CalendarWeek(2026, 40, 53), monday.calendarWeek(friday))
+        val sunday = LifeCalendar(birth, 80, DayOfWeek.SUNDAY)
+        assertEquals(com.numbered.app.domain.CalendarWeek(2026, 39, 52), sunday.calendarWeek(friday))
+        assertEquals(com.numbered.app.domain.CalendarWeek(2026, 53, 53), monday.calendarWeek(LocalDate.of(2027, 1, 1)))
+        assertEquals(com.numbered.app.domain.CalendarWeek(2027, 1, 52), monday.calendarWeek(LocalDate.of(2027, 1, 4)))
+    }
+
+    @Test fun calendarYearWeekNumbersMatchTheYearGridAtNewYearAndInLeapYears() {
+        DayOfWeek.entries.forEach { firstDay ->
+            val calendar = LifeCalendar(LocalDate.of(2000, 1, 1), 80, firstDay)
+            (2024..2028).forEach { year ->
+                val window = com.numbered.app.ui.life.yearWindow(calendar, year, calendar.horizonWeeks)
+                window.forEachIndexed { offset, index ->
+                    repeat(7) { day ->
+                        assertEquals(
+                            com.numbered.app.domain.CalendarWeek(year, offset + 1, window.count()),
+                            calendar.calendarWeek(calendar.weekStart(index).plusDays(day.toLong())),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     @Test fun indexCountsWholeCalendarWeeks() {
         assertEquals(1922, monday.indexOf(LocalDate.of(2026, 10, 1)))
         assertEquals(1922, monday.indexOf(LocalDate.of(2026, 9, 28)))

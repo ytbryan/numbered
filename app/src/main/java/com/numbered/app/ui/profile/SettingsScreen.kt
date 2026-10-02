@@ -31,6 +31,8 @@ import com.numbered.app.ui.NoticeEffect
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.locale
+import com.numbered.app.ui.shortDate
+import com.numbered.app.ui.toLocalDate
 import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +44,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
     val data = containerViewModel { DataViewModel(it, resolver) }
+    val lastExport by data.lastExport.collectAsStateWithLifecycle()
+    val recoveryDate by data.recoveryDate.collectAsStateWithLifecycle()
     NoticeEffect(data.notices)
     val import = rememberImport(data)
     ExportDialog(data)
@@ -102,7 +106,21 @@ fun SettingsScreen(onBack: () -> Unit) {
                     )
                 }
                 DataAction(Icons.Outlined.SaveAlt, stringResource(R.string.export_title), stringResource(R.string.export_body), data::startExport)
+                Text(
+                    lastExport?.let { stringResource(R.string.last_export_date, shortDate(it.toLocalDate(), today)) }
+                        ?: stringResource(R.string.last_export_never),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 DataAction(Icons.Outlined.Restore, stringResource(R.string.import_title), stringResource(R.string.import_body), import)
+                recoveryDate?.let { savedAt ->
+                    DataAction(
+                        Icons.Outlined.Restore,
+                        stringResource(R.string.recovery_title),
+                        stringResource(R.string.recovery_body, shortDate(savedAt.toLocalDate(), today)),
+                        data::restoreRecovery,
+                    )
+                }
             }
             Text(
                 stringResource(R.string.name_origin),

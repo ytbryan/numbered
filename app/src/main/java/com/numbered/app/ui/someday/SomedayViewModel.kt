@@ -27,6 +27,26 @@ data class SomedayState(
     val nextWeekStart: LocalDate,
 )
 
+enum class SomedaySort { Oldest, Newest, RecentlyKept }
+
+/** Search every group, including let-go ideas, without changing their review status. */
+fun SomedayState.matching(query: String, sort: SomedaySort): SomedayState {
+    val needle = query.trim()
+    val order = when (sort) {
+        SomedaySort.Oldest -> compareBy<SomedayItem> { it.createdAt }
+        SomedaySort.Newest -> compareByDescending<SomedayItem> { it.createdAt }
+        SomedaySort.RecentlyKept -> compareByDescending<SomedayItem> { it.keptAt ?: Long.MIN_VALUE }
+            .thenByDescending { it.createdAt }
+    }.thenBy { it.id }
+    fun rows(values: List<SomedayRow>) = values.filter { it.item.title.contains(needle, ignoreCase = true) }
+        .sortedWith { a, b -> order.compare(a.item, b.item) }
+    return copy(
+        stale = rows(stale),
+        waiting = rows(waiting),
+        letGo = letGo.filter { it.title.contains(needle, ignoreCase = true) }.sortedWith(order),
+    )
+}
+
 class SomedayViewModel(private val container: AppContainer) : NoticeViewModel() {
     private val repository = container.repository
 

@@ -129,8 +129,11 @@ fun CatchUpScreen(onBack: () -> Unit, onClosed: (Int) -> Unit) {
                     )
                 }
                 OutlinedTextField(
-                    value = notes[week.weekStart].orEmpty(),
-                    onValueChange = { notes[week.weekStart] = it },
+                    value = notes[week.weekStart] ?: viewModel.draft(week.weekStart).orEmpty(),
+                    onValueChange = {
+                        notes[week.weekStart] = it
+                        viewModel.saveDraft(week.weekStart, it)
+                    },
                     placeholder = { Text(stringResource(R.string.catch_up_note_placeholder)) },
                     maxLines = 3,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),

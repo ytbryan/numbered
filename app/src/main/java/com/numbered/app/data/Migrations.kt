@@ -22,4 +22,20 @@ internal val MIGRATIONS: Array<Migration> = arrayOf(
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_chapters_startWeek` ON `chapters` (`startWeek`)")
         }
     },
+    // Stable carry-over links. Only link old entries when their provenance is unambiguous.
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `commitments` ADD COLUMN `carriedFromId` INTEGER")
+            db.execSQL(
+                "UPDATE commitments SET carriedFromId = (SELECT source.id FROM commitments AS source " +
+                    "WHERE source.weekStart = commitments.carriedFrom AND source.title = commitments.title " +
+                    "AND source.status = 'Carried' AND source.resolvedAt = commitments.createdAt) " +
+                    "WHERE carriedFrom < weekStart AND (SELECT COUNT(*) FROM commitments AS source " +
+                    "WHERE source.weekStart = commitments.carriedFrom AND source.title = commitments.title " +
+                    "AND source.status = 'Carried' AND source.resolvedAt = commitments.createdAt) = 1 " +
+                    "AND (SELECT COUNT(*) FROM commitments AS child WHERE child.carriedFrom = commitments.carriedFrom " +
+                    "AND child.title = commitments.title AND child.createdAt = commitments.createdAt) = 1",
+            )
+        }
+    },
 )

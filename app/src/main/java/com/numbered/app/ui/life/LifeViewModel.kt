@@ -53,6 +53,16 @@ data class SelectedWeek(
     val chapters: List<String>,
 )
 
+/** Weeks belong to the calendar year containing their midpoint, including New Year boundaries. */
+internal fun yearWindow(calendar: LifeCalendar, year: Int, visibleWeeks: Int): IntRange {
+    fun firstInYear(value: Int): Int {
+        val january = LocalDate.of(value, 1, 1)
+        val index = calendar.indexOf(january)
+        return index + if (calendar.weekStart(index).plusDays(3) < january) 1 else 0
+    }
+    return firstInYear(year).coerceAtLeast(0) until firstInYear(year + 1).coerceAtMost(visibleWeeks)
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class LifeViewModel(container: AppContainer) : NoticeViewModel() {
     private val repository = container.repository

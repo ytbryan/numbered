@@ -85,7 +85,7 @@ fun CloseWeekScreen(weekStart: LocalDate, onBack: () -> Unit, onClosed: (Int) ->
         },
     ) { padding ->
         val current = state ?: return@Scaffold
-        var note by rememberSaveable(current.weekStart) { mutableStateOf(current.existingNote.orEmpty()) }
+        var note by rememberSaveable(current.weekStart) { mutableStateOf(viewModel.draft() ?: current.existingNote.orEmpty()) }
         var showErrors by rememberSaveable { mutableStateOf(false) }
 
         Column(
@@ -144,11 +144,19 @@ fun CloseWeekScreen(weekStart: LocalDate, onBack: () -> Unit, onClosed: (Int) ->
             )
             OutlinedTextField(
                 value = note,
-                onValueChange = { note = it },
+                onValueChange = {
+                    note = it
+                    viewModel.saveDraft(it)
+                },
                 placeholder = { Text(stringResource(R.string.close_note_placeholder)) },
                 maxLines = 3,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                stringResource(R.string.reflection_draft_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(Modifier.height(8.dp))

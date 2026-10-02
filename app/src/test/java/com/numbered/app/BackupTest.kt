@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -73,7 +74,7 @@ class BackupTest {
         val text = BackupFormat.encode(seeded())
         listOf(
             "\"format\": \"numbered\"",
-            "\"version\": 2",
+            "\"version\": 3",
             "\"birthDate\": \"1989-12-02\"",
             "\"firstDayOfWeek\": \"monday\"",
             "\"status\": \"carried\"",
@@ -111,7 +112,7 @@ class BackupTest {
     }
 
     @Test fun newerFilesAreRefusedWithoutGuessing() {
-        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 3, "somethingNew": true}"""))
+        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 4, "somethingNew": true}"""))
     }
 
     @Test fun damagedFilesChangeNothing() {
@@ -223,14 +224,99 @@ class BackupTest {
 
         // A file from before chapters existed: version 1, no chapters key.
         val version1 = BackupFormat.encode(base)
-            .replace("\"version\": 2", "\"version\": 1")
+            .replace("\"version\": 3", "\"version\": 1")
+            .replace(Regex(",\\s*\"carriedFromId\": \\d+"), "")
             .replace(Regex(",\\s*\"chapters\": \\[\\s*]"), "")
         assertTrue(!version1.contains("chapters"))
-        assertEquals(BackupRead.Ok(base.copy(chapters = emptyList())), BackupFormat.decode(version1))
+        assertEquals(BackupRead.Ok(base.copy(chapters = emptyList(), commitments = base.commitments.map { it.copy(carriedFromId = null) })), BackupFormat.decode(version1))
 
         // A chapter ending before it starts breaks the rules.
         val moved = snapshot.chapters.single { it.title == "Moved to Singapore" }
         val backwards = snapshot.copy(chapters = listOf(moved.copy(endWeek = lastWeek.minusWeeks(1))))
         assertEquals(BackupRead.Damaged, BackupFormat.decode(BackupFormat.encode(backwards)))
+    }
+
+    @Test fun version2FilesKeepWeekProvenanceAndVersion3KeepsIds() {
+        val original = seeded()
+        val text = BackupFormat.encode(original)
+        val version2 = text.replace("\"version\": 3", "\"version\": 2")
+            .replace(Regex(",\\s*\"carriedFromId\": \\d+"), "")
+        assertEquals(
+            BackupRead.Ok(original.copy(commitments = original.commitments.map { it.copy(carriedFromId = null) })),
+            BackupFormat.decode(version2),
+        )
+        assertEquals(BackupRead.Ok(original), BackupFormat.decode(text))
+        val child = original.commitments.single { it.carriedFromId != null }
+        val loop = original.copy(commitments = original.commitments.map {
+            if (it.id == child.id) it.copy(carriedFromId = it.id) else it
+        })
+        assertEquals(BackupRead.Damaged, BackupFormat.decode(BackupFormat.encode(loop)))
+        val removed = original.copy(commitments = original.commitments.filter { it.id != child.carriedFromId })
+        assertEquals(BackupRead.Ok(removed), BackupFormat.decode(BackupFormat.encode(removed)))
+    }
+
+    private fun awaitNotice(viewModel: DataViewModel): Notice = runBlocking {
+        withTimeout(5_000) {
+            var received: Notice? = null
+            while (received == null) {
+                shadowOf(Looper.getMainLooper()).idle()
+                received = withTimeoutOrNull(50) { viewModel.notices.first() }
+            }
+            received
+        }
+    }
+
+    @Test fun aFailedRecoveryWritePreventsImportAndKeepsThePreviousRecovery() {
+        val original = seeded()
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val container = AppContainer(app, db, clock)
+        runBlocking { container.backupSafety.saveRecovery(original) }
+        container.drafts.save(thisWeek, "Keep this draft")
+        val replacement = original.copy(commitments = emptyList(), reviews = emptyList(), someday = emptyList())
+        val file = File.createTempFile("numbered-replacement", ".json").apply {
+            writeText(BackupFormat.encode(replacement))
+            deleteOnExit()
+        }
+        val viewModel = DataViewModel(container, app.contentResolver)
+        viewModel.read(Uri.fromFile(file))
+        runBlocking {
+            withTimeout(5_000) {
+                while (viewModel.importStep.value == null) {
+                    shadowOf(Looper.getMainLooper()).idle()
+                    delay(10)
+                }
+            }
+        }
+        // A directory in place of the temporary recovery file simulates an unwritable destination.
+        val blocked = File(app.noBackupFilesDir, "before-import.json.new")
+        assertTrue(blocked.mkdir())
+        try {
+            viewModel.confirmImport()
+            assertEquals(R.string.notice_recovery_failed, awaitNotice(viewModel).message)
+            assertEquals(original, runBlocking { repository.snapshot() })
+            assertEquals(original, runBlocking { container.backupSafety.readRecovery() })
+            assertEquals("Keep this draft", container.drafts.read(thisWeek))
+            assertTrue(viewModel.importStep.value != null)
+        } finally {
+            blocked.delete()
+        }
+    }
+
+    @Test fun onlySuccessfulExportsUpdateTheLastExportDate() {
+        seeded()
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val container = AppContainer(app, db, clock)
+        val viewModel = DataViewModel(container, app.contentResolver)
+        val file = File.createTempFile("numbered-export", ".json").apply { deleteOnExit() }
+        assertNull(container.backupSafety.lastExport.value)
+        viewModel.chooseExport(null)
+        viewModel.export(Uri.fromFile(file))
+        assertEquals(R.string.notice_exported, awaitNotice(viewModel).message)
+        assertEquals(clock.millis(), container.backupSafety.lastExport.value)
+        assertEquals(clock.millis(), com.numbered.app.data.BackupSafety(app).lastExport.value)
+        viewModel.chooseExport(null)
+        viewModel.export(Uri.fromFile(File(app.cacheDir, "missing/folder/export.json")))
+        assertEquals(R.string.notice_export_failed, awaitNotice(viewModel).message)
+        assertEquals(clock.millis(), container.backupSafety.lastExport.value)
     }
 }

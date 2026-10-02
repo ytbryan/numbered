@@ -47,6 +47,7 @@ fun LifeGrid(
     previousLabel: String,
     nextLabel: String,
     modifier: Modifier = Modifier,
+    columns: Int = WEEKS_PER_ROW,
 ) {
     val colors = LocalWeekColors.current
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -60,34 +61,34 @@ fun LifeGrid(
     }
     val density = LocalDensity.current
     val labelGap = with(density) { 6.dp.toPx() }
-    val labelWidth = (labels.maxOfOrNull { it.second.size.width } ?: 0) + labelGap
+    val labelWidth = if (labels.isEmpty()) 0f else (labels.maxOfOrNull { it.second.size.width } ?: 0) + labelGap
     // Labels are centred on their rows, so the first and last can overhang the squares by half a line.
     val inset = (labels.maxOfOrNull { it.second.size.height } ?: 0) / 2f
-    val rows = (tones.size + WEEKS_PER_ROW - 1) / WEEKS_PER_ROW
+    val rows = (tones.size + columns - 1) / columns
     val currentSelect = rememberUpdatedState(onSelect)
     val currentSelected = rememberUpdatedState(selectedIndex)
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val widthPx = with(density) { maxWidth.toPx() }
-        val pitch = (widthPx - labelWidth) / WEEKS_PER_ROW
+        val pitch = (widthPx - labelWidth) / columns
         val gap = maxOf(1f, pitch * 0.18f)
         val heightDp = with(density) { (pitch * rows + inset * 2).toDp() }
 
         fun indexAt(position: Offset): Int? {
             val column = floor((position.x - labelWidth) / pitch).toInt()
             val row = floor((position.y - inset) / pitch).toInt()
-            if (column !in 0 until WEEKS_PER_ROW || row !in 0 until rows) return null
-            return (row * WEEKS_PER_ROW + column).takeIf { it < tones.size }
+            if (column !in 0 until columns || row !in 0 until rows) return null
+            return (row * columns + column).takeIf { it < tones.size }
         }
 
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(heightDp)
-                .pointerInput(pitch, labelWidth, tones.size) {
+                .pointerInput(pitch, labelWidth, tones.size, columns) {
                     detectTapGestures { position -> indexAt(position)?.let(currentSelect.value) }
                 }
-                .pointerInput(pitch, labelWidth, tones.size) {
+                .pointerInput(pitch, labelWidth, tones.size, columns) {
                     detectHorizontalDragGestures(
                         onDragStart = { position -> indexAt(position)?.let(currentSelect.value) },
                     ) { change, _ ->
@@ -112,8 +113,8 @@ fun LifeGrid(
             val square = Size(pitch - gap, pitch - gap)
             val corner = CornerRadius(square.width * 0.22f)
             tones.forEachIndexed { index, tone ->
-                val row = index / WEEKS_PER_ROW
-                val column = index % WEEKS_PER_ROW
+                val row = index / columns
+                val column = index % columns
                 drawRoundRect(
                     color = colors.of(tone),
                     topLeft = Offset(labelWidth + column * pitch, inset + row * pitch),
@@ -129,8 +130,8 @@ fun LifeGrid(
                     color = if (fill.luminance() > 0.5f) markOnLight else markOnDark,
                     radius = square.width * 0.24f,
                     center = Offset(
-                        labelWidth + (index % WEEKS_PER_ROW) * pitch + square.width / 2,
-                        inset + (index / WEEKS_PER_ROW) * pitch + square.height / 2,
+                        labelWidth + (index % columns) * pitch + square.width / 2,
+                        inset + (index / columns) * pitch + square.height / 2,
                     ),
                 )
             }
@@ -144,8 +145,8 @@ fun LifeGrid(
                 )
             }
             if (selectedIndex in tones.indices) {
-                val row = selectedIndex / WEEKS_PER_ROW
-                val column = selectedIndex % WEEKS_PER_ROW
+                val row = selectedIndex / columns
+                val column = selectedIndex % columns
                 val stroke = 1.5.dp.toPx()
                 val outset = stroke + gap / 2
                 drawRoundRect(

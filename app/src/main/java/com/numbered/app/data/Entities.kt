@@ -37,6 +37,8 @@ data class Commitment(
     val resolvedAt: Long? = null,
     /** The week this was carried from, when it was not finished there. */
     val carriedFrom: LocalDate? = null,
+    /** Stable provenance, including after either entry is renamed or removed. */
+    val carriedFromId: Long? = null,
 )
 
 @Entity(tableName = "someday")

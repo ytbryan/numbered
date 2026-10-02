@@ -221,6 +221,17 @@ fun EmptySquare(title: String, subtitle: String, onClick: () -> Unit, modifier: 
 }
 
 @Composable
+fun commitmentStatus(status: CommitmentStatus): String = stringResource(
+    when (status) {
+        CommitmentStatus.Open -> R.string.status_open
+        CommitmentStatus.Done -> R.string.status_done
+        CommitmentStatus.Carried -> R.string.history_status_carried
+        CommitmentStatus.ReturnedToSomeday -> R.string.status_returned
+        CommitmentStatus.LetGo -> R.string.status_let_go
+    },
+)
+
+@Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,

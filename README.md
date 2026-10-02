@@ -13,11 +13,26 @@ It shares these rules and the export file, so a copy moves between the two.
 - **Life**: every week of your life, 52 to a row, coloured by what you finished. Tap or drag to inspect a week.
 - **Someday**: ideas without dates. Items untouched for 12 weeks ask whether they still deserve a square.
 - **Close week**: decide what happens to each unfinished commitment (done, carry, Someday, or let go) and write one line.
+Unfinished reflections are saved on this phone as you type, including in Catch up.
 - **Catch up**: after time away, close every open past week at once.
 - **Your lines**: every weekly line, grouped by year with what each year held, and searchable.
 - **Chapters**: name a stretch of life, like a move or a job. Chapters mark the grid and the weeks they cover.
 - **Reminders**: optional nudges to plan the week and to close it, set in Settings.
 - **Widget**: this week on the home screen. Tick commitments off, add one, or close the week near its end.
+
+Life offers both a whole-life overview and larger week squares for one calendar year, with year navigation and a shortcut back to this week.
+This week names today and highlights it in a seven-day strip ordered by your chosen week start.
+Life also shows today and the current calendar week within its year.
+Lifetime totals sit below the grid, and the colour key opens on demand.
+Someday searches across waiting and let-go ideas, with oldest, newest, and recently kept sorting.
+Share text or a link from another Android app to edit it and save it to Someday, then return to that app.
+Shared ideas can be saved before setup.
+Search on This week finds commitments, weekly notes, all Someday ideas, and chapters, with links to open each result.
+Carry-over history opens from the commitment menu and follows its weeks even after a rename.
+Older entries are linked only when their original title and carry time identify one source.
+Missing or ambiguous earlier entries are shown explicitly.
+Database version 3 adds these links without replacing saved data.
+Backup format version 3 includes them and still reads versions 1 and 2.
 
 ## Rules worth knowing
 
@@ -27,6 +42,9 @@ It shares these rules and the export file, so a copy moves between the two.
 - Everything is local (Room, `numbered.db`) and included in Android device backups. There is no account.
 - Settings can export everything to a JSON file, optionally protected with a passphrase, and import it again. Setup offers to restore one on a new phone.
 Importing replaces all data in one transaction, after showing what the file holds.
+Before replacing existing data, the app saves one private recovery copy on this phone.
+Settings shows the last successful export date and can restore the data saved before the last import.
+Recovery copies and unfinished reflection drafts stay on this phone and are not included in exports or device backups.
 - The export format (`BackupFormat`) has its own types and version, separate from the database, so files people keep stay readable.
 Change its shape only by bumping `BackupFormat.VERSION`, and keep every older version readable.
 

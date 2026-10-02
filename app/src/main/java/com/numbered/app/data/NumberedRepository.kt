@@ -49,6 +49,10 @@ class NumberedRepository(
         }
     }
 
+    fun commitments(): Flow<List<Commitment>> = commitments.observeAll()
+
+    fun somedayAll(): Flow<List<SomedayItem>> = someday.observeAll()
+
     fun week(weekStart: LocalDate): Flow<List<Commitment>> = commitments.observeWeek(weekStart)
 
     fun summaries(): Flow<Map<LocalDate, WeekSummary>> = commitments.observeStatuses()
@@ -139,7 +143,7 @@ class NumberedRepository(
     /** Moves an unfinished commitment to [toWeek], keeping a Carried record in its original week. */
     suspend fun carry(id: Long, toWeek: LocalDate): PlanResult = db.withTransaction {
         val commitment = commitments.get(id)
-            ?.takeIf { it.status == CommitmentStatus.Open && it.weekStart != toWeek }
+            ?.takeIf { it.status == CommitmentStatus.Open && it.weekStart < toWeek }
             ?: return@withTransaction PlanResult.Missing
         if (commitments.occupied(toWeek) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanResult.WeekFull
         carryUnchecked(commitment, toWeek, clock.millis())
@@ -211,6 +215,9 @@ class NumberedRepository(
         val open = closings.associateWith { closing ->
             commitments.week(closing.weekStart).filter { it.status == CommitmentStatus.Open }
         }
+        if (open.any { (closing, unfinished) ->
+                unfinished.any { closing.choices[it.id] == CloseChoice.Carry && it.weekStart >= carryTo }
+            }) return@withTransaction PlanResult.Missing
         val carrying = open.entries.sumOf { (closing, unfinished) -> unfinished.count { closing.choices[it.id] == CloseChoice.Carry } }
         if (carrying > 0 && commitments.occupied(carryTo) + carrying > MAX_COMMITMENTS_PER_WEEK) {
             return@withTransaction PlanResult.WeekFull
@@ -255,7 +262,7 @@ class NumberedRepository(
     private suspend fun carryUnchecked(commitment: Commitment, toWeek: LocalDate, now: Long) {
         commitments.update(commitment.copy(status = CommitmentStatus.Carried, resolvedAt = now))
         commitments.insert(
-            Commitment(weekStart = toWeek, title = commitment.title, createdAt = now, carriedFrom = commitment.weekStart),
+            Commitment(weekStart = toWeek, title = commitment.title, createdAt = now, carriedFrom = commitment.weekStart, carriedFromId = commitment.id),
         )
     }
 

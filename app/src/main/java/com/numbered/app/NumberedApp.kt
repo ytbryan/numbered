@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.numbered.app.data.NumberedDatabase
 import com.numbered.app.data.NumberedRepository
+import com.numbered.app.data.ReflectionDrafts
+import com.numbered.app.data.BackupSafety
 import com.numbered.app.reminders.Reminders
 import com.numbered.app.widget.keepWidgetsCurrent
 import java.time.Clock
@@ -40,6 +42,8 @@ class NumberedApp : Application() {
 class AppContainer(context: Context, val database: NumberedDatabase, val clock: Clock) {
     val repository = NumberedRepository(database, clock)
     val today = Today(clock)
+    val drafts = ReflectionDrafts(context.applicationContext)
+    val backupSafety = BackupSafety(context.applicationContext)
 
     /** Work that outlives a screen, such as scheduling reminders. */
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

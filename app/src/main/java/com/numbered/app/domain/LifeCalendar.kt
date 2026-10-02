@@ -4,6 +4,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import java.time.temporal.WeekFields
 
 /**
  * Maps calendar dates onto the weeks of one life.
@@ -29,6 +30,17 @@ class LifeCalendar(
     fun weekStart(index: Int): LocalDate = firstWeekStart.plusWeeks(index.toLong())
 
     fun weekEnd(index: Int): LocalDate = weekStart(index).plusDays(6)
+
+    /** Uses the configured week start; a week belongs to the year containing at least four days. */
+    fun calendarWeek(date: LocalDate): CalendarWeek {
+        val fields = WeekFields.of(firstDayOfWeek, 4)
+        val year = date.get(fields.weekBasedYear())
+        return CalendarWeek(
+            year = year,
+            number = date.get(fields.weekOfWeekBasedYear()),
+            total = LocalDate.of(year, 12, 28).get(fields.weekOfWeekBasedYear()),
+        )
+    }
 
     /** Whole years of age on [date]. */
     fun ageOn(date: LocalDate): Int = ChronoUnit.YEARS.between(birthDate, date).toInt().coerceAtLeast(0)
@@ -77,3 +89,5 @@ class LifeCalendar(
         }
     }
 }
+
+data class CalendarWeek(val year: Int, val number: Int, val total: Int)

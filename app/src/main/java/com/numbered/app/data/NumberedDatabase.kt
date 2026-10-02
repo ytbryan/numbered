@@ -24,7 +24,7 @@ abstract class NumberedDatabase : RoomDatabase() {
 
     companion object {
         const val FILE_NAME = "numbered.db"
-        const val VERSION = 2
+        const val VERSION = 3
 
         fun open(context: Context, name: String = FILE_NAME): NumberedDatabase =
             Room.databaseBuilder(context, NumberedDatabase::class.java, name).addMigrations(*MIGRATIONS).build()

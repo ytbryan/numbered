@@ -86,6 +86,41 @@ class MigrationTest {
         }
     }
 
+    @Test fun version2PreservesDataAndOnlyLinksUnambiguousCarries() {
+        val name = "migration-2-3.db"
+        helper.createDatabase(name, 2).use { db ->
+            seedVersion1(db)
+            val from = WEEK.toEpochDay()
+            val to = WEEK.plusWeeks(1).toEpochDay()
+            db.execSQL(
+                "INSERT INTO commitments (id, weekStart, title, status, createdAt, resolvedAt, carriedFrom) VALUES " +
+                    "(10, ?, 'Same title', 'Carried', 1, 50, NULL), (11, ?, 'Same title', 'Carried', 1, 50, NULL), " +
+                    "(12, ?, 'Same title', 'Open', 50, NULL, ?), (13, ?, 'Finish the grant draft', 'Open', 2, NULL, ?), " +
+                    "(14, ?, 'Two children', 'Carried', 1, 70, NULL), " +
+                    "(15, ?, 'Two children', 'Open', 70, NULL, ?), (16, ?, 'Two children', 'Open', 70, NULL, ?)",
+                arrayOf(from, from, to, from, to, from, from, to, from, to, from),
+            )
+        }
+        helper.runMigrationsAndValidate(name, 3, true, *MIGRATIONS).close()
+        val db = NumberedDatabase.open(context, name)
+        try {
+            runBlocking {
+                val entries = db.commitments().all()
+                assertEquals(9, entries.size)
+                assertEquals(null, entries.single { it.id == 12L }.carriedFromId)
+                assertEquals(1L, entries.single { it.id == 13L }.carriedFromId)
+                assertEquals(null, entries.single { it.id == 15L }.carriedFromId)
+                assertEquals(null, entries.single { it.id == 16L }.carriedFromId)
+                assertEquals(WEEK, entries.single { it.id == 12L }.carriedFrom)
+                assertEquals("A steady week.", db.reviews().all().single().note)
+                assertEquals("Learn to sail", db.someday().all().single().title)
+            }
+        } finally {
+            db.close()
+            context.deleteDatabase(name)
+        }
+    }
+
     private fun seedVersion1(db: SupportSQLiteDatabase) {
         val week = WEEK.toEpochDay()
         db.execSQL(
@@ -112,6 +147,7 @@ class MigrationTest {
         val FROZEN_SCHEMAS = mapOf(
             1 to "23828907e852728555f8f59d986c2f97",
             2 to "b8169d580e770840a3abf439edef752a",
+            3 to "11e9ceb29e61c4a6b91d2cc5c572eb8c",
         )
     }
 }

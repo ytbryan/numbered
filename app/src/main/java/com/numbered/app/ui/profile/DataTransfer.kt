@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.room.withTransaction
 import com.numbered.app.AppContainer
 import com.numbered.app.R
 import com.numbered.app.data.BackupFormat
@@ -83,6 +84,7 @@ class DataViewModel(private val container: AppContainer, private val resolver: C
     private val repository = container.repository
     private val choosing = MutableStateFlow(false)
     private val step = MutableStateFlow<ImportStep?>(null)
+    private val importing = MutableStateFlow(false)
 
     /**
      * The passphrase chosen for the export in progress, held only in memory while the save dialog
@@ -97,6 +99,9 @@ class DataViewModel(private val container: AppContainer, private val resolver: C
     val choosingExport: StateFlow<Boolean> = choosing.asStateFlow()
 
     val importStep: StateFlow<ImportStep?> = step.asStateFlow()
+    val importBusy: StateFlow<Boolean> = importing.asStateFlow()
+    val lastExport = container.backupSafety.lastExport
+    val recoveryDate = container.backupSafety.recoveryDate
 
     val today: StateFlow<LocalDate> = container.today.value
 
@@ -140,6 +145,7 @@ class DataViewModel(private val container: AppContainer, private val resolver: C
         } catch (_: SecurityException) {
             false
         }
+        if (saved) container.backupSafety.recordExport(container.clock.millis())
         notify(
             Notice(
                 when {
@@ -192,14 +198,38 @@ class DataViewModel(private val container: AppContainer, private val resolver: C
     }
 
     fun confirmImport() = launchWrite {
+        if (importing.value) return@launchWrite
         val snapshot = (step.value as? ImportStep.Confirm)?.snapshot ?: return@launchWrite
-        step.value = null
-        repository.replaceAll(snapshot)
-        notify(Notice(R.string.notice_imported))
+        importing.value = true
+        try {
+            // Hold the database transaction while saving its current contents so widget writes
+            // cannot slip between the recovery copy and the replacement.
+            container.database.withTransaction {
+                repository.snapshot()?.let { container.backupSafety.saveRecovery(it) }
+                repository.replaceAll(snapshot)
+            }
+            container.drafts.clearAll()
+            step.value = null
+            notify(Notice(R.string.notice_imported))
+        } catch (_: IOException) {
+            notify(Notice(R.string.notice_recovery_failed))
+        } catch (_: SecurityException) {
+            notify(Notice(R.string.notice_recovery_failed))
+        } finally {
+            importing.value = false
+        }
+    }
+
+    fun restoreRecovery() = launchWrite {
+        try {
+            step.value = ImportStep.Confirm(container.backupSafety.readRecovery())
+        } catch (_: IOException) {
+            notify(Notice(R.string.notice_recovery_unreadable))
+        }
     }
 
     fun cancelImport() {
-        step.value = null
+        if (!importing.value) step.value = null
     }
 
     fun noFilePicker() = notify(Notice(R.string.notice_no_file_picker))
@@ -311,6 +341,8 @@ fun rememberImport(viewModel: DataViewModel): () -> Unit {
 @Composable
 fun ImportDialog(viewModel: DataViewModel, replacing: Boolean) {
     val current by viewModel.importStep.collectAsStateWithLifecycle()
+    val exporting by viewModel.choosingExport.collectAsStateWithLifecycle()
+    if (exporting) return
     when (val step = current) {
         is ImportStep.Locked -> UnlockDialog(step, viewModel)
         is ImportStep.Confirm -> ConfirmImportDialog(step.snapshot, viewModel, replacing)
@@ -355,6 +387,7 @@ private fun UnlockDialog(step: ImportStep.Locked, viewModel: DataViewModel) {
 @Composable
 private fun ConfirmImportDialog(pending: Snapshot, viewModel: DataViewModel, replacing: Boolean) {
     val today by viewModel.today.collectAsStateWithLifecycle()
+    val busy by viewModel.importBusy.collectAsStateWithLifecycle()
     val savedOn = shortDate(pending.savedAt.toLocalDate(), today)
     val weeksPlanned = pending.commitments.map { it.weekStart }.distinct().size
     val closed = pending.reviews.size
@@ -380,14 +413,24 @@ private fun ConfirmImportDialog(pending: Snapshot, viewModel: DataViewModel, rep
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (replacing) {
+                    Text(
+                        stringResource(R.string.import_recovery_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    TextButton(onClick = viewModel::startExport, enabled = !busy) {
+                        Text(stringResource(R.string.action_export_first))
+                    }
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = viewModel::confirmImport) {
-                Text(stringResource(if (replacing) R.string.action_replace else R.string.action_restore))
+            TextButton(onClick = viewModel::confirmImport, enabled = !busy) {
+                Text(stringResource(if (busy) R.string.importing else if (replacing) R.string.action_replace else R.string.action_restore))
             }
         },
-        dismissButton = { TextButton(onClick = viewModel::cancelImport) { Text(stringResource(R.string.action_cancel)) } },
+        dismissButton = { TextButton(onClick = viewModel::cancelImport, enabled = !busy) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 

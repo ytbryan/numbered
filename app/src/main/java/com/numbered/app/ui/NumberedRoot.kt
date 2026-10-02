@@ -49,6 +49,8 @@ import com.numbered.app.ui.chapter.ChapterViewModel
 import com.numbered.app.ui.close.CatchUpScreen
 import com.numbered.app.ui.close.CloseWeekScreen
 import com.numbered.app.ui.life.LifeScreen
+import com.numbered.app.ui.search.SearchScreen
+import com.numbered.app.ui.history.CarryHistoryScreen
 import com.numbered.app.ui.lines.LinesScreen
 import com.numbered.app.ui.profile.DataViewModel
 import com.numbered.app.ui.profile.ImportDialog
@@ -71,7 +73,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object LifeRoute
 
-@Serializable data object SomedayRoute
+@Serializable data class SomedayRoute(val query: String = "")
+
+@Serializable data object SearchRoute
+
+@Serializable data class HistoryRoute(val id: Long)
 
 @Serializable data class WeekRoute(val epochDay: Long)
 
@@ -96,7 +102,7 @@ private class Tab(val route: Any, val routeClass: KClass<*>, @param:StringRes va
 private val Tabs = listOf(
     Tab(ThisWeekRoute, ThisWeekRoute::class, R.string.tab_this_week, Icons.Outlined.CalendarViewWeek),
     Tab(LifeRoute, LifeRoute::class, R.string.tab_life, Icons.Outlined.GridView),
-    Tab(SomedayRoute, SomedayRoute::class, R.string.tab_someday, Icons.Outlined.Inbox),
+    Tab(SomedayRoute(), SomedayRoute::class, R.string.tab_someday, Icons.Outlined.Inbox),
 )
 
 @Composable
@@ -181,7 +187,9 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
                     onCloseWeek = { nav.navigate(CloseWeekRoute(it.toEpochDay())) },
                     onCatchUp = { nav.navigate(CatchUpRoute) },
-                    onOpenSomeday = { nav.openTab(SomedayRoute) },
+                    onOpenSomeday = { nav.openTab(SomedayRoute()) },
+                    onSearch = { nav.navigate(SearchRoute) },
+                    onHistory = { nav.navigate(HistoryRoute(it)) },
                 )
             }
             composable<LifeRoute> {
@@ -192,13 +200,29 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                 )
             }
-            composable<SomedayRoute> { SomedayScreen() }
+            composable<SomedayRoute> { entry -> SomedayScreen(initialQuery = entry.toRoute<SomedayRoute>().query) }
+            composable<SearchRoute> {
+                SearchScreen(
+                    onBack = { nav.popBackStack() },
+                    onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
+                    onOpenSomeday = { nav.navigate(SomedayRoute(it)) },
+                    onOpenChapter = { nav.navigate(ChapterRoute(it, 0)) },
+                )
+            }
+            composable<HistoryRoute> { entry ->
+                CarryHistoryScreen(
+                    id = entry.toRoute<HistoryRoute>().id,
+                    onBack = { nav.popBackStack() },
+                    onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
+                )
+            }
             composable<WeekRoute> { backStackEntry ->
                 val route = backStackEntry.toRoute<WeekRoute>()
                 WeekDetailScreen(
                     weekStart = LocalDate.ofEpochDay(route.epochDay),
                     onBack = { nav.popBackStack() },
                     onCloseWeek = { nav.navigate(CloseWeekRoute(it.toEpochDay())) },
+                    onHistory = { nav.navigate(HistoryRoute(it)) },
                     onOpenChapter = { id, start -> nav.navigate(ChapterRoute(id ?: ChapterViewModel.NEW, start.toEpochDay())) },
                 )
             }

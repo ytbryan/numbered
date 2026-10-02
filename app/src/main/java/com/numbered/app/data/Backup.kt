@@ -52,8 +52,8 @@ sealed interface BackupRead {
  */
 object BackupFormat {
     const val NAME = "numbered"
-    /** 2 added chapters. */
-    const val VERSION = 2
+    /** 2 added chapters; 3 adds stable carry-over links. */
+    const val VERSION = 3
 
     /** Larger than decades of weekly use, and small enough to refuse a wrongly picked video. */
     const val MAX_BYTES = 16 * 1024 * 1024
@@ -109,6 +109,7 @@ object BackupFormat {
                     createdAt = it.createdAt,
                     resolvedAt = it.resolvedAt,
                     carriedFrom = it.carriedFrom?.toString(),
+                    carriedFromId = it.carriedFromId,
                 )
             },
             someday = snapshot.someday.map { SomedayJson(it.id, it.title, it.createdAt, it.keptAt, it.letGoAt) },
@@ -165,6 +166,7 @@ object BackupFormat {
                 createdAt = it.createdAt,
                 resolvedAt = it.resolvedAt,
                 carriedFrom = it.carriedFrom?.let(LocalDate::parse),
+                carriedFromId = it.carriedFromId,
             )
         },
         someday = someday.map { SomedayItem(it.id, it.title, it.createdAt, it.keptAt, it.letGoAt) },
@@ -183,7 +185,14 @@ object BackupFormat {
             .filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
             .groupingBy { it.weekStart }
             .eachCount()
-        return profile.horizonYears in LifeCalendar.HORIZON_CHOICES &&
+        val byId = commitments.associateBy { it.id }
+        val validLinks = commitments.all { entry ->
+            val parentId = entry.carriedFromId ?: return@all true
+            val parent = byId[parentId]
+            parentId > 0 && parentId != entry.id && entry.carriedFrom?.let { it < entry.weekStart } == true &&
+                (parent == null || (parent.status == CommitmentStatus.Carried && parent.weekStart == entry.carriedFrom))
+        } && commitments.mapNotNull { it.carriedFromId }.let { it.toSet().size == it.size }
+        return validLinks && profile.horizonYears in LifeCalendar.HORIZON_CHOICES &&
             !profile.birthDate.isAfter(profile.startedOn) &&
             commitments.all { it.weekStart.startsWeek() && it.carriedFrom?.startsWeek() != false && it.title.isCleanTitle() } &&
             commitments.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
@@ -258,6 +267,8 @@ private class CommitmentJson(
     val createdAt: Long,
     val resolvedAt: Long? = null,
     val carriedFrom: String? = null,
+    /** Added in version 3; older copies keep their original week-only provenance. */
+    val carriedFromId: Long? = null,
 )
 
 @Serializable

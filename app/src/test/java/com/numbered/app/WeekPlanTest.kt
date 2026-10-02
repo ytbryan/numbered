@@ -19,6 +19,21 @@ import com.numbered.app.ui.lines.matching
 import org.junit.Test
 
 class WeekPlanTest {
+    @Test fun enlargedYearsCoverEveryVisibleWeekExactlyOnce() {
+        java.time.DayOfWeek.entries.forEach { firstDay ->
+            val calendar = com.numbered.app.domain.LifeCalendar(LocalDate.of(1989, 12, 31), 80, firstDay)
+            listOf(60, 4175).forEach { visible ->
+                val firstYear = calendar.weekStart(0).plusDays(3).year
+                val lastYear = calendar.weekStart(visible - 1).plusDays(3).year
+                val covered = (firstYear..lastYear).flatMap { year ->
+                    com.numbered.app.ui.life.yearWindow(calendar, year, visible).also { window ->
+                        window.forEach { assertEquals(year, calendar.weekStart(it).plusDays(3).year) }
+                    }.toList()
+                }
+                assertEquals((0 until visible).toList(), covered)
+            }
+        }
+    }
     @Test fun lettingGoAndReturningDoNotCountAgainstAWeek() {
         val summary = WeekSummary.of(listOf(Done, Done, LetGo, ReturnedToSomeday))
         assertEquals(2, summary.done)

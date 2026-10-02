@@ -47,7 +47,6 @@
 
     <!-- This week -->
     <string name="this_week">This week</string>
-    <string name="range_and_days_left">%1$s · %2$s</string>
     <string name="last_day">Last day</string>
     <plurals name="days_left">
         <item quantity="one">%d day left</item>
@@ -192,8 +191,8 @@
 
     <!-- Close week -->
     <string name="close_title">Close week %1$s</string>
-    <string name="close_intro">Decide what happens to each unfinished commitment, then write one line about the week.</string>
-    <string name="close_intro_note_only">Everything is settled. Write one line about the week.</string>
+    <string name="close_intro">Settle the unfinished things. Write one line.</string>
+    <string name="close_intro_note_only">Write one line about the week.</string>
     <string name="close_finished">Finished</string>
     <string name="close_unfinished">Unfinished</string>
     <string name="close_choose_one">Choose what happens to this</string>
@@ -213,12 +212,12 @@
     <string name="choice_let_go">Let go</string>
 
     <!-- Someday -->
-    <string name="someday_intro">No dates and no pressure. Pull something into a week when it is ready.</string>
+    <string name="someday_intro">Ideas for later.</string>
     <string name="someday_placeholder">Learn to sail</string>
     <string name="stale_heading">Still worth a square?</string>
-    <string name="stale_explainer">These have waited 12 weeks or more. Keeping one is fine. Letting go is a decision, not a failure.</string>
+    <string name="stale_explainer">Waiting 12+ weeks. Keep or let go.</string>
     <string name="waiting_heading">Waiting · %1$d</string>
-    <string name="waiting_empty">Nothing waiting. Ideas you are not ready to schedule belong here.</string>
+    <string name="waiting_empty">Add an idea for later.</string>
     <string name="let_go_heading">Let go · %1$d</string>
     <string name="added_this_week">Added this week</string>
     <plurals name="added_weeks_ago">
@@ -268,7 +267,7 @@
 
     <!-- Export and import -->
     <string name="export_title">Export a copy</string>
-    <string name="export_body">Every week, note, and Someday item in one file you keep, with an optional passphrase.</string>
+    <string name="export_body">Save your weeks and ideas to a file.</string>
     <string name="export_dialog_body">Anyone who opens the file can read your weeks and notes. A passphrase keeps it private.</string>
     <string name="export_passphrase_warning">You will need this passphrase to import the file. It cannot be recovered if you forget it.</string>
     <string name="passphrase_optional">Passphrase (optional)</string>
@@ -283,7 +282,26 @@
     <string name="import_title">Import a copy</string>
     <string name="import_body">Bring back a file you exported. It replaces what is here.</string>
     <string name="import_replace_title">Replace everything here?</string>
-    <string name="import_replace_body">The copy saved on %1$s will replace everything on this phone. Export first if you want to keep what is here.</string>
+    <string name="import_replace_body">The copy saved on %1$s will replace everything on this phone.</string>
+    <string name="import_recovery_help">Your current data will be saved on this phone before replacing it.</string>
+    <string name="action_export_first">Export first</string>
+    <string name="importing">Restoring…</string>
+    <string name="last_export_date">Last exported %1$s</string>
+    <string name="last_export_never">No exported copy yet</string>
+    <string name="recovery_title">Restore previous data</string>
+    <string name="recovery_body">Recover the weeks saved before your last import, on %1$s.</string>
+    <string name="notice_recovery_failed">Could not save a recovery copy. Your weeks have not been replaced.</string>
+    <string name="notice_recovery_unreadable">Could not open the recovery copy. Your weeks have not changed.</string>
+    <string name="reflection_draft_help">Draft saved on this phone.</string>
+    <string name="life_whole">Whole life</string>
+    <string name="life_larger">Larger weeks</string>
+    <string name="life_jump_year">Jump to year</string>
+    <string name="life_jump_this_week">This week</string>
+    <string name="life_previous_year">Previous year</string>
+    <string name="life_next_year">Next year</string>
+    <string name="a11y_year_grid">Weeks in %1$d. Tap or drag to select a week.</string>
+    <string name="today_date">Today · %1$s</string>
+    <string name="today_week_of_year">%3$d · week %1$d of %2$d</string>
     <string name="import_restore_title">Restore your weeks?</string>
     <string name="import_restore_body">This copy was saved on %1$s.</string>
     <string name="import_contents">%1$s · %2$s · %3$s</string>
@@ -338,4 +356,38 @@
     <string name="a11y_collapsed">Collapsed</string>
     <string name="a11y_show_passphrase">Show passphrase</string>
     <string name="a11y_hide_passphrase">Hide passphrase</string>
+    <string name="life_colour_key">Colour key</string>
+    <string name="someday_search">Search ideas</string>
+    <string name="someday_clear_search">Clear search</string>
+    <string name="someday_sort">Sort ideas</string>
+    <string name="someday_oldest">Oldest first</string>
+    <string name="someday_newest">Newest first</string>
+    <string name="someday_recently_kept">Recently kept</string>
+    <string name="someday_no_matches">No matching ideas</string>
+    <string name="capture_title">Save to Someday</string>
+    <string name="capture_idea">Idea or link</string>
+    <string name="capture_saved">Saved to Someday</string>
+    <string name="capture_error">Couldn’t save. Try again.</string>
+    <string name="search_title">Search</string>
+    <string name="search_everything">Search everything</string>
+    <string name="search_hint">Search your weeks and ideas.</string>
+    <string name="search_no_matches">No matches</string>
+    <string name="search_commitments">Commitments · %1$d</string>
+    <string name="search_notes">Weekly notes · %1$d</string>
+    <string name="search_ideas">Someday · %1$d</string>
+    <string name="search_chapters">Chapters · %1$d</string>
+    <string name="search_more">Show more</string>
+    <string name="history_status_carried">Carried</string>
+    <string name="carry_history">Carry-over history</string>
+    <string name="history_not_carried">Not carried over</string>
+    <string name="history_missing">This entry was removed.</string>
+    <string name="history_earlier_missing">%1$s · earlier entry unavailable</string>
+    <plurals name="history_carried">
+        <item quantity="one">Carried once</item>
+        <item quantity="other">Carried %d times</item>
+    </plurals>
+    <plurals name="history_carried_at_least">
+        <item quantity="one">Carried at least once</item>
+        <item quantity="other">Carried at least %d times</item>
+    </plurals>
 </resources>

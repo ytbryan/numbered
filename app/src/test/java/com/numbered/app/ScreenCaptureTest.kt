@@ -18,7 +18,10 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -47,6 +50,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -67,6 +71,9 @@ annotation class FreshInstall
 /** Overrides the default Thursday 1 October 2026. */
 @Retention(AnnotationRetention.RUNTIME)
 annotation class OnDate(val date: String)
+
+@Retention(AnnotationRetention.RUNTIME)
+annotation class WeekStarts(val day: DayOfWeek)
 
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Gentle
@@ -122,7 +129,14 @@ class ScreenCaptureTest {
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
-                runBlocking { seed(database, today, gentle = description.getAnnotation(Gentle::class.java) != null) }
+                runBlocking {
+                    seed(
+                        database,
+                        today,
+                        gentle = description.getAnnotation(Gentle::class.java) != null,
+                        firstDay = description.getAnnotation(WeekStarts::class.java)?.day ?: DayOfWeek.MONDAY,
+                    )
+                }
             }
         }
 
@@ -139,14 +153,14 @@ class ScreenCaptureTest {
 
     private fun millis(date: LocalDate, hour: Int = 12) = date.atTime(hour, 0).atZone(zone).toInstant().toEpochMilli()
 
-    private suspend fun seed(db: NumberedDatabase, today: LocalDate, gentle: Boolean) {
-        val thisWeek = today.with(DayOfWeek.MONDAY)
+    private suspend fun seed(db: NumberedDatabase, today: LocalDate, gentle: Boolean, firstDay: DayOfWeek = DayOfWeek.MONDAY) {
+        val thisWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(firstDay))
         val started = LocalDate.of(2026, 1, 5)
         db.profiles().upsert(
             Profile(
                 birthDate = LocalDate.of(1989, 12, 2),
                 horizonYears = 80,
-                firstDayOfWeek = DayOfWeek.MONDAY,
+                firstDayOfWeek = firstDay,
                 gentle = gentle,
                 startedOn = started,
             ),
@@ -402,6 +416,68 @@ class ScreenCaptureTest {
         capture("week-detail-before")
     }
 
+    @Test @OnDate("2026-10-02") @WeekStarts(DayOfWeek.SUNDAY)
+    fun todayIsClearAcrossAMonthBoundaryWithASundayStart() {
+        awaitText("This week")
+        compose.onNodeWithText("Day 6 of 7").assertDoesNotExist()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Today · Friday, Oct 2", useUnmergedTree = true).fetchSemanticsNodes().size >= 2
+        }
+        val today = compose.onAllNodesWithContentDescription("Today · Friday, Oct 2", useUnmergedTree = true).onLast().fetchSemanticsNode()
+        val first = compose.onNodeWithContentDescription("Sunday, Sep 27", useUnmergedTree = true).fetchSemanticsNode()
+        val last = compose.onNodeWithContentDescription("Saturday, Oct 3", useUnmergedTree = true).fetchSemanticsNode()
+        org.junit.Assert.assertTrue(today.boundsInRoot.left > first.boundsInRoot.right)
+        org.junit.Assert.assertTrue(today.boundsInRoot.right <= last.boundsInRoot.left)
+        capture("this-week-today")
+        tap("Life")
+        compose.onNodeWithContentDescription("Today · Friday, Oct 2", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("2026 · week 39 of 52").assertIsDisplayed()
+        awaitText("Week 1,923 · age 36")
+        capture("life-today")
+    }
+
+    @Test fun reflectionDraftSurvivesLeavingAndReopeningTheWeek() {
+        tap("Close")
+        compose.onNode(hasSetTextAction()).performTextInput("An unfinished reflection.")
+        compose.onNodeWithContentDescription("Back").performClick()
+        tap("Close")
+        compose.onNodeWithText("An unfinished reflection.").assertIsDisplayed()
+        capture("close-week-draft")
+        val container = (RuntimeEnvironment.getApplication() as NumberedApp).container
+        val lastWeek = defaultToday.with(DayOfWeek.MONDAY).minusWeeks(1)
+        assertEquals("An unfinished reflection.", com.numbered.app.data.ReflectionDrafts(compose.activity).read(lastWeek))
+        tap("This week")
+        scrollTo("Close week")
+        tap("Close week")
+        awaitText("Week 1,923 of 4,175")
+        awaitGone("Week 1,922 is still open")
+        assertNull(container.drafts.read(lastWeek))
+    }
+
+    @Test fun largerGridSelectsTheCorrectWeekAndJumpsBetweenYears() {
+        tap("Life")
+        tap("Larger weeks")
+        compose.onNodeWithText("2026").assertIsDisplayed()
+        capture("life-larger")
+        compose.onNodeWithContentDescription("Weeks in 2026", substring = true).performTouchInput {
+            click(Offset(width / 14f, 10f))
+        }
+        val first = com.numbered.app.ui.life.yearWindow(
+            com.numbered.app.domain.LifeCalendar(LocalDate.of(1989, 12, 2), 80, DayOfWeek.MONDAY), 2026, 4175,
+        ).first
+        awaitText("Week ${java.text.NumberFormat.getIntegerInstance(java.util.Locale.US).format(first + 1)} · age 36")
+        compose.onNodeWithContentDescription("Previous year").performClick()
+        awaitText("2025")
+        tap("Jump to year")
+        tap("2024")
+        compose.onNodeWithContentDescription("Weeks in 2024", substring = true).assertExists()
+        capture("life-year-jump")
+        tap("This week")
+        awaitText("Week 1,923 · age 36")
+        tap("Whole life")
+        compose.onNodeWithContentDescription("Life grid", substring = true).assertExists()
+    }
+
     @Test fun currentWeekDetail() {
         tap("Life")
         tap("Week 1,923 · age 36")
@@ -448,6 +524,101 @@ class ScreenCaptureTest {
         capture("someday-let-go")
     }
 
+    @Test fun somedaySearchFindsLetGoIdeasAndClears() {
+        tap("Someday")
+        awaitText("Still worth a square?")
+        compose.onNodeWithContentDescription("Search ideas").performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("  VIOLIN  ")
+        awaitText("Learn the violin")
+        compose.onNodeWithText("Learn the violin").assertIsDisplayed()
+        compose.onNodeWithText("Learn to sail").assertDoesNotExist()
+        capture("someday-search")
+        compose.onNode(hasSetTextAction()).performTextReplacement("no such idea")
+        awaitText("No matching ideas")
+        compose.onNodeWithContentDescription("Clear search").performClick()
+        awaitText("Still worth a square?")
+        compose.onNodeWithContentDescription("Search ideas").performClick()
+        compose.onAllNodesWithText("Learn to sail").assertCountEquals(2)
+    }
+
+    @Test fun somedaySortChangesTheVisibleOrder() {
+        val container = (RuntimeEnvironment.getApplication() as NumberedApp).container
+        runBlocking {
+            val now = container.clock.millis()
+            container.database.someday().insert(SomedayItem(title = "Sort older", createdAt = now - 172_800_000L))
+            container.database.someday().insert(SomedayItem(title = "Sort newer", createdAt = now - 86_400_000L))
+        }
+        tap("Someday")
+        awaitText("Still worth a square?")
+        compose.onNodeWithContentDescription("Search ideas").performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("Sort ")
+        awaitText("Sort older")
+        fun top(title: String) = compose.onNodeWithText(title).fetchSemanticsNode().boundsInRoot.top
+        org.junit.Assert.assertTrue(top("Sort older") < top("Sort newer"))
+        compose.onNodeWithContentDescription("Sort ideas").performClick()
+        tap("Newest first")
+        compose.waitForIdle()
+        org.junit.Assert.assertTrue(top("Sort newer") < top("Sort older"))
+        capture("someday-sorted")
+    }
+
+    @Test fun globalSearchOpensNotesCommitmentsAndLetGoIdeas() {
+        awaitText("Renew passport photos")
+        compose.onNodeWithContentDescription("Search everything").performClick()
+        awaitText("Search your weeks and ideas.")
+        compose.onNode(hasSetTextAction()).performTextInput("  grant  ")
+        awaitText("Commitments · 2")
+        awaitText("Weekly notes ·")
+        capture("search-everything")
+        tap("Finish the grant draft")
+        awaitText("Week 1,923")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNode(hasSetTextAction()).performTextReplacement("A steady week.")
+        awaitText("Weekly notes ·")
+        val noteResult = hasText("A steady week.") and !hasSetTextAction()
+        compose.waitUntil(5_000) { compose.onAllNodes(noteResult).fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodes(noteResult).onFirst().performClick()
+        awaitText("“A steady week.”")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNode(hasSetTextAction()).performTextReplacement("VIOLIN")
+        awaitText("Learn the violin")
+        tap("Learn the violin")
+        awaitText("Let go · 1")
+        compose.onNode(hasText("Learn the violin") and !hasSetTextAction()).assertIsDisplayed()
+        capture("search-open-someday")
+    }
+
+    @Test fun carryHistoryConnectsRenamedEntriesAndOpensTheirWeeks() {
+        val container = (RuntimeEnvironment.getApplication() as NumberedApp).container
+        val start = LocalDate.of(2026, 9, 7)
+        runBlocking {
+            val repository = container.repository
+            // These historical weeks already have seeded plans; make room in this isolated test.
+            for (week in listOf(start, start.plusWeeks(1))) {
+                container.database.commitments().week(week).forEach { container.database.commitments().delete(it.id) }
+            }
+            assertEquals(com.numbered.app.data.PlanResult.Ok, repository.addCommitment(start, "Original talk"))
+            val original = container.database.commitments().week(start).single { it.title == "Original talk" }
+            repository.carry(original.id, start.plusWeeks(1))
+            val middle = container.database.commitments().week(start.plusWeeks(1)).single { it.carriedFromId == original.id }
+            repository.rename(middle.id, "Revised talk")
+            repository.carry(middle.id, LocalDate.of(2026, 9, 28))
+        }
+        awaitText("Revised talk")
+        scrollTo("Revised talk")
+        compose.onNodeWithContentDescription("More options for Revised talk").performClick()
+        tap("Carry-over history")
+        awaitText("Carried 2 times")
+        compose.onNodeWithText("Original talk").assertIsDisplayed()
+        capture("carry-history")
+        compose.onNode(hasText("Sep 7", substring = true)).performClick()
+        awaitText("Week 1,920")
+        awaitText("Original talk")
+        compose.onNodeWithContentDescription("More options for Original talk").performClick()
+        tap("Carry-over history")
+        awaitText("Carried 2 times")
+    }
+
     @Test fun settings() {
         openSettings()
         capture("settings")
@@ -472,6 +643,33 @@ class ScreenCaptureTest {
         tap("Replace")
         awaitText("Imported your weeks")
         awaitGone("Replace everything here?")
+    }
+
+    @Test fun importSavesARecoveryCopyAndItCanBeRestored() {
+        val container = (RuntimeEnvironment.getApplication() as NumberedApp).container
+        val export = files.newFile("empty-copy.json")
+        val original = runBlocking { container.repository.snapshot()!! }
+        export.writeText(BackupFormat.encode(original.copy(commitments = emptyList(), someday = emptyList(), reviews = emptyList(), chapters = emptyList())))
+        container.drafts.save(defaultToday.with(DayOfWeek.MONDAY), "Old draft")
+        openSettings()
+        scrollTo("Import a copy")
+        tap("Import a copy")
+        answerFilePicker(Intent.ACTION_OPEN_DOCUMENT, export)
+        awaitText("Replace everything here?")
+        tap("Replace")
+        awaitText("Imported your weeks")
+        awaitGone("Replace everything here?")
+        assertEquals(emptyList<com.numbered.app.data.Commitment>(), runBlocking { container.repository.snapshot()!!.commitments })
+        assertEquals(original, runBlocking { container.backupSafety.readRecovery() })
+        assertNull(container.drafts.read(defaultToday.with(DayOfWeek.MONDAY)))
+        scrollTo("Restore previous data")
+        capture("settings-recovery")
+        tap("Restore previous data")
+        awaitText("Replace everything here?")
+        capture("recovery-confirm")
+        tap("Replace")
+        awaitGone("Replace everything here?")
+        assertEquals(original, runBlocking { container.repository.snapshot()!! })
     }
 
     @Test fun turningOnTheCloseReminder() {

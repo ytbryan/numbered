@@ -2,6 +2,12 @@ package com.numbered.app.ui.week
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -37,6 +43,8 @@ import com.numbered.app.ui.components.PromptCard
 import com.numbered.app.ui.components.RenameDialog
 import com.numbered.app.ui.components.commitmentSubtitle
 import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.components.TodayDate
+import com.numbered.app.ui.components.WeekDays
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
 import com.numbered.app.ui.pluralString
@@ -49,6 +57,8 @@ fun ThisWeekScreen(
     onCloseWeek: (LocalDate) -> Unit,
     onCatchUp: () -> Unit,
     onOpenSomeday: () -> Unit,
+    onSearch: () -> Unit,
+    onHistory: (Long) -> Unit,
 ) {
     val viewModel = containerViewModel { ThisWeekViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -64,7 +74,7 @@ fun ThisWeekScreen(
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, top = 24.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item(key = "header") { WeekHeader(current) }
+        item(key = "header") { WeekHeader(current, onSearch) }
         current.catchUp?.let { catchUp ->
             item(key = "catch-up") {
                 PromptCard(
@@ -99,6 +109,7 @@ fun ThisWeekScreen(
                 subtitle = commitmentSubtitle(commitment, current.zone, current.today),
                 onToggleDone = { done -> viewModel.setDone(commitment, done) },
                 actions = buildList {
+                    if (commitment.carriedFrom != null) add(MenuAction(stringResource(R.string.carry_history)) { onHistory(commitment.id) })
                     add(MenuAction(stringResource(R.string.action_edit)) { renamingId = commitment.id })
                     if (commitment.status == CommitmentStatus.Open) {
                         add(MenuAction(stringResource(R.string.action_move_next_week)) { viewModel.moveToNextWeek(commitment) })
@@ -195,7 +206,7 @@ fun ThisWeekScreen(
 }
 
 @Composable
-private fun WeekHeader(state: ThisWeekState) {
+private fun WeekHeader(state: ThisWeekState, onSearch: () -> Unit) {
     Column(Modifier.padding(bottom = 10.dp)) {
         Text(
             text = state.horizonWeeks?.let {
@@ -204,19 +215,17 @@ private fun WeekHeader(state: ThisWeekState) {
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            text = stringResource(R.string.this_week),
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() },
-        )
-        Text(
-            text = stringResource(
-                R.string.range_and_days_left,
-                weekRange(state.weekStart, state.today),
-                if (state.daysLeft == 1) stringResource(R.string.last_day) else pluralString(R.plurals.days_left, state.daysLeft, state.daysLeft),
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.this_week),
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            IconButton(onClick = onSearch) {
+                Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search_everything))
+            }
+        }
+        TodayDate(state.today, Modifier.padding(top = 4.dp, bottom = 4.dp))
+        WeekDays(state.weekStart, state.today, Modifier.padding(top = 12.dp))
     }
 }

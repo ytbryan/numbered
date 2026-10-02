@@ -43,6 +43,7 @@ data class CloseWeekState(
 
 class CloseWeekViewModel(container: AppContainer, private val weekStart: LocalDate) : NoticeViewModel() {
     private val repository = container.repository
+    private val drafts = container.drafts
     private val choices = MutableStateFlow<Map<Long, CloseChoice>>(emptyMap())
     private val closedChannel = Channel<Int>(Channel.CONFLATED)
 
@@ -80,11 +81,18 @@ class CloseWeekViewModel(container: AppContainer, private val weekStart: LocalDa
         choices.value = choices.value + (commitment.id to choice)
     }
 
+    fun draft(): String? = drafts.read(weekStart)
+
+    fun saveDraft(note: String) = drafts.save(weekStart, note)
+
     fun close(note: String) = launchWrite {
         val current = state.value ?: return@launchWrite
         if (current.undecided > 0) return@launchWrite
         when (val result = repository.closeWeek(weekStart, note, current.choices, current.carryTo)) {
-            PlanResult.Ok -> closedChannel.trySend(current.weekNumber)
+            PlanResult.Ok -> {
+                drafts.clear(weekStart)
+                closedChannel.trySend(current.weekNumber)
+            }
             else -> report(result)
         }
     }
