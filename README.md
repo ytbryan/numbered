@@ -4,6 +4,9 @@ A weekly planner where the week is the unit, not the task.
 Choose up to three commitments a week, close each week with one line, and watch your life fill in on a grid of weeks.
 Named after Psalm 90:12.
 
+The iOS app lives in [`number_ios`](number_ios/README.md).
+It shares these rules and the export file, so a copy moves between the two.
+
 ## Screens
 
 - **This week**: up to three commitments, a prompt to close any unclosed past week, next week, and stale Someday items.
@@ -26,7 +29,7 @@ Change its shape only by bumping `BackupFormat.VERSION`, and keep every older ve
 
 A person's weeks span decades, so the database is never rebuilt destructively.
 To change an entity, bump `NumberedDatabase.VERSION`, add the migration to `MIGRATIONS`, commit the new schema in `app/schemas`, pin its hash in `MigrationTest`, and add a test that opens the previous version's data.
-`MigrationTest` fails if a released schema changes without a version bump.
+`MigrationTest` fails if a released schema changes without a version bump, and CI fails if the regenerated schema is not committed.
 
 ## Build and test
 
@@ -35,6 +38,7 @@ To change an entity, bump `NumberedDatabase.VERSION`, add the migration to `MIGR
 ./gradlew testDebugUnitTest lintDebug assembleRelease
 ```
 
+CI (`.github/workflows/ci.yml`) runs the second line on every push to `main` and every pull request, and uploads the screens and reports.
 Lint treats warnings as errors, and deliberate exceptions live in `app/lint.xml`.
 
 Release builds are minified and unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.
