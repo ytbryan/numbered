@@ -27,6 +27,9 @@ import kotlinx.coroutines.flow.stateIn
 /** A past week that still needs closing, because it has unfinished commitments or no review. */
 data class UnclosedWeek(val weekStart: LocalDate, val weekNumber: Int, val open: Int)
 
+/** Several past weeks left open, offered as one catch-up instead of one week at a time. */
+data class CatchUp(val weeks: Int, val open: Int)
+
 data class ThisWeekState(
     val today: LocalDate,
     val zone: ZoneId,
@@ -36,7 +39,9 @@ data class ThisWeekState(
     val horizonWeeks: Int?,
     val daysLeft: Int,
     val commitments: List<Commitment>,
+    /** The one past week to close, when it is the only one. */
     val unclosed: UnclosedWeek?,
+    val catchUp: CatchUp?,
     val closedNote: String?,
     val isClosed: Boolean,
     val nextWeekStart: LocalDate,
@@ -73,6 +78,7 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
             repository.somedayWaiting(),
         ) { week, summaries, reviews, someday ->
             val now = container.today.nowMillis()
+            val unclosed = unclosedWeeks(summaries, reviews.keys, weekStart)
             ThisWeekState(
                 today = today,
                 zone = container.clock.zone,
@@ -81,8 +87,11 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
                 horizonWeeks = calendar.horizonWeeks.takeUnless { profile.gentle },
                 daysLeft = ChronoUnit.DAYS.between(today, weekStart.plusDays(6)).toInt() + 1,
                 commitments = week.filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done },
-                unclosed = findUnclosed(summaries, reviews.keys, weekStart)?.let { start ->
+                unclosed = unclosed.singleOrNull()?.let { start ->
                     UnclosedWeek(start, calendar.indexOf(start) + 1, summaries[start]?.open ?: 0)
+                },
+                catchUp = unclosed.takeIf { it.size > 1 }?.let { weeks ->
+                    CatchUp(weeks.size, weeks.sumOf { summaries[it]?.open ?: 0 })
                 },
                 closedNote = reviews[weekStart]?.note,
                 isClosed = weekStart in reviews,
@@ -130,17 +139,17 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
 
     companion object {
         /**
-         * The oldest past week with unfinished commitments and no review, or else last week if it
-         * had commitments and was never closed. Only one week is offered at a time.
+         * Past weeks that still need closing, oldest first: every one with unfinished commitments
+         * and no review, and last week if it had commitments and was never closed.
          */
-        fun findUnclosed(
+        fun unclosedWeeks(
             summaries: Map<LocalDate, WeekSummary>,
             closed: Set<LocalDate>,
             currentWeekStart: LocalDate,
-        ): LocalDate? {
+        ): List<LocalDate> {
             val unclosed = summaries.filterKeys { it < currentWeekStart && it !in closed }
-            return unclosed.filterValues { it.open > 0 }.keys.minOrNull()
-                ?: currentWeekStart.minusWeeks(1).takeIf { (unclosed[it]?.planned ?: 0) > 0 }
+            val lastWeek = currentWeekStart.minusWeeks(1).takeIf { (unclosed[it]?.planned ?: 0) > 0 }
+            return (unclosed.filterValues { it.open > 0 }.keys + listOfNotNull(lastWeek)).sorted()
         }
     }
 }

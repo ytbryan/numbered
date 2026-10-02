@@ -74,6 +74,26 @@
         <item quantity="other">%d unfinished. Decide what happens to them and write one line.</item>
     </plurals>
     <string name="unclosed_body_note">Everything is settled. Write one line to close it.</string>
+    <plurals name="catch_up_title">
+        <item quantity="one">%d week to close</item>
+        <item quantity="other">%d weeks to close</item>
+    </plurals>
+    <plurals name="catch_up_body_open">
+        <item quantity="one">%d unfinished across them. Settle everything at once, then plan this week.</item>
+        <item quantity="other">%d unfinished across them. Settle everything at once, then plan this week.</item>
+    </plurals>
+    <string name="catch_up_body_notes">Everything is settled. Add a line for each if you like.</string>
+    <string name="action_catch_up">Catch up</string>
+    <string name="catch_up_heading">Catch up</string>
+    <string name="catch_up_intro">Decide what happens to each unfinished commitment. A line for each week is optional.</string>
+    <string name="catch_up_intro_notes">Everything is settled. A line for each week is optional.</string>
+    <string name="catch_up_all">For everything still undecided</string>
+    <string name="catch_up_week">Week %1$s · %2$s</string>
+    <string name="catch_up_note_placeholder">One line about that week (optional)</string>
+    <plurals name="action_close_weeks">
+        <item quantity="one">Close %d week</item>
+        <item quantity="other">Close %d weeks</item>
+    </plurals>
     <string name="close_prompt_title">Close the week</string>
     <string name="close_prompt_body">About three minutes. Settle what is unfinished and write one line.</string>
     <string name="closed_title">Week closed</string>
@@ -239,6 +259,10 @@
     <string name="notice_added_this_week">Added to this week: %1$s</string>
     <string name="notice_added_next_week">Added to next week: %1$s</string>
     <string name="notice_week_closed">Week %1$s closed</string>
+    <plurals name="notice_weeks_closed">
+        <item quantity="one">Closed %d week</item>
+        <item quantity="other">Closed %d weeks</item>
+    </plurals>
     <string name="notice_exported">Exported a copy of your weeks</string>
     <string name="notice_exported_protected">Exported a protected copy of your weeks</string>
     <string name="notice_export_interrupted">The export was interrupted, so nothing was saved. Try again.</string>

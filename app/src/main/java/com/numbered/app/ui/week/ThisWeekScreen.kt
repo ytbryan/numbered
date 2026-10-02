@@ -47,6 +47,7 @@ import java.time.LocalDate
 fun ThisWeekScreen(
     onOpenWeek: (LocalDate) -> Unit,
     onCloseWeek: (LocalDate) -> Unit,
+    onCatchUp: () -> Unit,
     onOpenSomeday: () -> Unit,
 ) {
     val viewModel = containerViewModel { ThisWeekViewModel(it) }
@@ -64,6 +65,20 @@ fun ThisWeekScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item(key = "header") { WeekHeader(current) }
+        current.catchUp?.let { catchUp ->
+            item(key = "catch-up") {
+                PromptCard(
+                    title = pluralString(R.plurals.catch_up_title, catchUp.weeks, catchUp.weeks),
+                    body = if (catchUp.open > 0) {
+                        pluralString(R.plurals.catch_up_body_open, catchUp.open, catchUp.open)
+                    } else {
+                        stringResource(R.string.catch_up_body_notes)
+                    },
+                    action = stringResource(R.string.action_catch_up),
+                    onClick = onCatchUp,
+                )
+            }
+        }
         current.unclosed?.let { unclosed ->
             item(key = "unclosed") {
                 PromptCard(

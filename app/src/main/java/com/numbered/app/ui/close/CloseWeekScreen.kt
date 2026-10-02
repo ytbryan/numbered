@@ -129,7 +129,9 @@ fun CloseWeekScreen(weekStart: LocalDate, onBack: () -> Unit, onClosed: (Int) ->
                 current.open.forEach { commitment ->
                     UnfinishedCard(
                         commitment = commitment,
-                        state = current,
+                        selected = current.choices[commitment.id],
+                        canCarry = current.canCarry(commitment),
+                        closingCurrent = current.closingCurrent,
                         showError = showErrors && commitment.id !in current.choices,
                         onChoose = { viewModel.choose(commitment, it) },
                     )
@@ -170,11 +172,17 @@ fun CloseWeekScreen(weekStart: LocalDate, onBack: () -> Unit, onClosed: (Int) ->
     }
 }
 
+/**
+ * One unfinished commitment and the choices for it. Carrying goes to next week when
+ * [closingCurrent], and into this week when closing a past week.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun UnfinishedCard(
+internal fun UnfinishedCard(
     commitment: Commitment,
-    state: CloseWeekState,
+    selected: CloseChoice?,
+    canCarry: Boolean,
+    closingCurrent: Boolean,
     showError: Boolean,
     onChoose: (CloseChoice) -> Unit,
 ) {
@@ -190,20 +198,19 @@ private fun UnfinishedCard(
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
             Text(commitment.title, style = MaterialTheme.typography.bodyLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val selected = state.choices[commitment.id]
                 CloseChoice.entries.forEach { choice ->
-                    val enabled = choice != CloseChoice.Carry || state.canCarry(commitment)
+                    val enabled = choice != CloseChoice.Carry || canCarry
                     FilterChip(
                         selected = selected == choice,
                         onClick = { onChoose(choice) },
                         enabled = enabled,
-                        label = { Text(choiceLabel(choice, state.closingCurrent)) },
+                        label = { Text(choiceLabel(choice, closingCurrent)) },
                     )
                 }
             }
-            if (!state.canCarry(commitment)) {
+            if (!canCarry) {
                 Text(
-                    text = stringResource(if (state.closingCurrent) R.string.close_next_week_full else R.string.close_this_week_full),
+                    text = stringResource(if (closingCurrent) R.string.close_next_week_full else R.string.close_this_week_full),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp),

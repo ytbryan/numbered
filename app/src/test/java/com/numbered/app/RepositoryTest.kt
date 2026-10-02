@@ -5,6 +5,7 @@ import com.numbered.app.data.Commitment
 import com.numbered.app.data.NumberedDatabase
 import com.numbered.app.data.NumberedRepository
 import com.numbered.app.data.PlanResult
+import com.numbered.app.data.WeekClosing
 import com.numbered.app.domain.CloseChoice
 import com.numbered.app.domain.CommitmentStatus
 import java.time.Clock
@@ -171,5 +172,36 @@ class RepositoryTest {
         assertEquals(2, summaries.getValue(lastWeek).counted)
         assertEquals(1, summaries.getValue(nextWeek).occupied)
         assertNull(summaries[thisWeek])
+    }
+
+    @Test fun catchingUpClosesEveryWeekAtOnceOrNothing() = runBlocking {
+        val twoAgo = lastWeek.minusWeeks(1)
+        repository.addCommitment(twoAgo, "Write to Mr Tan")
+        repository.addCommitment(lastWeek, "Draft the talk")
+        repository.addCommitment(lastWeek, "Fix the bike")
+        repeat(2) { repository.addCommitment(thisWeek, "Already here $it") }
+        val tan = week(twoAgo).single()
+        val (talk, bike) = week(lastWeek)
+
+        // Two carries into a week with one square left: nothing changes, not even the first week.
+        val tooMany = listOf(
+            WeekClosing(twoAgo, "Away.", mapOf(tan.id to CloseChoice.Carry)),
+            WeekClosing(lastWeek, "", mapOf(talk.id to CloseChoice.Carry, bike.id to CloseChoice.LetGo)),
+        )
+        assertEquals(PlanResult.WeekFull, repository.closeWeeks(tooMany, thisWeek))
+        assertEquals(emptyMap<LocalDate, Any>(), repository.reviews().first())
+        assertEquals(listOf(CommitmentStatus.Open), week(twoAgo).map { it.status })
+
+        val fits = listOf(
+            WeekClosing(twoAgo, "  Away.  ", mapOf(tan.id to CloseChoice.Someday)),
+            WeekClosing(lastWeek, "", mapOf(talk.id to CloseChoice.Carry, bike.id to CloseChoice.LetGo)),
+        )
+        assertEquals(PlanResult.Ok, repository.closeWeeks(fits, thisWeek))
+        val reviews = repository.reviews().first()
+        assertEquals("Away.", reviews.getValue(twoAgo).note)
+        assertEquals("", reviews.getValue(lastWeek).note)
+        assertEquals(listOf("Already here 0", "Already here 1", "Draft the talk"), titles(thisWeek))
+        assertEquals(listOf("Write to Mr Tan"), repository.somedayWaiting().first().map { it.title })
+        assertEquals(listOf(CommitmentStatus.Carried, CommitmentStatus.LetGo), week(lastWeek).map { it.status })
     }
 }

@@ -44,6 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.numbered.app.R
+import com.numbered.app.ui.close.CatchUpScreen
 import com.numbered.app.ui.close.CloseWeekScreen
 import com.numbered.app.ui.life.LifeScreen
 import com.numbered.app.ui.profile.DataViewModel
@@ -79,6 +80,8 @@ private const val CLOSE_WEEK_DEEP_LINK = "numbered://close"
 fun closeWeekDeepLink(weekStart: LocalDate): Uri = "$CLOSE_WEEK_DEEP_LINK/${weekStart.toEpochDay()}".toUri()
 
 @Serializable data object SettingsRoute
+
+@Serializable data object CatchUpRoute
 
 private class Tab(val route: Any, val routeClass: KClass<*>, @param:StringRes val label: Int, val icon: ImageVector)
 
@@ -169,6 +172,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                 ThisWeekScreen(
                     onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
                     onCloseWeek = { nav.navigate(CloseWeekRoute(it.toEpochDay())) },
+                    onCatchUp = { nav.navigate(CatchUpRoute) },
                     onOpenSomeday = { nav.openTab(SomedayRoute) },
                 )
             }
@@ -198,6 +202,15 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                             val number = NumberFormat.getIntegerInstance(resources.configuration.locales[0]).format(weekNumber)
                             snackbar.showSnackbar(resources.getString(R.string.notice_week_closed, number))
                         }
+                    },
+                )
+            }
+            composable<CatchUpRoute> {
+                CatchUpScreen(
+                    onBack = { nav.popBackStack() },
+                    onClosed = { weeks ->
+                        nav.popBackStack()
+                        scope.launch { snackbar.showSnackbar(resources.getQuantityString(R.plurals.notice_weeks_closed, weeks, weeks)) }
                     },
                 )
             }

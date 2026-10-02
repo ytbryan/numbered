@@ -71,6 +71,10 @@ annotation class OnDate(val date: String)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Gentle
 
+/** Seeds the usual history, then opens the app this many weeks later, as if back from time away. */
+@Retention(AnnotationRetention.RUNTIME)
+annotation class AwayFor(val weeks: Int)
+
 /**
  * Drives the real app on seeded data and renders each screen to app/build/screens for review.
  * Most captures use a 366dp-wide phone at 145% text, the size the app must look right at.
@@ -96,7 +100,8 @@ class ScreenCaptureTest {
 
         override fun before() {
             val today = description.getAnnotation(OnDate::class.java)?.date?.let(LocalDate::parse) ?: defaultToday
-            val clock = clockOn(today)
+            val away = description.getAnnotation(AwayFor::class.java)?.weeks?.toLong() ?: 0
+            val clock = clockOn(today.plusWeeks(away))
             val app = RuntimeEnvironment.getApplication() as NumberedApp
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
@@ -421,6 +426,27 @@ class ScreenCaptureTest {
         compose.onNodeWithContentDescription("Change the time for Close the week").performClick()
         awaitText("Remind me at")
         capture("reminder-time")
+    }
+
+    @Test @AwayFor(weeks = 3)
+    fun catchingUpAfterThreeWeeksAway() {
+        awaitText("3 weeks to close")
+        compose.onNodeWithText("3 unfinished across them", substring = true).assertIsDisplayed()
+        capture("this-week-catch-up")
+        tap("Catch up")
+        awaitText("Week 1,922 · ")
+        capture("catch-up")
+        // Bring one thing into this week, then let the rest go in one tap.
+        compose.onAllNodesWithText("This week").onFirst().performClick()
+        tap("Let go")
+        compose.onAllNodes(hasSetTextAction()).onFirst().performTextInput("Away in Osaka.")
+        scrollTo("Close 3 weeks")
+        capture("catch-up-decided")
+        tap("Close 3 weeks")
+        awaitText("Closed 3 weeks")
+        awaitText("Draft the conference talk")
+        compose.onAllNodesWithText("3 weeks to close").assertCountEquals(0)
+        capture("after-catch-up")
     }
 
     @Test fun importRefusesOtherFiles() {

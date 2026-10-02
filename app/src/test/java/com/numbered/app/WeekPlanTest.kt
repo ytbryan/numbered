@@ -14,7 +14,6 @@ import com.numbered.app.ui.week.ThisWeekViewModel
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -58,7 +57,7 @@ class WeekPlanTest {
         assertFalse(isStale(createdAtMillis = 0, reviewedAtMillis = limit, nowMillis = limit + 1))
     }
 
-    @Test fun theOldestWeekWithUnfinishedWorkIsOfferedFirst() {
+    @Test fun everyUnclosedWeekWithUnfinishedWorkIsOfferedOldestFirst() {
         val current = LocalDate.of(2026, 9, 28)
         val summaries = mapOf(
             current.minusWeeks(5) to WeekSummary.of(listOf(Open)),
@@ -66,19 +65,23 @@ class WeekPlanTest {
             current.minusWeeks(1) to WeekSummary.of(listOf(Done)),
             current to WeekSummary.of(listOf(Open)),
         )
-        assertEquals(current.minusWeeks(3), ThisWeekViewModel.findUnclosed(summaries, setOf(current.minusWeeks(5)), current))
+        assertEquals(
+            listOf(current.minusWeeks(5), current.minusWeeks(3), current.minusWeeks(1)),
+            ThisWeekViewModel.unclosedWeeks(summaries, emptySet(), current),
+        )
+        assertEquals(listOf(current.minusWeeks(3), current.minusWeeks(1)), ThisWeekViewModel.unclosedWeeks(summaries, setOf(current.minusWeeks(5)), current))
     }
 
     @Test fun lastWeekIsOfferedForItsNoteWhenEverythingIsSettled() {
         val current = LocalDate.of(2026, 9, 28)
         val summaries = mapOf(current.minusWeeks(1) to WeekSummary.of(listOf(Done, LetGo)))
-        assertEquals(current.minusWeeks(1), ThisWeekViewModel.findUnclosed(summaries, emptySet(), current))
-        assertNull(ThisWeekViewModel.findUnclosed(summaries, setOf(current.minusWeeks(1)), current))
+        assertEquals(listOf(current.minusWeeks(1)), ThisWeekViewModel.unclosedWeeks(summaries, emptySet(), current))
+        assertTrue(ThisWeekViewModel.unclosedWeeks(summaries, setOf(current.minusWeeks(1)), current).isEmpty())
     }
 
     @Test fun olderSettledWeeksAreLeftAlone() {
         val current = LocalDate.of(2026, 9, 28)
         val summaries = mapOf(current.minusWeeks(4) to WeekSummary.of(listOf(Done)))
-        assertNull(ThisWeekViewModel.findUnclosed(summaries, emptySet(), current))
+        assertTrue(ThisWeekViewModel.unclosedWeeks(summaries, emptySet(), current).isEmpty())
     }
 }

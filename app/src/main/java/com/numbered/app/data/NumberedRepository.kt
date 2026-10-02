@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.map
 
 enum class PlanResult { Ok, WeekFull, Blank, Missing }
 
+/** One week's close: its note, and what happens to each unfinished commitment. */
+data class WeekClosing(val weekStart: LocalDate, val note: String, val choices: Map<Long, CloseChoice>)
+
 /** Every write that must respect a week's three squares goes through one transaction here. */
 class NumberedRepository(
     private val db: NumberedDatabase,
@@ -168,23 +171,33 @@ class NumberedRepository(
         note: String,
         choices: Map<Long, CloseChoice>,
         carryTo: LocalDate,
-    ): PlanResult = db.withTransaction {
+    ): PlanResult = closeWeeks(listOf(WeekClosing(weekStart, note, choices)), carryTo)
+
+    /**
+     * Closes several weeks at once, all or nothing. Everything carried from any of them goes to
+     * [carryTo], and nothing changes if together they would overfill it.
+     */
+    suspend fun closeWeeks(closings: List<WeekClosing>, carryTo: LocalDate): PlanResult = db.withTransaction {
         val now = clock.millis()
-        val open = commitments.week(weekStart).filter { it.status == CommitmentStatus.Open }
-        val carrying = open.count { choices[it.id] == CloseChoice.Carry }
+        val open = closings.associateWith { closing ->
+            commitments.week(closing.weekStart).filter { it.status == CommitmentStatus.Open }
+        }
+        val carrying = open.entries.sumOf { (closing, unfinished) -> unfinished.count { closing.choices[it.id] == CloseChoice.Carry } }
         if (carrying > 0 && commitments.occupied(carryTo) + carrying > MAX_COMMITMENTS_PER_WEEK) {
             return@withTransaction PlanResult.WeekFull
         }
-        open.forEach { commitment ->
-            when (choices[commitment.id]) {
-                CloseChoice.Done -> resolveUnchecked(commitment, CommitmentStatus.Done, now)
-                CloseChoice.Carry -> carryUnchecked(commitment, carryTo, now)
-                CloseChoice.Someday -> resolveUnchecked(commitment, CommitmentStatus.ReturnedToSomeday, now)
-                CloseChoice.LetGo -> resolveUnchecked(commitment, CommitmentStatus.LetGo, now)
-                null -> Unit
+        open.forEach { (closing, unfinished) ->
+            unfinished.forEach { commitment ->
+                when (closing.choices[commitment.id]) {
+                    CloseChoice.Done -> resolveUnchecked(commitment, CommitmentStatus.Done, now)
+                    CloseChoice.Carry -> carryUnchecked(commitment, carryTo, now)
+                    CloseChoice.Someday -> resolveUnchecked(commitment, CommitmentStatus.ReturnedToSomeday, now)
+                    CloseChoice.LetGo -> resolveUnchecked(commitment, CommitmentStatus.LetGo, now)
+                    null -> Unit
+                }
             }
+            reviews.upsert(WeekReview(weekStart = closing.weekStart, note = closing.note.trim(), closedAt = now))
         }
-        reviews.upsert(WeekReview(weekStart = weekStart, note = note.trim(), closedAt = now))
         PlanResult.Ok
     }
 
