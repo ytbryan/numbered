@@ -81,7 +81,9 @@ fun OtherThingsDoneSection(
 @Composable
 private fun AddOtherThingDoneDialog(onAdd: (String) -> Unit, onDismiss: () -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
+    val submit = { onAdd(text); onDismiss() }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_other_thing_done)) },
@@ -91,15 +93,24 @@ private fun AddOtherThingDoneDialog(onAdd: (String) -> Unit, onDismiss: () -> Un
                 onValueChange = { text = it },
                 placeholder = { Text(stringResource(R.string.other_thing_done_hint)) },
                 singleLine = true,
+                trailingIcon = { ExpandTextButton { expanded = true } },
                 modifier = Modifier.focusRequester(focus),
             )
         },
         confirmButton = {
-            TextButton(onClick = { onAdd(text); onDismiss() }, enabled = text.isNotBlank()) {
+            TextButton(onClick = submit, enabled = text.isNotBlank()) {
                 Text(stringResource(R.string.action_add))
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+    if (expanded) ExpandedTextEditor(
+        title = stringResource(R.string.add_other_thing_done),
+        value = text,
+        onValueChange = { text = it },
+        onClose = { expanded = false },
+        submitLabel = stringResource(R.string.action_add),
+        onSubmit = { expanded = false; submit() },
     )
     LaunchedEffect(Unit) { focus.requestFocus() }
 }

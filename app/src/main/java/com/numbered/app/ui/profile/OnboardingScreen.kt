@@ -73,11 +73,11 @@ fun OnboardingScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        BirthDateField(birthDate, today) { picked ->
+        BirthDateField(birthDate, today, onChange = { picked ->
             birthEpochDay = picked.toEpochDay()
             if (!horizonAvailable(horizon, picked, today)) horizon = LifeCalendar.defaultHorizon(picked, today)
             showError = false
-        }
+        })
         if (showError && birthDate == null) {
             Text(
                 stringResource(R.string.birth_date_required),

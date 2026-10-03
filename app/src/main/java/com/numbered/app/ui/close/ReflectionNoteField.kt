@@ -1,6 +1,7 @@
 package com.numbered.app.ui.close
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -22,6 +23,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import com.numbered.app.R
+import com.numbered.app.ui.components.ExpandedTextEditor
+import com.numbered.app.ui.components.ExpandTextButton
 import java.time.LocalDate
 
 private val ReflectionQuestions = listOf(
@@ -42,6 +45,7 @@ internal fun ReflectionNoteField(
 ) {
     var selected by rememberSaveable(weekStart) { mutableStateOf<Int?>(null) }
     var choosing by rememberSaveable(weekStart) { mutableStateOf(false) }
+    var expanded by rememberSaveable(weekStart) { mutableStateOf(false) }
     val prompt = selected?.let { stringResource(ReflectionQuestions[it]) }
     OutlinedTextField(
         value = value,
@@ -50,13 +54,22 @@ internal fun ReflectionNoteField(
         label = label?.let { text -> { Text(text) } },
         supportingText = if (prompt == null) null else { { Text(prompt) } },
         trailingIcon = {
-            IconButton(onClick = { choosing = true }) {
-                Icon(Icons.Outlined.Lightbulb, contentDescription = stringResource(R.string.reflection_prompt_action))
+            Row {
+                IconButton(onClick = { choosing = true }) {
+                    Icon(Icons.Outlined.Lightbulb, contentDescription = stringResource(R.string.reflection_prompt_action))
+                }
+                ExpandTextButton { expanded = true }
             }
         },
         maxLines = 3,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         modifier = Modifier.fillMaxWidth(),
+    )
+    if (expanded) ExpandedTextEditor(
+        title = label ?: stringResource(R.string.close_note_label),
+        value = value,
+        onValueChange = onValueChange,
+        onClose = { expanded = false },
     )
     if (choosing) AlertDialog(
         onDismissRequest = { choosing = false },

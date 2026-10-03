@@ -40,6 +40,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.numbered.app.data.PlanResult
+import com.numbered.app.ui.components.ExpandedTextEditor
+import com.numbered.app.ui.components.ExpandTextButton
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.security.LockedActivity
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,6 +99,7 @@ private fun CaptureScreen(initialText: String, onCancel: () -> Unit, onSaved: ()
     val viewModel = containerViewModel { CaptureViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var text by rememberSaveable { mutableStateOf(initialText) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.saved) { if (state.saved) onSaved() }
     BackHandler(enabled = state.saving) { /* Wait for the save before returning to the sharing app. */ }
     Scaffold(
@@ -121,6 +124,7 @@ private fun CaptureScreen(initialText: String, onCancel: () -> Unit, onSaved: ()
                 label = { Text(stringResource(R.string.capture_idea)) },
                 minLines = 4,
                 enabled = !state.saving,
+                trailingIcon = { ExpandTextButton(onClick = { expanded = true }, enabled = !state.saving) },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -132,4 +136,12 @@ private fun CaptureScreen(initialText: String, onCancel: () -> Unit, onSaved: ()
             ) { Text(stringResource(R.string.action_save)) }
         }
     }
+    if (expanded) ExpandedTextEditor(
+        title = stringResource(R.string.capture_idea),
+        value = text,
+        onValueChange = { text = it },
+        onClose = { expanded = false },
+        submitLabel = stringResource(R.string.action_save),
+        onSubmit = { expanded = false; viewModel.save(text) },
+    )
 }

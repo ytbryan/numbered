@@ -58,6 +58,8 @@ import com.numbered.app.R
 import com.numbered.app.data.SomedayItem
 import com.numbered.app.ui.NoticeEffect
 import com.numbered.app.ui.components.CardShape
+import com.numbered.app.ui.components.ExpandedTextEditor
+import com.numbered.app.ui.components.ExpandTextButton
 import com.numbered.app.ui.components.MenuAction
 import com.numbered.app.ui.components.OverflowMenu
 import com.numbered.app.ui.components.ScreenPadding
@@ -79,6 +81,7 @@ fun SomedayScreen(initialQuery: String = "") {
     val current = source.matching(query, sort)
     val filtering = query.isNotBlank()
     var draft by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     var showLetGo by rememberSaveable { mutableStateOf(false) }
     val submit = {
         if (draft.isNotBlank()) {
@@ -153,6 +156,7 @@ fun SomedayScreen(initialQuery: String = "") {
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submit() }),
+                    trailingIcon = { ExpandTextButton { expanded = true } },
                     modifier = Modifier.weight(1f),
                 )
                 Button(onClick = submit, enabled = draft.isNotBlank()) {
@@ -237,6 +241,14 @@ fun SomedayScreen(initialQuery: String = "") {
             }
         }
     }
+    if (expanded) ExpandedTextEditor(
+        title = stringResource(R.string.tab_someday),
+        value = draft,
+        onValueChange = { draft = it },
+        onClose = { expanded = false },
+        submitLabel = stringResource(R.string.action_add),
+        onSubmit = { expanded = false; submit() },
+    )
 }
 
 @Composable

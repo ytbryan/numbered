@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SegmentedButton
@@ -51,11 +54,17 @@ fun horizonAvailable(horizon: Int, birthDate: LocalDate?, today: LocalDate): Boo
     birthDate == null || ChronoUnit.YEARS.between(birthDate, today) < horizon
 
 @Composable
-fun BirthDateField(birthDate: LocalDate?, today: LocalDate, onChange: (LocalDate) -> Unit) {
+fun BirthDateField(
+    birthDate: LocalDate?,
+    today: LocalDate,
+    visible: Boolean = true,
+    onToggleVisibility: (() -> Unit)? = null,
+    onChange: (LocalDate) -> Unit,
+) {
     var picking by rememberSaveable { mutableStateOf(false) }
     val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
     OutlinedCard(
-        onClick = { picking = true },
+        onClick = { if (visible) picking = true else onToggleVisibility?.invoke() },
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
@@ -66,17 +75,26 @@ fun BirthDateField(birthDate: LocalDate?, today: LocalDate, onChange: (LocalDate
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(
                     stringResource(R.string.birth_date),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    birthDate?.format(formatter) ?: stringResource(R.string.birth_date_choose),
+                    if (visible) birthDate?.format(formatter) ?: stringResource(R.string.birth_date_choose)
+                    else stringResource(R.string.birth_date_hidden),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (birthDate == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    color = if (birthDate == null && visible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
+            }
+            if (onToggleVisibility != null) {
+                IconButton(onClick = onToggleVisibility) {
+                    Icon(
+                        if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        contentDescription = stringResource(if (visible) R.string.a11y_hide_birth_date else R.string.a11y_show_birth_date),
+                    )
+                }
             }
         }
     }

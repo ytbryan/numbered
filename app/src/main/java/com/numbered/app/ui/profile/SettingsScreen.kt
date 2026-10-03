@@ -20,6 +20,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +51,7 @@ import java.time.format.TextStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen() {
+    var birthDateVisible by remember { mutableStateOf(false) }
     val viewModel = containerViewModel { SettingsViewModel(it) }
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
@@ -89,7 +93,13 @@ fun SettingsScreen() {
                 .padding(top = 8.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            BirthDateField(current.birthDate, today, viewModel::setBirthDate)
+            BirthDateField(
+                current.birthDate,
+                today,
+                visible = birthDateVisible,
+                onToggleVisibility = { birthDateVisible = !birthDateVisible },
+                onChange = viewModel::setBirthDate,
+            )
             HorizonField(current.horizonYears, current.birthDate, today, viewModel::setHorizon)
             GentleField(current.gentle, viewModel::setGentle)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

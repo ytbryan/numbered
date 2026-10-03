@@ -106,6 +106,14 @@ class RepositoryTest {
         assertEquals(listOf("Helped Mum"), repository.otherThingsDone(thisWeek).first().map { it.title })
     }
 
+    @Test fun longerEntriesKeepTheirParagraphs() = runBlocking {
+        val draft = "  First line  \n\n  Second   line  "
+        assertEquals(PlanResult.Ok, repository.addSomeday(draft))
+        assertEquals("First line\n\nSecond line", repository.somedayWaiting().first().single().title)
+        assertEquals(PlanResult.Ok, repository.addOtherThingDone(thisWeek, draft))
+        assertEquals("First line\n\nSecond line", repository.otherThingsDone(thisWeek).first().single().title)
+    }
+
     @Test fun resolvedCommitmentsFreeTheirSquare() = runBlocking {
         repeat(3) { repository.addCommitment(thisWeek, "Thing $it") }
         repository.returnToSomeday(week(thisWeek).first().id)
@@ -116,7 +124,7 @@ class RepositoryTest {
     @Test fun titlesAreTidiedAndBlankOnesRefused() = runBlocking {
         assertEquals(PlanResult.Blank, repository.addCommitment(thisWeek, "   \n "))
         repository.addCommitment(thisWeek, "  Call   mum\nabout Sunday ")
-        assertEquals(listOf("Call mum about Sunday"), titles(thisWeek))
+        assertEquals(listOf("Call mum\nabout Sunday"), titles(thisWeek))
     }
 
     @Test fun carryingKeepsARecordInTheOriginalWeek() = runBlocking {

@@ -370,5 +370,11 @@ class NumberedRepository(
     }
 }
 
-/** Trims and collapses whitespace so pasted titles stay on one tidy line. */
-internal fun String.cleanTitle(): String? = trim().replace(Regex("\\s+"), " ").takeIf { it.isNotEmpty() }
+/** Tidies spaces while keeping the line breaks written in the expanded editor. */
+internal fun String.cleanTitle(): String? = replace("\r\n", "\n")
+    .replace('\r', '\n')
+    .trim()
+    .lines()
+    .joinToString("\n") { it.trim().replace(Regex("[\t ]+"), " ") }
+    .replace(Regex("\n{3,}"), "\n\n")
+    .takeIf { it.isNotEmpty() }

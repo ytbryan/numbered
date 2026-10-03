@@ -60,6 +60,7 @@ fun AddCommitmentSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var text by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val submit = {
         if (text.isNotBlank()) {
@@ -84,6 +85,7 @@ fun AddCommitmentSheet(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { submit() }),
+                    trailingIcon = { ExpandTextButton { expanded = true } },
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(focus),
@@ -112,6 +114,14 @@ fun AddCommitmentSheet(
             }
         }
     }
+    if (expanded) ExpandedTextEditor(
+        title = heading,
+        value = text,
+        onValueChange = { text = it },
+        onClose = { expanded = false },
+        submitLabel = stringResource(R.string.action_add),
+        onSubmit = { expanded = false; submit() },
+    )
     LaunchedEffect(Unit) { focus.requestFocus() }
 }
 
@@ -119,7 +129,14 @@ fun AddCommitmentSheet(
 @Composable
 fun RenameDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     var text by rememberSaveable { mutableStateOf(initial) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
+    val submit = {
+        if (text.isNotBlank()) {
+            onSave(text)
+            onDismiss()
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.rename_title)) },
@@ -128,26 +145,27 @@ fun RenameDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Uni
                 value = text,
                 onValueChange = { text = it },
                 singleLine = true,
+                trailingIcon = { ExpandTextButton { expanded = true } },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    if (text.isNotBlank()) {
-                        onSave(text)
-                        onDismiss()
-                    }
-                }),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
                 modifier = Modifier.focusRequester(focus),
             )
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    onSave(text)
-                    onDismiss()
-                },
+                onClick = submit,
                 enabled = text.isNotBlank(),
             ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+    if (expanded) ExpandedTextEditor(
+        title = stringResource(R.string.rename_title),
+        value = text,
+        onValueChange = { text = it },
+        onClose = { expanded = false },
+        submitLabel = stringResource(R.string.action_save),
+        onSubmit = { expanded = false; submit() },
     )
     LaunchedEffect(Unit) { focus.requestFocus() }
 }

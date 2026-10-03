@@ -19,6 +19,7 @@
     <string name="action_close_week">Close week</string>
     <string name="action_delete">Delete</string>
     <string name="action_done">Done</string>
+    <string name="action_expand_editor">Expand editor</string>
     <string name="action_edit">Edit</string>
     <string name="action_export">Export</string>
     <string name="action_edit_close">Edit the weekly note</string>
@@ -264,6 +265,9 @@
     <string name="onboarding_hook">About 4,000 weeks. Spend this one on purpose.</string>
     <string name="onboarding_body">Choose up to three.\nWrite one line.\nSee your weeks.</string>
     <string name="birth_date">Birth date</string>
+    <string name="birth_date_hidden">Hidden</string>
+    <string name="a11y_show_birth_date">Show birth date</string>
+    <string name="a11y_hide_birth_date">Hide birth date</string>
     <string name="birth_date_choose">Choose your birth date</string>
     <string name="birth_date_required">Choose your birth date to place this week on your grid.</string>
     <string name="horizon_label">Years on the grid</string>

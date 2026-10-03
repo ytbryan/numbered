@@ -2,7 +2,7 @@
 # Compose 1.12, Lifecycle 2.11, and Navigation 2.10 need compileSdk 37 and AGP 9.1.
 # Stay on the SDK 36 line (shared with Doerlist) until both projects move together.
 agp = "8.13.2"
-kotlin = "2.4.20"
+kotlin = "2.3.20"
 ksp = "2.3.12"
 composeBom = "2026.06.01"
 materialIcons = "1.7.8"

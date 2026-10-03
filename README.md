@@ -95,7 +95,7 @@ To change an entity, bump `NumberedDatabase.VERSION`, add the migration to `MIGR
 CI (`.github/workflows/ci.yml`) runs the second line on every push to `main` and every pull request, and uploads the screens and reports.
 Lint treats warnings as errors, and deliberate exceptions live in `app/lint.xml`.
 
-Release builds are minified and unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.
+Release builds are unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.
 Bump `versionCode` and `versionName` in `app/build.gradle.kts` for every release.
 Keep the release signing key and its passwords backed up securely, since updates to an installed app must use the same key.
 

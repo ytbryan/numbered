@@ -522,6 +522,30 @@ class ScreenCaptureTest {
         capture("this-week-full")
     }
 
+    @Test fun expandedEditorsSaveLongEntries() {
+        val repository = (RuntimeEnvironment.getApplication() as NumberedApp).container.repository
+        tap("Someday")
+        compose.onNodeWithContentDescription("Expand editor").performClick()
+        compose.onAllNodes(hasSetTextAction()).onLast().performTextReplacement("Plan the trip\n\nBook the train")
+        capture("someday-expanded-editor")
+        compose.onAllNodesWithText("Add").onLast().performClick()
+        compose.waitUntil(5_000) {
+            runBlocking { repository.somedayWaiting().first().any { it.title == "Plan the trip\n\nBook the train" } }
+        }
+
+        runBlocking { repository.setOtherThingsDoneEnabled(true) }
+        tap("Week")
+        scrollTo("Add something done")
+        tap("Add something done")
+        compose.onNodeWithContentDescription("Expand editor").performClick()
+        compose.onAllNodes(hasSetTextAction()).onLast().performTextReplacement("Helped a neighbour\n\nBrought groceries")
+        compose.onAllNodesWithText("Add").onLast().performClick()
+        compose.waitUntil(5_000) {
+            runBlocking { repository.otherThingsDone(defaultToday.with(DayOfWeek.MONDAY)).first()
+                .any { it.title == "Helped a neighbour\n\nBrought groceries" } }
+        }
+    }
+
     @Test fun closingLastWeekCarriesIntoThisWeek() {
         tap("Close")
         compose.onNodeWithText("Draft the conference talk").assertIsDisplayed()
@@ -891,6 +915,24 @@ class ScreenCaptureTest {
         compose.onNodeWithText("Named after Psalm", substring = true).assertExists()
         capture("settings-about")
         compose.onNodeWithText("Done").performScrollTo().performClick()
+    }
+
+    @Test fun birthDateStartsHiddenAndCanBeRevealedAndHiddenAgain() {
+        openSettings()
+        compose.onNodeWithText("Hidden").assertIsDisplayed()
+        compose.onAllNodesWithText("1989", substring = true).assertCountEquals(0)
+
+        compose.onNodeWithContentDescription("Show birth date").performClick()
+        awaitText("1989")
+        compose.onNodeWithContentDescription("Hide birth date").performClick()
+        compose.onNodeWithText("Hidden").assertIsDisplayed()
+        compose.onAllNodesWithText("1989", substring = true).assertCountEquals(0)
+
+        compose.onNodeWithContentDescription("Show birth date").performClick()
+        tap("Week")
+        openSettings()
+        compose.onNodeWithText("Hidden").assertIsDisplayed()
+        compose.onAllNodesWithText("1989", substring = true).assertCountEquals(0)
     }
 
     @Test fun weekProgressChoiceUpdatesWeekAndPersists() {

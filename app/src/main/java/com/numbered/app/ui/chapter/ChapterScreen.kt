@@ -53,6 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
 import com.numbered.app.ui.NoticeEffect
 import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.components.ExpandedTextEditor
+import com.numbered.app.ui.components.ExpandTextButton
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.shortDate
 import java.time.LocalDate
@@ -91,6 +93,7 @@ fun ChapterScreen(id: Long?, startWeek: LocalDate, onDone: () -> Unit) {
         val initial = form ?: return@Scaffold
         // Typed text and choices stay in the screen; the view model only saves them.
         var title by rememberSaveable { mutableStateOf(initial.title) }
+        var expanded by rememberSaveable { mutableStateOf(false) }
         var start by rememberSaveable { mutableLongStateOf(initial.start.toEpochDay()) }
         var end by rememberSaveable { mutableStateOf(initial.end) }
         var endWeek by rememberSaveable { mutableLongStateOf(initial.endWeek.toEpochDay()) }
@@ -119,8 +122,15 @@ fun ChapterScreen(id: Long?, startWeek: LocalDate, onDone: () -> Unit) {
                 label = { Text(stringResource(R.string.chapter_name)) },
                 placeholder = { Text(stringResource(R.string.chapter_placeholder)) },
                 singleLine = true,
+                trailingIcon = { ExpandTextButton { expanded = true } },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
+            )
+            if (expanded) ExpandedTextEditor(
+                title = stringResource(R.string.chapter_name),
+                value = title,
+                onValueChange = { title = it },
+                onClose = { expanded = false },
             )
             WeekField(stringResource(R.string.chapter_starts), startDate, initial.today) { picking = START }
             // Radio rows rather than segmented buttons, so the choices stay on one line at large text sizes.
