@@ -69,32 +69,32 @@
     <string name="carried_from_last_week">Carried from last week</string>
     <string name="unclosed_title">Week %1$s is still open</string>
     <plurals name="unclosed_body_open">
-        <item quantity="one">%d unfinished. Decide what happens to it and write one line.</item>
-        <item quantity="other">%d unfinished. Decide what happens to them and write one line.</item>
+        <item quantity="one">%d unfinished</item>
+        <item quantity="other">%d unfinished</item>
     </plurals>
-    <string name="unclosed_body_note">Everything is settled. Write one line to close it.</string>
+    <string name="unclosed_body_note">Ready for your weekly line.</string>
     <plurals name="catch_up_title">
         <item quantity="one">%d week to close</item>
         <item quantity="other">%d weeks to close</item>
     </plurals>
     <plurals name="catch_up_body_open">
-        <item quantity="one">%d unfinished across them. Settle everything at once, then plan this week.</item>
-        <item quantity="other">%d unfinished across them. Settle everything at once, then plan this week.</item>
+        <item quantity="one">%d unfinished</item>
+        <item quantity="other">%d unfinished</item>
     </plurals>
-    <string name="catch_up_body_notes">Everything is settled. Add a line for each if you like.</string>
+    <string name="catch_up_body_notes">Ready to close.</string>
     <string name="action_catch_up">Catch up</string>
     <string name="catch_up_heading">Catch up</string>
-    <string name="catch_up_intro">Decide what happens to each unfinished commitment. A line for each week is optional.</string>
-    <string name="catch_up_intro_notes">Everything is settled. A line for each week is optional.</string>
+    <string name="catch_up_intro">Settle unfinished commitments.</string>
+    <string name="catch_up_intro_notes">Ready to close.</string>
     <string name="catch_up_all">For everything still undecided</string>
     <string name="catch_up_week">Week %1$s · %2$s</string>
-    <string name="catch_up_note_placeholder">One line about that week (optional)</string>
+    <string name="catch_up_note_placeholder">One line about that week</string>
     <plurals name="action_close_weeks">
         <item quantity="one">Close %d week</item>
         <item quantity="other">Close %d weeks</item>
     </plurals>
     <string name="close_prompt_title">Close the week</string>
-    <string name="close_prompt_body">About three minutes. Settle what is unfinished and write one line.</string>
+    <string name="close_prompt_body">Settle unfinished commitments. Write one line.</string>
     <string name="closed_title">Week closed</string>
     <string name="next_week">Next week</string>
     <string name="next_week_body">%1$s · %2$d of 3 planned</string>
@@ -137,7 +137,7 @@
 
     <!-- Chapters -->
     <string name="chapters_title">Chapters</string>
-    <string name="chapters_empty">Name a stretch of your life, like a move, a job, or a season. Open any week to start one there.</string>
+    <string name="chapters_empty">Name a season of your life.</string>
     <string name="chapter_span">%1$s – %2$s</string>
     <string name="chapter_span_ongoing">%1$s – now</string>
     <string name="chapter_age_span">Age %1$d · %2$s</string>
@@ -227,7 +227,7 @@
 
     <!-- Onboarding and settings -->
     <string name="onboarding_hook">About 4,000 weeks. Spend this one on purpose.</string>
-    <string name="onboarding_body">Choose up to three things each week. Close the week with one line. Watch your life fill in, one square at a time.</string>
+    <string name="onboarding_body">Choose up to three.\nWrite one line.\nSee your weeks.</string>
     <string name="birth_date">Birth date</string>
     <string name="birth_date_choose">Choose your birth date</string>
     <string name="birth_date_required">Choose your birth date to place this week on your grid.</string>
@@ -235,7 +235,7 @@
     <string name="horizon_years">%1$d</string>
     <string name="horizon_help">How many years the grid shows. It is a canvas, not a prediction.</string>
     <string name="gentle_label">Gentle mode</string>
-    <string name="gentle_help">Hide the weeks ahead. The grid shows only the years you have lived.</string>
+    <string name="gentle_help">Show only weeks lived.</string>
     <string name="start_week">Start week %1$s</string>
     <string name="data_title">Your data</string>
     <string name="privacy_note">Your weeks stay on this phone and in your device backups. No account needed.</string>
@@ -293,6 +293,23 @@
     <string name="notice_recovery_failed">Could not save a recovery copy. Your weeks have not been replaced.</string>
     <string name="notice_recovery_unreadable">Could not open the recovery copy. Your weeks have not changed.</string>
     <string name="reflection_draft_help">Draft saved on this phone.</string>
+    <string name="reflection_prompt_action">Reflection prompt</string>
+    <string name="reflection_prompt_title">Need a prompt?</string>
+    <string name="reflection_prompt_good">What felt good?</string>
+    <string name="reflection_prompt_learned">What did you learn?</string>
+    <string name="reflection_prompt_change">What would you change?</string>
+    <string name="reflection_prompt_hide">Hide prompt</string>
+    <string name="lock_setting">App lock</string>
+    <string name="lock_setting_help">Use fingerprint or screen lock. Widget details stay hidden.</string>
+    <string name="lock_locked_title">Numbered is locked</string>
+    <string name="lock_locked_help">Unlock to see your weeks and notes.</string>
+    <string name="lock_auth_title">Unlock Numbered</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_setup_needed">Set a screen lock in Android Settings, then try again.</string>
+    <string name="lock_unavailable">Authentication is unavailable. Try again.</string>
+    <string name="lock_save_failed">Could not save the lock setting. Try again.</string>
+    <string name="lock_android_settings">Android Settings</string>
+    <string name="lock_widget">Numbered is locked. Tap to unlock.</string>
     <string name="life_whole">Whole life</string>
     <string name="life_larger">Larger weeks</string>
     <string name="life_jump_year">Jump to year</string>
@@ -356,6 +373,9 @@
     <string name="a11y_collapsed">Collapsed</string>
     <string name="a11y_show_passphrase">Show passphrase</string>
     <string name="a11y_hide_passphrase">Hide passphrase</string>
+    <string name="life_help_summary">Each square is one week</string>
+    <string name="life_help_title">Your life, in weeks</string>
+    <string name="life_help_body">Colours show what you completed or planned.\n\nTap or drag to select a week, then open its commitments and reflection.</string>
     <string name="life_colour_key">Colour key</string>
     <string name="someday_search">Search ideas</string>
     <string name="someday_clear_search">Clear search</string>
@@ -390,4 +410,24 @@
         <item quantity="one">Carried at least once</item>
         <item quantity="other">Carried at least %d times</item>
     </plurals>
+    <string name="review_title">Year in review</string>
+    <string name="review_choose_year">Choose year</string>
+    <string name="review_document_title">Numbered - %1$d in review</string>
+    <string name="review_so_far">Year so far · %1$s</string>
+    <string name="review_completed">Completed commitments</string>
+    <string name="review_notes">Weekly notes</string>
+    <string name="review_empty">This year’s review is empty.</string>
+    <string name="review_save">Save file</string>
+    <string name="review_share">Share</string>
+    <string name="review_saved">Saved your year in review</string>
+    <string name="review_share_failed">Could not share. Try saving the file instead.</string>
+    <string name="settings_help_title">About these settings</string>
+    <string name="horizon_summary">A canvas, not a prediction.</string>
+    <string name="reminders_summary">Plan and close your week.</string>
+    <string name="week_starts_summary">Fixed at setup.</string>
+    <string name="about_numbered">About Numbered</string>
+    <string name="chapter_help_title">About chapters</string>
+    <string name="chapter_help_details">Name a stretch of life, like a move, a job, or a season. Choose its first week and leave it ongoing or set an end. A dot marks where it starts on your grid.</string>
+    <string name="catch_up_note_label">Reflection (optional)</string>
+    <string name="gentle_details">Gentle mode hides the weeks ahead. The grid shows only the years you have lived.</string>
 </resources>

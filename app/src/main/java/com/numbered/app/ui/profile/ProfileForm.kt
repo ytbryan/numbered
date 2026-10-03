@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.numbered.app.R
+import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.domain.LifeCalendar
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -128,7 +129,10 @@ private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInsta
 @Composable
 fun HorizonField(horizon: Int, birthDate: LocalDate?, today: LocalDate, onChange: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.horizon_label), style = MaterialTheme.typography.titleSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.horizon_label), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            ExplanationHelp(stringResource(R.string.horizon_label), stringResource(R.string.horizon_help))
+        }
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             LifeCalendar.HORIZON_CHOICES.forEachIndexed { index, choice ->
                 SegmentedButton(
@@ -140,7 +144,7 @@ fun HorizonField(horizon: Int, birthDate: LocalDate?, today: LocalDate, onChange
             }
         }
         Text(
-            stringResource(R.string.horizon_help),
+            stringResource(R.string.horizon_summary),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

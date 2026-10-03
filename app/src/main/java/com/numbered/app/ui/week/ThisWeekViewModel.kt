@@ -110,7 +110,12 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
 
     fun addFromSomeday(item: SomedayItem) = launchWrite {
         val weekStart = state.value?.weekStart ?: return@launchWrite
-        report(repository.schedule(item.id, weekStart))
+        val move = repository.scheduleWithUndo(item.id, weekStart)
+        if (move.result == PlanResult.Ok) {
+            notify(Notice(R.string.notice_added_this_week, listOf(item.title)) {
+                launchWrite { report(repository.undoPlanningMove(requireNotNull(move.undo))) }
+            })
+        } else report(move.result)
     }
 
     fun setDone(commitment: Commitment, done: Boolean) = launchWrite {
@@ -123,13 +128,17 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
 
     fun moveToNextWeek(commitment: Commitment) = launchWrite {
         val next = state.value?.nextWeekStart ?: return@launchWrite
-        val result = repository.carry(commitment.id, next)
-        if (result == PlanResult.Ok) notify(Notice(R.string.notice_moved_next_week)) else report(result)
+        val move = repository.carryWithUndo(commitment.id, next)
+        if (move.result == PlanResult.Ok) notify(Notice(R.string.notice_moved_next_week, undo = {
+            launchWrite { report(repository.undoPlanningMove(requireNotNull(move.undo))) }
+        })) else report(move.result)
     }
 
     fun returnToSomeday(commitment: Commitment) = launchWrite {
-        val result = repository.returnToSomeday(commitment.id)
-        if (result == PlanResult.Ok) notify(Notice(R.string.notice_returned_to_someday)) else report(result)
+        val move = repository.returnToSomedayWithUndo(commitment.id)
+        if (move.result == PlanResult.Ok) notify(Notice(R.string.notice_returned_to_someday, undo = {
+            launchWrite { report(repository.undoPlanningMove(requireNotNull(move.undo))) }
+        })) else report(move.result)
     }
 
     fun remove(commitment: Commitment) = launchWrite {

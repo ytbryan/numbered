@@ -14,10 +14,12 @@ import android.view.WindowManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
@@ -51,6 +53,8 @@ import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -150,6 +154,17 @@ class ScreenCaptureTest {
 
     @get:Rule(order = 2)
     val files = TemporaryFolder()
+
+    @Test fun movingCommitmentOffersUndo() {
+        awaitText("Finish the grant draft")
+        compose.onNodeWithContentDescription("More options for Finish the grant draft", useUnmergedTree = true).performClick()
+        tap("Move to next week")
+        awaitText("Undo")
+        compose.onNodeWithText("Undo").assertIsDisplayed()
+        tap("Undo")
+        awaitText("Finish the grant draft")
+        compose.onNodeWithText("Finish the grant draft").assertIsDisplayed()
+    }
 
     private fun millis(date: LocalDate, hour: Int = 12) = date.atTime(hour, 0).atZone(zone).toInstant().toEpochMilli()
 
@@ -301,7 +316,7 @@ class ScreenCaptureTest {
     @Test fun aChapterFromStartToGrid() {
         tap("Life")
         scrollTo("Chapters")
-        awaitText("Open any week to start one there.")
+        awaitText("Name a season of your life.")
         tap("Week 1,923 · age 36")
         tap("Start a chapter here")
         awaitText("New chapter")
@@ -340,6 +355,110 @@ class ScreenCaptureTest {
         compose.onAllNodesWithText("Osaka", substring = true).onFirst().performClick()
         awaitText("Age 36")
         capture("lines-open-week")
+    }
+
+    @Suppress("DEPRECATION")
+    @Test fun yearReviewSavesAndSharesTheWholeYearEvenWhenLinesWereFiltered() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        val before = runBlocking { app.container.repository.snapshot()!! }
+        tap("Life")
+        compose.onNodeWithContentDescription("Your lines").performClick()
+        awaitText("2026")
+        compose.onNode(hasSetTextAction()).performTextInput("osaka")
+        awaitText("4\u00A0lines")
+        compose.onNodeWithContentDescription("Year in review").performClick()
+        awaitText("Completed commitments")
+        compose.onNodeWithText("32\u00A0weeks closed · 77\u00A0things done · 16\u00A0lines").assertIsDisplayed()
+        capture("year-review")
+        tap("Save file")
+        val output = files.newFile("review.txt")
+        val request = answerFilePicker(Intent.ACTION_CREATE_DOCUMENT, output)
+        assertEquals("text/plain", request.type)
+        assertEquals("numbered-2026-review.txt", request.getStringExtra(Intent.EXTRA_TITLE))
+        awaitText("Saved your year in review")
+        val text = output.readText(Charsets.UTF_8)
+        assertTrue(text.contains("Renew passport photos"))
+        assertTrue(text.contains("Quiet week. Slept well."))
+        assertFalse(text.contains("Finish the grant draft"))
+        assertFalse(text.contains("Read Middlemarch"))
+        assertEquals(before, runBlocking { app.container.repository.snapshot() })
+        capture("year-review-saved")
+        // Robolectric also keeps a copy of the handled picker in its general activity queue.
+        assertEquals(Intent.ACTION_CREATE_DOCUMENT, shadowOf(compose.activity).nextStartedActivity.action)
+        tap("Share")
+        compose.waitUntil(timeoutMillis = 5_000) { shadowOf(compose.activity).peekNextStartedActivity() != null }
+        val chooser = shadowOf(compose.activity).nextStartedActivity
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        val send = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        val uri = send.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)!!
+        assertEquals(text, app.contentResolver.openInputStream(uri)!!.bufferedReader(Charsets.UTF_8).use { it.readText() })
+    }
+
+    @Test fun yearReviewCanSelectAnEarlierYearAndSavesOnlyThatYear() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        val oldWeek = LocalDate.of(2025, 6, 2)
+        runBlocking {
+            app.container.database.commitments().insert(Commitment(weekStart = oldWeek, title = "Finished in 2025", status = Done, createdAt = 1))
+            app.container.database.reviews().upsert(WeekReview(oldWeek, "Last year’s reflection", 1))
+        }
+        tap("Life")
+        compose.onNodeWithContentDescription("Your lines").performClick()
+        awaitText("2026")
+        compose.onNodeWithContentDescription("Year in review").performClick()
+        awaitText("Completed commitments")
+        compose.onNodeWithContentDescription("Choose year").performClick()
+        tap("2025")
+        awaitText("Finished in 2025")
+        capture("year-review-earlier")
+        tap("Save file")
+        val output = files.newFile("old-review.txt")
+        val request = answerFilePicker(Intent.ACTION_CREATE_DOCUMENT, output)
+        assertEquals("numbered-2025-review.txt", request.getStringExtra(Intent.EXTRA_TITLE))
+        awaitText("Saved your year in review")
+        assertTrue(output.readText().contains("Last year’s reflection"))
+        assertFalse(output.readText().contains("Renew passport photos"))
+        assertFalse(output.readText().contains("Year so far"))
+    }
+
+    @Test fun yearReviewExplainsAnEmptyYearAndDisablesExport() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        runBlocking {
+            val original = app.container.repository.snapshot()!!
+            app.container.repository.replaceAll(original.copy(commitments = emptyList(), reviews = emptyList(), chapters = emptyList()))
+        }
+        tap("Life")
+        compose.onNodeWithContentDescription("Your lines").performClick()
+        awaitText("Your lines")
+        compose.onNodeWithContentDescription("Year in review").performClick()
+        awaitText("This year’s review is empty.")
+        compose.onNodeWithText("Save file").assertIsNotEnabled()
+        compose.onNodeWithText("Share").assertIsNotEnabled()
+        capture("year-review-empty")
+    }
+
+    @Test fun yearReviewSaveCanBeCancelledAndRetriedAfterFailure() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        val before = runBlocking { app.container.repository.snapshot()!! }
+        tap("Life")
+        compose.onNodeWithContentDescription("Your lines").performClick()
+        awaitText("2026")
+        compose.onNodeWithContentDescription("Year in review").performClick()
+        awaitText("Completed commitments")
+        tap("Save file")
+        val activity = shadowOf(compose.activity)
+        val cancelled = activity.nextStartedActivityForResult
+        compose.runOnUiThread { activity.receiveResult(cancelled.intent, Activity.RESULT_CANCELED, null) }
+        compose.onAllNodesWithText("Saved your year in review").assertCountEquals(0)
+        tap("Save file")
+        answerFilePicker(Intent.ACTION_CREATE_DOCUMENT, File(files.root, "missing/review.txt"))
+        awaitText("Could not save to that file. Try another place.")
+        capture("year-review-save-failed")
+        tap("Save file")
+        val output = files.newFile("retry.txt")
+        answerFilePicker(Intent.ACTION_CREATE_DOCUMENT, output)
+        awaitText("Saved your year in review")
+        assertTrue(output.readText().contains("Renew passport photos"))
+        assertEquals(before, runBlocking { app.container.repository.snapshot() })
     }
 
     @Test fun thisWeek() {
@@ -405,6 +524,12 @@ class ScreenCaptureTest {
         awaitText("36.8 years · 1,922 weeks lived")
         awaitText("Week 1,923 · age 36")
         capture("life")
+        compose.onNodeWithText("Colour key").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Your life, in weeks").performClick()
+        awaitText("Colour key")
+        capture("life-help")
+        compose.onNodeWithText("Done").performScrollTo().performClick()
+        compose.onNodeWithText("Colour key").assertDoesNotExist()
         compose.onNodeWithContentDescription("Life grid", substring = true).performTouchInput {
             click(Offset(width * 0.6f, height * 0.3f))
         }
@@ -452,6 +577,71 @@ class ScreenCaptureTest {
         awaitText("Week 1,923 of 4,175")
         awaitGone("Week 1,922 is still open")
         assertNull(container.drafts.read(lastWeek))
+    }
+
+    @Test fun reflectionPromptsCanBeChangedAndHiddenWithoutChangingTheNote() {
+        tap("Close")
+        val note = "A small but worthwhile step."
+        val question = "What did you learn?"
+        val container = (RuntimeEnvironment.getApplication() as NumberedApp).container
+        val lastWeek = defaultToday.with(DayOfWeek.MONDAY).minusWeeks(1)
+        compose.onAllNodesWithText(question).assertCountEquals(0)
+        compose.onNode(hasSetTextAction()).performTextInput(note)
+        compose.onNodeWithContentDescription("Reflection prompt").performScrollTo().performClick()
+        awaitText("Need a prompt?")
+        capture("reflection-prompts")
+        tap(question)
+        awaitGone("Need a prompt?")
+        compose.onNode(hasSetTextAction()).assert(hasText(note))
+        assertEquals(note, container.drafts.read(lastWeek))
+        capture("reflection-selected")
+        compose.activityRule.scenario.recreate()
+        awaitText(question)
+        compose.onNode(hasSetTextAction()).assert(hasText(note))
+        compose.onNodeWithContentDescription("Reflection prompt").performClick()
+        tap("What felt good?")
+        compose.onNodeWithContentDescription("Reflection prompt").performClick()
+        tap("Cancel")
+        awaitGone("Need a prompt?")
+        compose.onNodeWithText("What felt good?").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Reflection prompt").performClick()
+        tap("Hide prompt")
+        awaitGone("Need a prompt?")
+        compose.onAllNodesWithText("What felt good?").assertCountEquals(0)
+        compose.onNode(hasSetTextAction()).assert(hasText(note))
+        compose.onNodeWithContentDescription("Reflection prompt").performClick()
+        tap(question)
+        tap("This week")
+        scrollTo("Close week")
+        tap("Close week")
+        awaitText("Week 1,923 of 4,175")
+        awaitGone("Week 1,922 is still open")
+        assertEquals(note, runBlocking { container.repository.snapshot()!!.reviews.single { it.weekStart == lastWeek }.note })
+        assertNull(container.drafts.read(lastWeek))
+    }
+
+    @Test @AwayFor(weeks = 3)
+    fun reflectionPromptsInCatchUpStayWithTheirOwnWeek() {
+        tap("Catch up")
+        awaitText("Week 1,922 · ")
+        compose.onAllNodesWithText("What felt good?").assertCountEquals(0)
+        compose.onAllNodesWithContentDescription("Reflection prompt").onFirst().performScrollTo().performClick()
+        tap("What felt good?")
+        compose.onAllNodesWithContentDescription("Reflection prompt").onLast().performScrollTo().performClick()
+        tap("What did you learn?")
+        capture("catch-up-reflection")
+        compose.onAllNodes(hasSetTextAction()).onFirst().performScrollTo().performTextInput("Away in Osaka.")
+        scrollTo("Let go")
+        tap("Let go")
+        scrollTo("Close 3 weeks")
+        tap("Close 3 weeks")
+        awaitText("Closed 3 weeks")
+        val container = (RuntimeEnvironment.getApplication() as NumberedApp).container
+        val firstWeek = defaultToday.with(DayOfWeek.MONDAY).minusWeeks(1)
+        val reviews = runBlocking { container.repository.snapshot()!!.reviews }.associateBy { it.weekStart }
+        assertEquals("Away in Osaka.", reviews[firstWeek]!!.note)
+        assertEquals("", reviews[firstWeek.plusWeeks(1)]!!.note)
+        assertEquals("", reviews[firstWeek.plusWeeks(2)]!!.note)
     }
 
     @Test fun largerGridSelectsTheCorrectWeekAndJumpsBetweenYears() {
@@ -619,9 +809,32 @@ class ScreenCaptureTest {
         awaitText("Carried 2 times")
     }
 
+    @Test fun creatingChapterFromLifeEmptyState() {
+        val repository = (RuntimeEnvironment.getApplication() as NumberedApp).container.repository
+        runBlocking {
+            repository.replaceAll(repository.snapshot()!!.copy(chapters = emptyList()))
+        }
+        tap("Life")
+        scrollTo("New chapter")
+        capture("life-empty-chapters")
+        tap("New chapter")
+        awaitText("New chapter")
+        compose.onNodeWithText("Name").assertExists()
+        capture("chapter-from-life")
+    }
+
     @Test fun settings() {
         openSettings()
         capture("settings")
+        compose.onNodeWithContentDescription("Years on the grid").performClick()
+        awaitText("How many years the grid shows. It is a canvas, not a prediction.")
+        capture("settings-horizon-help")
+        compose.onNodeWithText("Done").performScrollTo().performClick()
+        scrollTo("About Numbered")
+        tap("About Numbered")
+        compose.onNodeWithText("Named after Psalm", substring = true).assertExists()
+        capture("settings-about")
+        compose.onNodeWithText("Done").performScrollTo().performClick()
     }
 
     @Test fun importInSettingsReplacesEverything() {
@@ -689,7 +902,7 @@ class ScreenCaptureTest {
     @Test @AwayFor(weeks = 3)
     fun catchingUpAfterThreeWeeksAway() {
         awaitText("3 weeks to close")
-        compose.onNodeWithText("3 unfinished across them", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("3 unfinished", substring = true).assertIsDisplayed()
         capture("this-week-catch-up")
         tap("Catch up")
         awaitText("Week 1,922 · ")

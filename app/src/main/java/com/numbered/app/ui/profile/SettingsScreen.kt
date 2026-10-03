@@ -27,6 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
+import com.numbered.app.ui.components.ExplanationHelp
+import com.numbered.app.security.AppLockSetting
 import com.numbered.app.ui.NoticeEffect
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.containerViewModel
@@ -60,6 +62,12 @@ fun SettingsScreen(onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
+                actions = {
+                    ExplanationHelp(
+                        title = stringResource(R.string.settings_help_title),
+                        body = stringResource(R.string.gentle_details) + "\n\n" + stringResource(R.string.week_starts_help),
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -77,6 +85,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             BirthDateField(current.birthDate, today, viewModel::setBirthDate)
             HorizonField(current.horizonYears, current.birthDate, today, viewModel::setHorizon)
             GentleField(current.gentle, viewModel::setGentle)
+            AppLockSetting()
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             RemindersSection(
                 settings = reminders,
@@ -91,7 +100,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    stringResource(R.string.week_starts_help),
+                    stringResource(R.string.week_starts_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -122,10 +131,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                     )
                 }
             }
-            Text(
-                stringResource(R.string.name_origin),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            ExplanationHelp(
+                title = stringResource(R.string.about_numbered),
+                body = stringResource(R.string.name_origin),
+                buttonLabel = stringResource(R.string.about_numbered),
             )
         }
     }

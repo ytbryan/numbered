@@ -14,6 +14,14 @@ It shares these rules and the export file, so a copy moves between the two.
 - **Someday**: ideas without dates. Items untouched for 12 weeks ask whether they still deserve a square.
 - **Close week**: decide what happens to each unfinished commitment (done, carry, Someday, or let go) and write one line.
 Unfinished reflections are saved on this phone as you type, including in Catch up.
+The note field’s prompt icon offers three optional reflection questions, with a chosen question shown below the field.
+Questions can be changed or hidden and are kept separate from saved notes and drafts.
+- **App lock**: an optional setting requiring Android biometric or screen-lock authentication to open the app, including shared ideas and widget links.
+Enabling and disabling it require authentication.
+Leaving the app locks it again; rotation preserves an authenticated session.
+Widget details and screenshots/recent-app previews are hidden whenever App lock is on.
+Its preference stays on this phone and is excluded from exports, device backups, and recovery restores.
+App lock controls access to the app; exported files and Android database backups keep their existing protections.
 - **Catch up**: after time away, close every open past week at once.
 - **Your lines**: every weekly line, grouped by year with what each year held, and searchable.
 - **Chapters**: name a stretch of life, like a move or a job. Chapters mark the grid and the weeks they cover.
@@ -23,16 +31,28 @@ Unfinished reflections are saved on this phone as you type, including in Catch u
 Life offers both a whole-life overview and larger week squares for one calendar year, with year navigation and a shortcut back to this week.
 This week names today and highlights it in a seven-day strip ordered by your chosen week start.
 Life also shows today and the current calendar week within its year.
-Lifetime totals sit below the grid, and the colour key opens on demand.
+Lifetime totals sit below the grid.
+A short explanation and help button sit above it; the help sheet holds the guidance, colour key, and age-horizon note.
 Someday searches across waiting and let-go ideas, with oldest, newest, and recently kept sorting.
 Share text or a link from another Android app to edit it and save it to Someday, then return to that app.
 Shared ideas can be saved before setup.
 Search on This week finds commitments, weekly notes, all Someday ideas, and chapters, with links to open each result.
+Moving a commitment to next week or back to Someday, and scheduling a Someday idea, offer Undo.
+Undo restores the original entry and removes the entry created by the move, provided neither has changed and the original week still has room.
 Carry-over history opens from the commitment menu and follows its weeks even after a rename.
 Older entries are linked only when their original title and carry time identify one source.
 Missing or ambiguous earlier entries are shown explicitly.
 Database version 3 adds these links without replacing saved data.
 Backup format version 3 includes them and still reads versions 1 and 2.
+Year in review opens from Your lines, with a year picker and a preview of completed commitments, notes, and overlapping chapters.
+Save the preview as a UTF-8 text file or share it using Android’s share sheet.
+Reviews use the same week-based years as Your lines and include recorded data through the current week.
+Saved and shared summaries contain the selected year’s previewed content without birth dates, drafts, or Someday items.
+
+Settings keeps short descriptions beside controls, with fuller explanations in help sheets and the name’s origin under About Numbered.
+Onboarding introduces the three steps briefly.
+The empty Chapters section offers a New chapter action for the selected week.
+Catch up marks reflection fields as optional even while typing.
 
 ## Rules worth knowing
 

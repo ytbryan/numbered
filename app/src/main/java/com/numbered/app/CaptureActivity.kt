@@ -4,9 +4,7 @@ import android.content.Intent
 import android.database.sqlite.SQLiteException
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,28 +41,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.numbered.app.data.PlanResult
 import com.numbered.app.ui.containerViewModel
-import com.numbered.app.ui.theme.NumberedTheme
+import com.numbered.app.security.LockedActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /** A separate screen returns to the sharing app after saving, including before initial setup. */
-class CaptureActivity : ComponentActivity() {
+class CaptureActivity : LockedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val shared = sharedIdea(intent)
-        setContent {
-            NumberedTheme {
-                CaptureScreen(
-                    initialText = shared,
-                    onCancel = { finish() },
-                    onSaved = {
-                        Toast.makeText(this, R.string.capture_saved, Toast.LENGTH_SHORT).show()
-                        finish()
-                    },
-                )
-            }
+        setLockedContent {
+            CaptureScreen(
+                initialText = shared,
+                onCancel = { finish() },
+                onSaved = {
+                    Toast.makeText(this, R.string.capture_saved, Toast.LENGTH_SHORT).show()
+                    finish()
+                },
+            )
         }
     }
 }

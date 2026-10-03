@@ -14,6 +14,17 @@ import kotlinx.coroutines.flow.map
 
 enum class PlanResult { Ok, WeekFull, Blank, Missing }
 
+/** The exact rows changed by one planning move, held only while Undo is offered. */
+data class PlanningUndo(
+    val originalCommitment: Commitment? = null,
+    val originalSomeday: SomedayItem? = null,
+    val changedCommitment: Commitment? = null,
+    val createdCommitment: Commitment? = null,
+    val createdSomeday: SomedayItem? = null,
+)
+
+data class PlanningMove(val result: PlanResult, val undo: PlanningUndo? = null)
+
 /** One week's close: its note, and what happens to each unfinished commitment. */
 data class WeekClosing(val weekStart: LocalDate, val note: String, val choices: Map<Long, CloseChoice>)
 
@@ -141,12 +152,56 @@ class NumberedRepository(
     }
 
     /** Moves an unfinished commitment to [toWeek], keeping a Carried record in its original week. */
-    suspend fun carry(id: Long, toWeek: LocalDate): PlanResult = db.withTransaction {
-        val commitment = commitments.get(id)
-            ?.takeIf { it.status == CommitmentStatus.Open && it.weekStart < toWeek }
-            ?: return@withTransaction PlanResult.Missing
-        if (commitments.occupied(toWeek) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanResult.WeekFull
-        carryUnchecked(commitment, toWeek, clock.millis())
+    suspend fun carry(id: Long, toWeek: LocalDate): PlanResult = carryWithUndo(id, toWeek).result
+
+    suspend fun carryWithUndo(id: Long, toWeek: LocalDate): PlanningMove = db.withTransaction {
+        val original = commitments.get(id) ?: return@withTransaction PlanningMove(PlanResult.Missing)
+        if (original.status != CommitmentStatus.Open || original.weekStart >= toWeek) {
+            return@withTransaction PlanningMove(PlanResult.Missing)
+        }
+        if (commitments.occupied(toWeek) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanningMove(PlanResult.WeekFull)
+        val createdId = carryUnchecked(original, toWeek, clock.millis())
+        PlanningMove(PlanResult.Ok, PlanningUndo(
+            originalCommitment = original,
+            changedCommitment = commitments.get(id),
+            createdCommitment = commitments.get(createdId),
+        ))
+    }
+
+    suspend fun returnToSomedayWithUndo(id: Long): PlanningMove = db.withTransaction {
+        val original = commitments.get(id)?.takeIf { it.status == CommitmentStatus.Open }
+            ?: return@withTransaction PlanningMove(PlanResult.Missing)
+        val createdId = resolveUnchecked(original, CommitmentStatus.ReturnedToSomeday, clock.millis())!!
+        PlanningMove(PlanResult.Ok, PlanningUndo(
+            originalCommitment = original,
+            changedCommitment = commitments.get(id),
+            createdSomeday = someday.get(createdId),
+        ))
+    }
+
+    suspend fun scheduleWithUndo(id: Long, weekStart: LocalDate): PlanningMove = db.withTransaction {
+        val item = someday.get(id)?.takeIf { it.letGoAt == null }
+            ?: return@withTransaction PlanningMove(PlanResult.Missing)
+        if (commitments.occupied(weekStart) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanningMove(PlanResult.WeekFull)
+        someday.delete(id)
+        val createdId = commitments.insert(Commitment(weekStart = weekStart, title = item.title, createdAt = clock.millis()))
+        PlanningMove(PlanResult.Ok, PlanningUndo(originalSomeday = item, createdCommitment = commitments.get(createdId)))
+    }
+
+    /** Refuses stale Undo actions and restores both sides of a move atomically. */
+    suspend fun undoPlanningMove(undo: PlanningUndo): PlanResult = db.withTransaction {
+        if (undo.changedCommitment?.let { commitments.get(it.id) != it } == true ||
+            undo.createdCommitment?.let { commitments.get(it.id) != it } == true ||
+            undo.createdSomeday?.let { someday.get(it.id) != it } == true ||
+            undo.originalSomeday?.let { someday.get(it.id) != null } == true
+        ) return@withTransaction PlanResult.Missing
+        undo.originalCommitment?.let {
+            if (commitments.occupied(it.weekStart) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanResult.WeekFull
+        }
+        undo.createdCommitment?.let { commitments.delete(it.id) }
+        undo.createdSomeday?.let { someday.delete(it.id) }
+        undo.originalCommitment?.let { commitments.update(it) }
+        undo.originalSomeday?.let { someday.insert(it) }
         PlanResult.Ok
     }
 
@@ -187,13 +242,7 @@ class NumberedRepository(
     }
 
     /** Moves a Someday item into a week's squares. */
-    suspend fun schedule(id: Long, weekStart: LocalDate): PlanResult = db.withTransaction {
-        val item = someday.get(id)?.takeIf { it.letGoAt == null } ?: return@withTransaction PlanResult.Missing
-        if (commitments.occupied(weekStart) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanResult.WeekFull
-        someday.delete(id)
-        commitments.insert(Commitment(weekStart = weekStart, title = item.title, createdAt = clock.millis()))
-        PlanResult.Ok
-    }
+    suspend fun schedule(id: Long, weekStart: LocalDate): PlanResult = scheduleWithUndo(id, weekStart).result
 
     /**
      * Closes [weekStart]: applies a choice to every unfinished commitment and records the note.
@@ -259,18 +308,18 @@ class NumberedRepository(
         }
     }
 
-    private suspend fun carryUnchecked(commitment: Commitment, toWeek: LocalDate, now: Long) {
+    private suspend fun carryUnchecked(commitment: Commitment, toWeek: LocalDate, now: Long): Long {
         commitments.update(commitment.copy(status = CommitmentStatus.Carried, resolvedAt = now))
-        commitments.insert(
+        return commitments.insert(
             Commitment(weekStart = toWeek, title = commitment.title, createdAt = now, carriedFrom = commitment.weekStart, carriedFromId = commitment.id),
         )
     }
 
-    private suspend fun resolveUnchecked(commitment: Commitment, status: CommitmentStatus, now: Long) {
+    private suspend fun resolveUnchecked(commitment: Commitment, status: CommitmentStatus, now: Long): Long? {
         commitments.update(commitment.copy(status = status, resolvedAt = now))
-        if (status == CommitmentStatus.ReturnedToSomeday) {
+        return if (status == CommitmentStatus.ReturnedToSomeday) {
             someday.insert(SomedayItem(title = commitment.title, createdAt = now))
-        }
+        } else null
     }
 }
 

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Summarize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +52,7 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LinesScreen(onBack: () -> Unit, onOpenWeek: (LocalDate) -> Unit) {
+fun LinesScreen(onBack: () -> Unit, onOpenWeek: (LocalDate) -> Unit, onYearReview: () -> Unit) {
     val viewModel = containerViewModel { LinesViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The query stays in the screen, so typing never waits on the view model.
@@ -64,6 +65,11 @@ fun LinesScreen(onBack: () -> Unit, onOpenWeek: (LocalDate) -> Unit) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onYearReview) {
+                        Icon(Icons.Outlined.Summarize, contentDescription = stringResource(R.string.review_title))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.numbered.app.R
+import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.domain.LifeCalendar
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.formatCount
@@ -107,10 +108,10 @@ fun OnboardingScreen(
         TextButton(onClick = onRestore, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(stringResource(R.string.action_restore_from_file))
         }
-        Text(
-            stringResource(R.string.name_origin),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ExplanationHelp(
+            title = stringResource(R.string.about_numbered),
+            body = stringResource(R.string.name_origin),
+            buttonLabel = stringResource(R.string.about_numbered),
         )
     }
 }

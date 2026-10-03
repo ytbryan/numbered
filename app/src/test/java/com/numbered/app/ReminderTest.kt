@@ -118,7 +118,7 @@ class ReminderTest {
 
         val posted = notifications.allNotifications.single()
         assertEquals("Close the week", posted.extras.getString("android.title"))
-        assertEquals("1 unfinished. Decide what happens to it and write one line.", posted.extras.getString("android.text"))
+        assertEquals("1 unfinished", posted.extras.getString("android.text"))
         val opens = shadowOf(posted.contentIntent).savedIntent
         assertEquals(closeWeekDeepLink(thisWeek), opens.data)
         assertTrue(opens.flags and Intent.FLAG_ACTIVITY_CLEAR_TASK != 0)

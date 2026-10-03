@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.numbered.app.R
+import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.reminders.Reminder
 import com.numbered.app.reminders.ReminderSettings
 import com.numbered.app.reminders.dayOf
@@ -92,9 +93,12 @@ fun RemindersSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.reminders_title), style = MaterialTheme.typography.titleSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.reminders_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                ExplanationHelp(stringResource(R.string.reminders_title), stringResource(R.string.reminders_help))
+            }
             Text(
-                stringResource(R.string.reminders_help),
+                stringResource(R.string.reminders_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

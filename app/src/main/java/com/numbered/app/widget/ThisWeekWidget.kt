@@ -5,6 +5,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -99,8 +101,12 @@ suspend fun loadWidgetState(repository: NumberedRepository, clock: Clock): Widge
 class ThisWeekWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = context.appContainer
-        val state = loadWidgetState(container.repository, container.clock)
-        provideContent { ThisWeekWidgetUi(state) }
+        val locked = container.appLock.enabled.value
+        val state = if (locked) null else loadWidgetState(container.repository, container.clock)
+        provideContent {
+            val currentlyLocked by container.appLock.enabled.collectAsState()
+            ThisWeekWidgetUi(state, currentlyLocked)
+        }
     }
 }
 
@@ -111,6 +117,7 @@ class ThisWeekWidgetReceiver : GlanceAppWidgetReceiver() {
 /** Ticks a commitment done or open again, straight from the widget. */
 class ToggleDone : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        if (context.appContainer.appLock.enabled.value) return
         val id = parameters[CommitmentId] ?: return
         val done = parameters[ToggleableStateKey] ?: return
         context.appContainer.repository.setDone(id, done)
@@ -129,8 +136,9 @@ class ToggleDone : ActionCallback {
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun keepWidgetsCurrent(context: Context, container: AppContainer) {
     val repository = container.repository
-    combine(repository.profile(), container.today.value, ::Pair)
-        .flatMapLatest { (profile, today) ->
+    combine(repository.profile(), container.today.value, container.appLock.enabled) { profile, today, locked -> Triple(profile, today, locked) }
+        .flatMapLatest { (profile, today, locked) ->
+            if (locked) return@flatMapLatest flowOf(null)
             val weekStart = profile?.calendar()?.weekStartOf(today) ?: return@flatMapLatest flowOf(null)
             combine(repository.week(weekStart), repository.review(weekStart), ::Pair)
         }
@@ -146,12 +154,12 @@ private val WidgetColors = ColorProviders(light = LightColors, dark = DarkColors
 
 /** The widget in the app's own colors, light and dark. */
 @Composable
-fun ThisWeekWidgetUi(state: WidgetState?) {
-    GlanceTheme(colors = WidgetColors) { WidgetContent(state) }
+fun ThisWeekWidgetUi(state: WidgetState?, locked: Boolean = false) {
+    GlanceTheme(colors = WidgetColors) { WidgetContent(state, locked) }
 }
 
 @Composable
-fun WidgetContent(state: WidgetState?) {
+fun WidgetContent(state: WidgetState?, locked: Boolean = false) {
     val context = LocalContext.current
     val colors = GlanceTheme.colors
     val openApp = actionStartActivity<MainActivity>()
@@ -163,9 +171,9 @@ fun WidgetContent(state: WidgetState?) {
             .cornerRadius(20.dp)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        if (state == null) {
+        if (locked || state == null) {
             Text(
-                context.getString(R.string.widget_setup),
+                context.getString(if (locked) R.string.lock_widget else R.string.widget_setup),
                 style = TextStyle(color = colors.onSurface, fontSize = 14.sp),
                 modifier = GlanceModifier.clickable(openApp),
             )

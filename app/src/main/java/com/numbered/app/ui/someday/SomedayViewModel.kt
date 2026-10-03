@@ -96,11 +96,13 @@ class SomedayViewModel(private val container: AppContainer) : NoticeViewModel() 
 
     private fun schedule(item: SomedayItem, thisWeek: Boolean) = launchWrite {
         val current = state.value ?: return@launchWrite
-        val result = repository.schedule(item.id, if (thisWeek) current.thisWeekStart else current.nextWeekStart)
-        if (result == PlanResult.Ok) {
-            notify(Notice(if (thisWeek) R.string.notice_added_this_week else R.string.notice_added_next_week, listOf(item.title)))
+        val move = repository.scheduleWithUndo(item.id, if (thisWeek) current.thisWeekStart else current.nextWeekStart)
+        if (move.result == PlanResult.Ok) {
+            notify(Notice(if (thisWeek) R.string.notice_added_this_week else R.string.notice_added_next_week, listOf(item.title)) {
+                launchWrite { report(repository.undoPlanningMove(requireNotNull(move.undo))) }
+            })
         } else {
-            report(result)
+            report(move.result)
         }
     }
 }

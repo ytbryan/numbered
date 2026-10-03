@@ -109,6 +109,30 @@ class WidgetTest {
         assertFalse(load(container)!!.items.single().done)
     }
 
+    @Test fun appLockBlocksPreviouslyCreatedWidgetActions() {
+        val container = containerAt("2026-10-01T10:00")
+        val entry = runBlocking {
+            container.repository.addCommitment(thisWeek, "Private commitment")
+            container.repository.week(thisWeek).first().single()
+        }
+        container.appLock.setEnabled(true)
+        runBlocking {
+            ToggleDone().onAction(app, object : GlanceId {}, actionParametersOf(ToggleDone.CommitmentId to entry.id, ToggleableStateKey to true))
+        }
+        assertEquals(entry, runBlocking { container.repository.week(thisWeek).first().single() })
+    }
+
+    @Test fun appLockRedactsEvenAPreviouslyLoadedWidget() = runGlanceAppWidgetUnitTest {
+        setContext(app)
+        setAppWidgetSize(DpSize(300.dp, 200.dp))
+        provideComposable {
+            WidgetContent(WidgetState(thisWeek, 1923, 1, listOf(WidgetItem(1, "Private commitment", false)), true), locked = true)
+        }
+        onNode(hasText("Numbered is locked. Tap to unlock.")).assertExists()
+        onNode(hasText("Private commitment")).assertDoesNotExist()
+        onNode(hasText("Close the week →")).assertDoesNotExist()
+    }
+
     @Test fun theContentOffersAddingAndClosing() = runGlanceAppWidgetUnitTest {
         setContext(app)
         setAppWidgetSize(DpSize(300.dp, 200.dp))

@@ -1,18 +1,16 @@
 package com.numbered.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.numbered.app.ui.NumberedRoot
-import com.numbered.app.ui.theme.NumberedTheme
+import com.numbered.app.security.LockedActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : LockedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,11 +23,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        setContent {
-            NumberedTheme {
-                NumberedRoot()
-            }
-        }
+        setLockedContent { NumberedRoot() }
     }
 
     private companion object {

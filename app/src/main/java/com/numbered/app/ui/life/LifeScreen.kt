@@ -32,6 +32,11 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
+import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.domain.WeekTone
 import com.numbered.app.ui.components.CardShape
 import com.numbered.app.ui.components.ScreenPadding
@@ -76,10 +82,12 @@ import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LifeScreen(
     onOpenWeek: (LocalDate) -> Unit,
     onOpenChapter: (Long) -> Unit,
+    onNewChapter: (LocalDate) -> Unit,
     onOpenLines: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -90,7 +98,7 @@ fun LifeScreen(
     val calendarWeek = state.calendar.calendarWeek(state.today)
     var enlarged by rememberSaveable { mutableStateOf(false) }
     var choosingYear by rememberSaveable { mutableStateOf(false) }
-    var showLegend by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     val index = selected?.index ?: state.currentIndex
     val year = state.calendar.weekStart(index).plusDays(3).year
     val firstYear = state.calendar.weekStart(0).plusDays(3).year
@@ -101,6 +109,32 @@ fun LifeScreen(
         val target = yearWindow(state.calendar, value, state.tones.size)
         if (!target.isEmpty()) viewModel.select(target.first)
         enlarged = true
+    }
+
+    if (showHelp) {
+        ModalBottomSheet(
+            onDismissRequest = { showHelp = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding).padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(stringResource(R.string.life_help_title), style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.semantics { heading() })
+                Text(stringResource(R.string.life_help_body), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.life_colour_key), style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.semantics { heading() })
+                Legend()
+                if (!state.gentle) {
+                    Text(stringResource(R.string.life_horizon_note, state.horizonYears),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Button(onClick = { showHelp = false }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.action_done))
+                }
+            }
+        }
     }
 
     if (choosingYear) {
@@ -163,7 +197,13 @@ fun LifeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
-            Spacer(Modifier.height(20.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.life_help_summary), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                IconButton(onClick = { showHelp = true }) {
+                    Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = stringResource(R.string.life_help_title))
+                }
+            }
             GridControls(
                 enlarged = enlarged,
                 onEnlarge = { enlarged = it },
@@ -213,17 +253,7 @@ fun LifeScreen(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = { showLegend = !showLegend }) { Text(stringResource(R.string.life_colour_key)) }
-            if (showLegend) Legend()
-            if (showLegend && !state.gentle) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.life_horizon_note, state.horizonYears),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Chapters(state, onOpenChapter)
+            Chapters(state, onOpenChapter, { onNewChapter(state.calendar.weekStart(index)) })
         }
         selected?.let { week ->
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -301,9 +331,12 @@ private fun LegendMark(label: String) {
 
 /** Every chapter, oldest first, each opening for editing. */
 @Composable
-private fun Chapters(state: LifeGridState, onOpen: (Long) -> Unit) {
+private fun Chapters(state: LifeGridState, onOpen: (Long) -> Unit, onNew: () -> Unit) {
     Spacer(Modifier.height(20.dp))
-    Text(stringResource(R.string.chapters_title), style = MaterialTheme.typography.titleSmall)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.chapters_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        ExplanationHelp(stringResource(R.string.chapter_help_title), stringResource(R.string.chapter_help_details))
+    }
     if (state.chapters.isEmpty()) {
         Text(
             stringResource(R.string.chapters_empty),
@@ -311,6 +344,7 @@ private fun Chapters(state: LifeGridState, onOpen: (Long) -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp),
         )
+        TextButton(onClick = onNew) { Text(stringResource(R.string.chapter_new)) }
         return
     }
     val locale = locale()

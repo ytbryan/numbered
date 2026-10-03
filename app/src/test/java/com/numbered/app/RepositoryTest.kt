@@ -40,6 +40,37 @@ class RepositoryTest {
     private fun titles(start: LocalDate, status: CommitmentStatus? = null) =
         week(start).filter { status == null || it.status == status }.map(Commitment::title)
 
+    @Test fun planningUndoRestoresBothSidesAndRejectsRepeatedUndo() = runBlocking {
+        repository.addCommitment(thisWeek, "Original")
+        val original = week(thisWeek).single()
+        val carry = repository.carryWithUndo(original.id, nextWeek)
+        assertEquals(PlanResult.Ok, repository.undoPlanningMove(requireNotNull(carry.undo)))
+        assertEquals(listOf(original), week(thisWeek))
+        assertEquals(emptyList<Commitment>(), week(nextWeek))
+        assertEquals(PlanResult.Missing, repository.undoPlanningMove(carry.undo))
+        val returned = repository.returnToSomedayWithUndo(original.id)
+        assertEquals(PlanResult.Ok, repository.undoPlanningMove(requireNotNull(returned.undo)))
+        assertEquals(listOf(original), week(thisWeek))
+        assertEquals(0, db.someday().all().size)
+        repository.addSomeday("Idea")
+        val idea = db.someday().all().single()
+        val scheduled = repository.scheduleWithUndo(idea.id, nextWeek)
+        assertEquals(PlanResult.Ok, repository.undoPlanningMove(requireNotNull(scheduled.undo)))
+        assertEquals(listOf(idea), db.someday().all())
+        assertEquals(emptyList<Commitment>(), week(nextWeek))
+    }
+
+    @Test fun planningUndoDoesNotOverfillOrOverwriteChanges() = runBlocking {
+        repository.addCommitment(thisWeek, "Original")
+        val move = repository.carryWithUndo(week(thisWeek).single().id, nextWeek)
+        repeat(3) { repository.addCommitment(thisWeek, "New $it") }
+        assertEquals(PlanResult.WeekFull, repository.undoPlanningMove(requireNotNull(move.undo)))
+        assertEquals(1, week(nextWeek).size)
+        repository.rename(week(nextWeek).single().id, "Edited")
+        assertEquals(PlanResult.Missing, repository.undoPlanningMove(move.undo))
+        assertEquals(listOf("Edited"), titles(nextWeek))
+    }
+
     @Test fun aWeekHoldsThreeCommitments() = runBlocking {
         repeat(3) { assertEquals(PlanResult.Ok, repository.addCommitment(thisWeek, "Thing $it")) }
         assertEquals(PlanResult.WeekFull, repository.addCommitment(thisWeek, "One more"))

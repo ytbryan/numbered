@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -21,7 +20,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
@@ -128,16 +125,15 @@ fun CatchUpScreen(onBack: () -> Unit, onClosed: (Int) -> Unit) {
                         onChoose = { viewModel.choose(commitment, it) },
                     )
                 }
-                OutlinedTextField(
+                ReflectionNoteField(
+                    weekStart = week.weekStart,
                     value = notes[week.weekStart] ?: viewModel.draft(week.weekStart).orEmpty(),
                     onValueChange = {
                         notes[week.weekStart] = it
                         viewModel.saveDraft(week.weekStart, it)
                     },
-                    placeholder = { Text(stringResource(R.string.catch_up_note_placeholder)) },
-                    maxLines = 3,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = stringResource(R.string.catch_up_note_placeholder),
+                    label = stringResource(R.string.catch_up_note_label),
                 )
             }
 

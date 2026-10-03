@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -25,7 +24,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
@@ -142,16 +139,14 @@ fun CloseWeekScreen(weekStart: LocalDate, onBack: () -> Unit, onClosed: (Int) ->
                 stringResource(if (current.closingCurrent) R.string.close_note_label else R.string.close_note_label_past),
                 Modifier.padding(top = 8.dp),
             )
-            OutlinedTextField(
+            ReflectionNoteField(
+                weekStart = current.weekStart,
                 value = note,
                 onValueChange = {
                     note = it
                     viewModel.saveDraft(it)
                 },
-                placeholder = { Text(stringResource(R.string.close_note_placeholder)) },
-                maxLines = 3,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth(),
+                placeholder = stringResource(R.string.close_note_placeholder),
             )
             Text(
                 stringResource(R.string.reflection_draft_help),

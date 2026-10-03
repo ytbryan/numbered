@@ -51,6 +51,7 @@ import com.numbered.app.ui.close.CloseWeekScreen
 import com.numbered.app.ui.life.LifeScreen
 import com.numbered.app.ui.search.SearchScreen
 import com.numbered.app.ui.history.CarryHistoryScreen
+import com.numbered.app.ui.yearreview.YearReviewScreen
 import com.numbered.app.ui.lines.LinesScreen
 import com.numbered.app.ui.profile.DataViewModel
 import com.numbered.app.ui.profile.ImportDialog
@@ -93,6 +94,8 @@ fun closeWeekDeepLink(weekStart: LocalDate): Uri = "$CLOSE_WEEK_DEEP_LINK/${week
 @Serializable data object CatchUpRoute
 
 @Serializable data object LinesRoute
+
+@Serializable data object YearReviewRoute
 
 /** [id] is [ChapterViewModel.NEW] for a chapter starting in the week of [startEpochDay]. */
 @Serializable data class ChapterRoute(val id: Long, val startEpochDay: Long)
@@ -196,6 +199,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                 LifeScreen(
                     onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
                     onOpenChapter = { id -> nav.navigate(ChapterRoute(id, 0)) },
+                    onNewChapter = { nav.navigate(ChapterRoute(ChapterViewModel.NEW, it.toEpochDay())) },
                     onOpenLines = { nav.navigate(LinesRoute) },
                     onOpenSettings = { nav.navigate(SettingsRoute) },
                 )
@@ -249,8 +253,13 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                 )
             }
             composable<LinesRoute> {
-                LinesScreen(onBack = { nav.popBackStack() }, onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) })
+                LinesScreen(
+                    onBack = { nav.popBackStack() },
+                    onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
+                    onYearReview = { nav.navigate(YearReviewRoute) },
+                )
             }
+            composable<YearReviewRoute> { YearReviewScreen(onBack = { nav.popBackStack() }) }
             composable<CatchUpRoute> {
                 CatchUpScreen(
                     onBack = { nav.popBackStack() },
