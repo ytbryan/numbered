@@ -48,7 +48,6 @@ import com.numbered.app.appContainer
 import com.numbered.app.data.NumberedRepository
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CommitmentStatus
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.ui.closeWeekDeepLink
 import com.numbered.app.ui.theme.DarkColors
 import com.numbered.app.ui.theme.LightColors
@@ -71,8 +70,9 @@ data class WidgetState(
     val daysLeft: Int,
     val items: List<WidgetItem>,
     val offerClose: Boolean,
+    val priorityLimit: Int = 3,
 ) {
-    val squaresLeft: Int get() = MAX_COMMITMENTS_PER_WEEK - items.size
+    val squaresLeft: Int get() = (priorityLimit - items.size).coerceAtLeast(0)
 }
 
 /** This week as the widget shows it, or null before setup. */
@@ -89,6 +89,7 @@ suspend fun loadWidgetState(repository: NumberedRepository, clock: Clock): Widge
         items = repository.week(weekStart).first()
             .filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
             .map { WidgetItem(it.id, it.title, it.status == CommitmentStatus.Done) },
+        priorityLimit = profile.prioritiesPerWeek,
         // The same rule as the This week screen.
         offerClose = !closed && daysLeft <= ThisWeekState.CLOSE_OFFER_DAYS,
     )
@@ -137,7 +138,9 @@ suspend fun keepWidgetsCurrent(context: Context, container: AppContainer) {
         .flatMapLatest { (profile, today, locked) ->
             if (locked) return@flatMapLatest flowOf(null)
             val weekStart = profile?.calendar()?.weekStartOf(today) ?: return@flatMapLatest flowOf(null)
-            combine(repository.week(weekStart), repository.review(weekStart), ::Pair)
+            combine(repository.week(weekStart), repository.review(weekStart)) { week, review ->
+                Triple(week, review, profile.prioritiesPerWeek)
+            }
         }
         .distinctUntilChanged()
         .collect {
@@ -197,7 +200,8 @@ fun WidgetContent(state: WidgetState?, locked: Boolean = false) {
             )
         }
         Spacer(GlanceModifier.height(4.dp))
-        state.items.forEach { item ->
+        val shown = if (state.items.size > 3) state.items.take(2) else state.items
+        shown.forEach { item ->
             CheckBox(
                 checked = item.done,
                 onCheckedChange = actionRunCallback<ToggleDone>(actionParametersOf(ToggleDone.CommitmentId to item.id)),
@@ -208,7 +212,15 @@ fun WidgetContent(state: WidgetState?, locked: Boolean = false) {
                 modifier = GlanceModifier.fillMaxWidth(),
             )
         }
-        // Adding and closing share one row, so three commitments still fit a two-row widget.
+        if (state.items.size > shown.size) {
+            Text(
+                context.getString(R.string.widget_more_priorities, state.items.size - shown.size),
+                style = TextStyle(color = colors.primary, fontSize = 12.sp),
+                modifier = GlanceModifier.fillMaxWidth().clickable(openApp),
+                maxLines = 1,
+            )
+        }
+        // Adding and closing share one row so the widget stays compact at larger limits.
         if (state.squaresLeft > 0 || state.offerClose) {
             Row(modifier = GlanceModifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (state.squaresLeft > 0) {

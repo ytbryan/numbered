@@ -70,11 +70,24 @@ class BackupTest {
         assertEquals(lastWeek, snapshot.commitments.first { it.weekStart == thisWeek }.carriedFrom)
     }
 
+    @Test fun planningChoicesAndOtherCompletedThingsTravelInTheExport() = runBlocking {
+        seeded()
+        repository.setPrioritiesPerWeek(5)
+        repository.setOtherThingsDoneEnabled(true)
+        repository.addOtherThingDone(thisWeek, "Helped a neighbour")
+        val snapshot = repository.snapshot()!!
+        val restored = BackupFormat.decode(BackupFormat.encode(snapshot))
+        assertEquals(BackupRead.Ok(snapshot), restored)
+        assertEquals(5, snapshot.profile.prioritiesPerWeek)
+        assertEquals(true, snapshot.profile.otherThingsDoneEnabled)
+        assertEquals(listOf("Helped a neighbour"), snapshot.otherThingsDone.map { it.title })
+    }
+
     @Test fun theFileIsReadableAndStable() {
         val text = BackupFormat.encode(seeded())
         listOf(
             "\"format\": \"numbered\"",
-            "\"version\": 3",
+            "\"version\": 4",
             "\"birthDate\": \"1989-12-02\"",
             "\"firstDayOfWeek\": \"monday\"",
             "\"status\": \"carried\"",
@@ -112,7 +125,7 @@ class BackupTest {
     }
 
     @Test fun newerFilesAreRefusedWithoutGuessing() {
-        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 4, "somethingNew": true}"""))
+        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 5, "somethingNew": true}"""))
     }
 
     @Test fun damagedFilesChangeNothing() {
@@ -127,13 +140,15 @@ class BackupTest {
         ).forEachIndexed { index, damaged -> assertEquals("Case $index", BackupRead.Damaged, BackupFormat.decode(damaged)) }
     }
 
-    @Test fun aWeekCannotArriveWithMoreThanThreeSquares() {
+    @Test fun anExportCanKeepWeeksFromBeforeTheLimitWasLowered() {
         val profile = Profile(birthDate = LocalDate.of(1989, 12, 2), horizonYears = 80, firstDayOfWeek = DayOfWeek.MONDAY, gentle = false, startedOn = thisWeek)
         fun commitment(id: Long, status: CommitmentStatus) = Commitment(id, thisWeek, "Goal $id", status, createdAt = 1)
         val three = Snapshot(profile, (1L..3L).map { commitment(it, CommitmentStatus.Done) } + commitment(4, CommitmentStatus.LetGo), emptyList(), emptyList())
         assertTrue(BackupFormat.decode(BackupFormat.encode(three)) is BackupRead.Ok)
         val four = three.copy(commitments = three.commitments + commitment(5, CommitmentStatus.Open))
-        assertEquals(BackupRead.Damaged, BackupFormat.decode(BackupFormat.encode(four)))
+        assertTrue(BackupFormat.decode(BackupFormat.encode(four)) is BackupRead.Ok)
+        val eleven = four.copy(commitments = (1L..11L).map { commitment(it, CommitmentStatus.Done) })
+        assertEquals(BackupRead.Damaged, BackupFormat.decode(BackupFormat.encode(eleven)))
         val duplicateIds = three.copy(someday = listOf(SomedayItem(1, "A", 1), SomedayItem(1, "B", 1)))
         assertEquals(BackupRead.Damaged, BackupFormat.decode(BackupFormat.encode(duplicateIds)))
         val twoNotes = three.copy(reviews = listOf(WeekReview(thisWeek, "a", 1), WeekReview(thisWeek, "b", 2)))
@@ -224,7 +239,7 @@ class BackupTest {
 
         // A file from before chapters existed: version 1, no chapters key.
         val version1 = BackupFormat.encode(base)
-            .replace("\"version\": 3", "\"version\": 1")
+            .replace("\"version\": 4", "\"version\": 1")
             .replace(Regex(",\\s*\"carriedFromId\": \\d+"), "")
             .replace(Regex(",\\s*\"chapters\": \\[\\s*]"), "")
         assertTrue(!version1.contains("chapters"))
@@ -239,13 +254,15 @@ class BackupTest {
     @Test fun version2FilesKeepWeekProvenanceAndVersion3KeepsIds() {
         val original = seeded()
         val text = BackupFormat.encode(original)
-        val version2 = text.replace("\"version\": 3", "\"version\": 2")
+        val version2 = text.replace("\"version\": 4", "\"version\": 2")
             .replace(Regex(",\\s*\"carriedFromId\": \\d+"), "")
+        val version3 = text.replace("\"version\": 4", "\"version\": 3")
         assertEquals(
             BackupRead.Ok(original.copy(commitments = original.commitments.map { it.copy(carriedFromId = null) })),
             BackupFormat.decode(version2),
         )
         assertEquals(BackupRead.Ok(original), BackupFormat.decode(text))
+        assertEquals(BackupRead.Ok(original), BackupFormat.decode(version3))
         val child = original.commitments.single { it.carriedFromId != null }
         val loop = original.copy(commitments = original.commitments.map {
             if (it.id == child.id) it.copy(carriedFromId = it.id) else it

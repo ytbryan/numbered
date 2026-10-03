@@ -8,7 +8,6 @@ import com.numbered.app.data.WeekClosing
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CloseChoice
 import com.numbered.app.domain.CommitmentStatus
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.ui.NoticeViewModel
 import com.numbered.app.ui.week.ThisWeekViewModel
 import java.time.LocalDate
@@ -75,14 +74,15 @@ class CatchUpViewModel(private val container: AppContainer) : NoticeViewModel() 
         container.today.value,
         repository.summaries(),
         choices,
-    ) { (currentWeek, weeks), today, summaries, chosen ->
+        repository.profile().filterNotNull(),
+    ) { (currentWeek, weeks), today, summaries, chosen, profile ->
         val openIds = weeks.flatMap { week -> week.open.map { it.id } }.toSet()
         CatchUpState(
             today = today,
             currentWeek = currentWeek,
             weeks = weeks,
             choices = chosen.filterKeys { it in openIds },
-            carryRoom = MAX_COMMITMENTS_PER_WEEK - (summaries[currentWeek]?.occupied ?: 0),
+            carryRoom = (profile.prioritiesPerWeek - (summaries[currentWeek]?.occupied ?: 0)).coerceAtLeast(0),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

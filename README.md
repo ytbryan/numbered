@@ -31,6 +31,8 @@ App lock controls access to the app; exported files and Android database backups
 Life offers both a whole-life overview and larger week squares for one calendar year, with year navigation and a shortcut back to this week.
 The selected-week drawer has a [reusable interaction specification](docs/new-app-life-week-drawer.md) for new apps.
 This week names today and highlights it in a seven-day strip ordered by your chosen week start.
+Settings can add a circular or week-by-week bar view of calendar-year progress above This week.
+Years with 53 calendar weeks show all 53 marks.
 Weeks near birthdays and at the six-month midpoint show age-relative labels.
 Lifetime week numbers remain on Life and week detail for orientation.
 Life also shows today and the current calendar week within its year.

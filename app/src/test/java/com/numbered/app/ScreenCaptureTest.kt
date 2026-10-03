@@ -2,7 +2,6 @@ package com.numbered.app
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -54,6 +53,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -135,6 +135,7 @@ class ScreenCaptureTest {
             val app = RuntimeEnvironment.getApplication() as NumberedApp
             app.getSharedPreferences("reminders", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("theme", Context.MODE_PRIVATE).edit().clear().commit()
+            app.getSharedPreferences("week_progress", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -708,6 +709,7 @@ class ScreenCaptureTest {
         awaitText("One week before turning 37")
         capture("this-week-before-birthday")
         tap("Life")
+        compose.onNodeWithContentDescription("Show week details").performClick()
         awaitText("One week before turning 37")
         capture("life-before-birthday")
         tap("One week before turning 37")
@@ -730,13 +732,14 @@ class ScreenCaptureTest {
     @Test fun pastWeekDetail() {
         tap("Life")
         awaitText("Week 1,923 · age 36")
+        compose.onNodeWithContentDescription("Show week details").performClick()
         // Three quick taps with no waiting in between must still move three weeks.
         compose.onNodeWithContentDescription("Previous week").performClick()
         compose.onNodeWithContentDescription("Previous week").performClick()
         compose.onNodeWithContentDescription("Previous week").performClick()
         awaitText("Week 1,920 · age 36")
         capture("life-previous")
-        compose.onNodeWithText("Week 1,920 · age 36").performClick()
+        compose.onNodeWithText("Sep 7", substring = true).performClick()
         capture("week-detail-past")
     }
 
@@ -889,6 +892,52 @@ class ScreenCaptureTest {
         compose.onNodeWithText("Done").performScrollTo().performClick()
     }
 
+    @Test fun weekProgressChoiceUpdatesWeekAndPersists() {
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertDoesNotExist()
+        openSettings()
+        scrollTo("Circle")
+        capture("settings-week-progress")
+        tap("Circle")
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        assertEquals(com.numbered.app.ui.week.WeekProgressStyle.Circle, app.container.weekProgress.style.value)
+        tap("Week")
+        capture("week-progress-circle")
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
+        openSettings()
+        scrollTo("Week bars")
+        tap("Week bars")
+        assertEquals(com.numbered.app.ui.week.WeekProgressStyle.Bars,
+            com.numbered.app.ui.week.WeekProgressStore(app).style.value)
+        tap("Week")
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
+        capture("week-progress-bars")
+        openSettings()
+        scrollTo("Off")
+        tap("Off")
+        tap("Week")
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertDoesNotExist()
+    }
+
+    @Test fun planningSettingsAllowAnotherPriorityAndRecordUnplannedWork() {
+        val repository = (RuntimeEnvironment.getApplication() as NumberedApp).container.repository
+        openSettings()
+        scrollTo("Priorities per week")
+        compose.onNodeWithContentDescription("More priorities per week").performClick()
+        compose.waitUntil(5_000) { runBlocking { repository.currentProfile()?.prioritiesPerWeek == 4 } }
+        scrollTo("Other things done")
+        tap("Other things done")
+        compose.waitUntil(5_000) { runBlocking { repository.currentProfile()?.otherThingsDoneEnabled == true } }
+        capture("settings-planning")
+        tap("Week")
+        scrollTo("Add something done")
+        compose.onNodeWithText("Add something done").assertIsDisplayed()
+        runBlocking { repository.addOtherThingDone(defaultToday.with(DayOfWeek.MONDAY), "Helped a neighbour") }
+        awaitText("Helped a neighbour")
+        scrollTo("Helped a neighbour")
+        capture("week-other-things-done")
+        assertEquals(1, runBlocking { repository.otherThingsDone(defaultToday.with(DayOfWeek.MONDAY)).first().size })
+    }
+
     @Test fun themePickerShowsFiveChoicesAndSavesSelection() {
         openSettings()
         tap("Theme")
@@ -954,10 +1003,10 @@ class ScreenCaptureTest {
         shadowOf(RuntimeEnvironment.getApplication()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         openSettings()
         scrollTo("Reminders")
-        compose.onNodeWithContentDescription("Close the week").performClick()
+        compose.onNodeWithContentDescription("Close the week").performScrollTo().performClick()
         awaitText("Sunday at 7:00")
-        val alarms = shadowOf(RuntimeEnvironment.getApplication().getSystemService(AlarmManager::class.java))
-        compose.waitUntil(5_000) { alarms.scheduledAlarms.isNotEmpty() }
+        val reminders = (RuntimeEnvironment.getApplication() as NumberedApp).container.reminders
+        compose.waitUntil(5_000) { reminders.store.settings.value.closeOn }
         capture("settings-reminders")
         compose.onNodeWithContentDescription("Change the time for Close the week").performClick()
         awaitText("Remind me at")

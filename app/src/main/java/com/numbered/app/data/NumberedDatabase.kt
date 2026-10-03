@@ -10,7 +10,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Database(
-    entities = [Profile::class, Commitment::class, SomedayItem::class, WeekReview::class, Chapter::class],
+    entities = [Profile::class, Commitment::class, OtherThingDone::class, SomedayItem::class, WeekReview::class, Chapter::class],
     version = NumberedDatabase.VERSION,
     exportSchema = true,
 )
@@ -18,13 +18,14 @@ import java.time.LocalDate
 abstract class NumberedDatabase : RoomDatabase() {
     abstract fun profiles(): ProfileDao
     abstract fun commitments(): CommitmentDao
+    abstract fun otherThingsDone(): OtherThingDoneDao
     abstract fun someday(): SomedayDao
     abstract fun reviews(): WeekReviewDao
     abstract fun chapters(): ChapterDao
 
     companion object {
         const val FILE_NAME = "numbered.db"
-        const val VERSION = 3
+        const val VERSION = 4
 
         fun open(context: Context, name: String = FILE_NAME): NumberedDatabase =
             Room.databaseBuilder(context, NumberedDatabase::class.java, name).addMigrations(*MIGRATIONS).build()

@@ -61,6 +61,36 @@ interface CommitmentDao {
 }
 
 @Dao
+interface OtherThingDoneDao {
+    @Query("SELECT * FROM other_things_done ORDER BY weekStart DESC, id")
+    fun observeAll(): Flow<List<OtherThingDone>>
+
+    @Query("SELECT * FROM other_things_done WHERE weekStart = :weekStart ORDER BY id")
+    fun observeWeek(weekStart: LocalDate): Flow<List<OtherThingDone>>
+
+    @Query("SELECT * FROM other_things_done ORDER BY weekStart, id")
+    suspend fun all(): List<OtherThingDone>
+
+    @Insert
+    suspend fun insert(item: OtherThingDone): Long
+
+    @Insert
+    suspend fun insertAll(items: List<OtherThingDone>)
+
+    @Update
+    suspend fun update(item: OtherThingDone)
+
+    @Query("DELETE FROM other_things_done WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM other_things_done")
+    suspend fun deleteAll()
+
+    @Query("SELECT * FROM other_things_done WHERE id = :id")
+    suspend fun get(id: Long): OtherThingDone?
+}
+
+@Dao
 interface SomedayDao {
     @Query("SELECT * FROM someday ORDER BY createdAt DESC, id")
     fun observeAll(): Flow<List<SomedayItem>>

@@ -3,7 +3,8 @@ package com.numbered.app.data
 import androidx.room.withTransaction
 import com.numbered.app.domain.CloseChoice
 import com.numbered.app.domain.CommitmentStatus
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
+import com.numbered.app.domain.DEFAULT_PRIORITIES_PER_WEEK
+import com.numbered.app.domain.MAX_PRIORITIES_PER_WEEK
 import com.numbered.app.domain.WeekSummary
 import java.time.Clock
 import java.time.DayOfWeek
@@ -28,13 +29,14 @@ data class PlanningMove(val result: PlanResult, val undo: PlanningUndo? = null)
 /** One week's close: its note, and what happens to each unfinished commitment. */
 data class WeekClosing(val weekStart: LocalDate, val note: String, val choices: Map<Long, CloseChoice>)
 
-/** Every write that must respect a week's three squares goes through one transaction here. */
+/** Every write that must respect a week's chosen limit goes through one transaction here. */
 class NumberedRepository(
     private val db: NumberedDatabase,
     private val clock: Clock,
 ) {
     private val profiles = db.profiles()
     private val commitments = db.commitments()
+    private val otherThingsDone = db.otherThingsDone()
     private val someday = db.someday()
     private val reviews = db.reviews()
     private val chapters = db.chapters()
@@ -42,6 +44,21 @@ class NumberedRepository(
     fun profile(): Flow<Profile?> = profiles.observe()
 
     suspend fun currentProfile(): Profile? = profiles.get()
+
+    suspend fun setPrioritiesPerWeek(prioritiesPerWeek: Int) {
+        require(prioritiesPerWeek in 1..MAX_PRIORITIES_PER_WEEK)
+        db.withTransaction {
+            profiles.get()?.let { profiles.upsert(it.copy(prioritiesPerWeek = prioritiesPerWeek)) }
+        }
+    }
+
+    suspend fun setOtherThingsDoneEnabled(enabled: Boolean) {
+        db.withTransaction {
+            profiles.get()?.let { profiles.upsert(it.copy(otherThingsDoneEnabled = enabled)) }
+        }
+    }
+
+    private suspend fun priorityLimit(): Int = profiles.get()?.prioritiesPerWeek ?: DEFAULT_PRIORITIES_PER_WEEK
 
     /** Creates the profile, or updates the personal details while keeping the week layout fixed. */
     suspend fun saveProfile(birthDate: LocalDate, horizonYears: Int, gentle: Boolean, firstDayOfWeek: DayOfWeek) {
@@ -65,6 +82,33 @@ class NumberedRepository(
     fun somedayAll(): Flow<List<SomedayItem>> = someday.observeAll()
 
     fun week(weekStart: LocalDate): Flow<List<Commitment>> = commitments.observeWeek(weekStart)
+
+    fun otherThingsDone(weekStart: LocalDate): Flow<List<OtherThingDone>> = otherThingsDone.observeWeek(weekStart)
+
+    fun allOtherThingsDone(): Flow<List<OtherThingDone>> = otherThingsDone.observeAll()
+
+    suspend fun addOtherThingDone(weekStart: LocalDate, title: String): PlanResult {
+        val clean = title.cleanTitle() ?: return PlanResult.Blank
+        db.withTransaction {
+            otherThingsDone.insert(OtherThingDone(weekStart = weekStart, title = clean, createdAt = clock.millis()))
+        }
+        return PlanResult.Ok
+    }
+
+    suspend fun renameOtherThingDone(id: Long, title: String): PlanResult {
+        val clean = title.cleanTitle() ?: return PlanResult.Blank
+        return db.withTransaction {
+            val item = otherThingsDone.get(id) ?: return@withTransaction PlanResult.Missing
+            otherThingsDone.update(item.copy(title = clean))
+            PlanResult.Ok
+        }
+    }
+
+    suspend fun removeOtherThingDone(id: Long): OtherThingDone? = db.withTransaction {
+        otherThingsDone.get(id)?.also { otherThingsDone.delete(id) }
+    }
+
+    suspend fun restoreOtherThingDone(item: OtherThingDone) = db.withTransaction { otherThingsDone.insert(item) }
 
     fun summaries(): Flow<Map<LocalDate, WeekSummary>> = commitments.observeStatuses()
         .map { rows -> rows.groupBy(WeekStatusRow::weekStart) { it.status }.mapValues { WeekSummary.of(it.value) } }
@@ -109,7 +153,7 @@ class NumberedRepository(
     suspend fun addCommitment(weekStart: LocalDate, title: String): PlanResult {
         val clean = title.cleanTitle() ?: return PlanResult.Blank
         return db.withTransaction {
-            if (commitments.occupied(weekStart) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanResult.WeekFull
+            if (commitments.occupied(weekStart) >= priorityLimit()) return@withTransaction PlanResult.WeekFull
             commitments.insert(Commitment(weekStart = weekStart, title = clean, createdAt = clock.millis()))
             PlanResult.Ok
         }
@@ -144,7 +188,7 @@ class NumberedRepository(
     /** Puts a removed commitment back exactly as it was, if its week still has room. */
     suspend fun restore(commitment: Commitment): PlanResult = db.withTransaction {
         val occupies = commitment.status == CommitmentStatus.Open || commitment.status == CommitmentStatus.Done
-        if (occupies && commitments.occupied(commitment.weekStart) >= MAX_COMMITMENTS_PER_WEEK) {
+        if (occupies && commitments.occupied(commitment.weekStart) >= priorityLimit()) {
             return@withTransaction PlanResult.WeekFull
         }
         commitments.insert(commitment)
@@ -159,7 +203,7 @@ class NumberedRepository(
         if (original.status != CommitmentStatus.Open || original.weekStart >= toWeek) {
             return@withTransaction PlanningMove(PlanResult.Missing)
         }
-        if (commitments.occupied(toWeek) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanningMove(PlanResult.WeekFull)
+        if (commitments.occupied(toWeek) >= priorityLimit()) return@withTransaction PlanningMove(PlanResult.WeekFull)
         val createdId = carryUnchecked(original, toWeek, clock.millis())
         PlanningMove(PlanResult.Ok, PlanningUndo(
             originalCommitment = original,
@@ -182,7 +226,7 @@ class NumberedRepository(
     suspend fun scheduleWithUndo(id: Long, weekStart: LocalDate): PlanningMove = db.withTransaction {
         val item = someday.get(id)?.takeIf { it.letGoAt == null }
             ?: return@withTransaction PlanningMove(PlanResult.Missing)
-        if (commitments.occupied(weekStart) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanningMove(PlanResult.WeekFull)
+        if (commitments.occupied(weekStart) >= priorityLimit()) return@withTransaction PlanningMove(PlanResult.WeekFull)
         someday.delete(id)
         val createdId = commitments.insert(Commitment(weekStart = weekStart, title = item.title, createdAt = clock.millis()))
         PlanningMove(PlanResult.Ok, PlanningUndo(originalSomeday = item, createdCommitment = commitments.get(createdId)))
@@ -196,7 +240,7 @@ class NumberedRepository(
             undo.originalSomeday?.let { someday.get(it.id) != null } == true
         ) return@withTransaction PlanResult.Missing
         undo.originalCommitment?.let {
-            if (commitments.occupied(it.weekStart) >= MAX_COMMITMENTS_PER_WEEK) return@withTransaction PlanResult.WeekFull
+            if (commitments.occupied(it.weekStart) >= priorityLimit()) return@withTransaction PlanResult.WeekFull
         }
         undo.createdCommitment?.let { commitments.delete(it.id) }
         undo.createdSomeday?.let { someday.delete(it.id) }
@@ -268,7 +312,7 @@ class NumberedRepository(
                 unfinished.any { closing.choices[it.id] == CloseChoice.Carry && it.weekStart >= carryTo }
             }) return@withTransaction PlanResult.Missing
         val carrying = open.entries.sumOf { (closing, unfinished) -> unfinished.count { closing.choices[it.id] == CloseChoice.Carry } }
-        if (carrying > 0 && commitments.occupied(carryTo) + carrying > MAX_COMMITMENTS_PER_WEEK) {
+        if (carrying > 0 && commitments.occupied(carryTo) + carrying > priorityLimit()) {
             return@withTransaction PlanResult.WeekFull
         }
         open.forEach { (closing, unfinished) ->
@@ -289,7 +333,8 @@ class NumberedRepository(
     /** Everything stored, read in one transaction so the copy is consistent. Null before setup. */
     suspend fun snapshot(): Snapshot? = db.withTransaction {
         profiles.get()?.let { profile ->
-            Snapshot(profile, commitments.all(), someday.all(), reviews.all(), chapters.all(), savedAt = clock.millis())
+            Snapshot(profile, commitments.all(), someday.all(), reviews.all(), chapters.all(),
+                otherThingsDone = otherThingsDone.all(), savedAt = clock.millis())
         }
     }
 
@@ -297,11 +342,13 @@ class NumberedRepository(
     suspend fun replaceAll(snapshot: Snapshot) {
         db.withTransaction {
             commitments.deleteAll()
+            otherThingsDone.deleteAll()
             someday.deleteAll()
             reviews.deleteAll()
             chapters.deleteAll()
             profiles.upsert(snapshot.profile)
             commitments.insertAll(snapshot.commitments)
+            otherThingsDone.insertAll(snapshot.otherThingsDone)
             someday.insertAll(snapshot.someday)
             reviews.insertAll(snapshot.reviews)
             chapters.insertAll(snapshot.chapters)

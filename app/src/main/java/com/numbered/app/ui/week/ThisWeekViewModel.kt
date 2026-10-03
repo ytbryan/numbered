@@ -4,12 +4,13 @@ import androidx.lifecycle.viewModelScope
 import com.numbered.app.AppContainer
 import com.numbered.app.R
 import com.numbered.app.data.Commitment
+import com.numbered.app.data.OtherThingDone
 import com.numbered.app.data.PlanResult
 import com.numbered.app.data.SomedayItem
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CommitmentStatus
+import com.numbered.app.domain.CalendarWeek
 import com.numbered.app.domain.LifeWeekMoment
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.domain.WeekSummary
 import com.numbered.app.domain.isStale
 import com.numbered.app.ui.Notice
@@ -36,8 +37,14 @@ data class ThisWeekState(
     val zone: ZoneId,
     val weekStart: LocalDate,
     val moment: LifeWeekMoment?,
+    val lifeWeekNumber: Int,
+    val age: Int,
+    val calendarWeek: CalendarWeek,
     val daysLeft: Int,
     val commitments: List<Commitment>,
+    val otherThingsDone: List<OtherThingDone>,
+    val otherThingsDoneEnabled: Boolean,
+    val priorityLimit: Int,
     /** The one past week to close, when it is the only one. */
     val unclosed: UnclosedWeek?,
     val catchUp: CatchUp?,
@@ -48,7 +55,7 @@ data class ThisWeekState(
     val staleSomeday: Int,
     val someday: List<SomedayItem>,
 ) {
-    val squaresLeft: Int get() = MAX_COMMITMENTS_PER_WEEK - commitments.size
+    val squaresLeft: Int get() = (priorityLimit - commitments.size).coerceAtLeast(0)
     val doneCount: Int get() = commitments.count { it.status == CommitmentStatus.Done }
 
     /** The weekly close is offered in the last three days, and whenever it has already begun. */
@@ -74,7 +81,8 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
             repository.summaries(),
             repository.reviews(),
             repository.somedayWaiting(),
-        ) { week, summaries, reviews, someday ->
+            repository.otherThingsDone(weekStart),
+        ) { week, summaries, reviews, someday, otherDone ->
             val now = container.today.nowMillis()
             val unclosed = unclosedWeeks(summaries, reviews.keys, weekStart)
             ThisWeekState(
@@ -82,8 +90,14 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
                 zone = container.clock.zone,
                 weekStart = weekStart,
                 moment = calendar.momentOf(weekStart),
+                lifeWeekNumber = calendar.indexOf(today) + 1,
+                age = calendar.ageOn(today),
+                calendarWeek = calendar.calendarWeek(today),
                 daysLeft = ChronoUnit.DAYS.between(today, weekStart.plusDays(6)).toInt() + 1,
                 commitments = week.filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done },
+                otherThingsDone = otherDone,
+                otherThingsDoneEnabled = profile.otherThingsDoneEnabled,
+                priorityLimit = profile.prioritiesPerWeek,
                 unclosed = unclosed.singleOrNull()?.let { start ->
                     UnclosedWeek(start, summaries[start]?.open ?: 0)
                 },
@@ -103,6 +117,22 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
     fun add(title: String) = launchWrite {
         val weekStart = state.value?.weekStart ?: return@launchWrite
         report(repository.addCommitment(weekStart, title))
+    }
+
+    fun addOtherThingDone(title: String) = launchWrite {
+        val weekStart = state.value?.weekStart ?: return@launchWrite
+        report(repository.addOtherThingDone(weekStart, title))
+    }
+
+    fun renameOtherThingDone(item: OtherThingDone, title: String) = launchWrite {
+        report(repository.renameOtherThingDone(item.id, title))
+    }
+
+    fun removeOtherThingDone(item: OtherThingDone) = launchWrite {
+        val removed = repository.removeOtherThingDone(item.id) ?: return@launchWrite
+        notify(Notice(R.string.notice_removed, listOf(removed.title)) {
+            launchWrite { repository.restoreOtherThingDone(removed) }
+        })
     }
 
     fun addFromSomeday(item: SomedayItem) = launchWrite {

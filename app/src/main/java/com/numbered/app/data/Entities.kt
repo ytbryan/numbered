@@ -5,6 +5,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.domain.LifeCalendar
+import com.numbered.app.domain.DEFAULT_PRIORITIES_PER_WEEK
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -19,6 +20,8 @@ data class Profile(
     /** Hides the weeks ahead and the horizon count. */
     val gentle: Boolean,
     val startedOn: LocalDate,
+    val prioritiesPerWeek: Int = DEFAULT_PRIORITIES_PER_WEEK,
+    val otherThingsDoneEnabled: Boolean = false,
 ) {
     companion object {
         const val SINGLE_ROW = 1
@@ -39,6 +42,15 @@ data class Commitment(
     val carriedFrom: LocalDate? = null,
     /** Stable provenance, including after either entry is renamed or removed. */
     val carriedFromId: Long? = null,
+)
+
+/** A completed thing recorded after the fact, separate from the week's chosen priorities. */
+@Entity(tableName = "other_things_done", indices = [Index("weekStart")])
+data class OtherThingDone(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val weekStart: LocalDate,
+    val title: String,
+    val createdAt: Long,
 )
 
 @Entity(tableName = "someday")

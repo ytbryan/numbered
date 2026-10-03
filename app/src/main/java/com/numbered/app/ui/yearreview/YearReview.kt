@@ -4,6 +4,7 @@ import android.content.res.Resources
 import com.numbered.app.R
 import com.numbered.app.data.Chapter
 import com.numbered.app.data.Commitment
+import com.numbered.app.data.OtherThingDone
 import com.numbered.app.data.Snapshot
 import com.numbered.app.data.WeekReview
 import com.numbered.app.data.calendar
@@ -22,10 +23,11 @@ internal data class YearReview(
     val inProgress: Boolean,
     val weeksClosed: Int,
     val completed: List<Commitment>,
+    val otherThingsDone: List<OtherThingDone> = emptyList(),
     val notes: List<WeekReview>,
     val chapters: List<ReviewChapter>,
 ) {
-    val hasContent: Boolean get() = weeksClosed > 0 || completed.isNotEmpty() || chapters.isNotEmpty()
+    val hasContent: Boolean get() = weeksClosed > 0 || completed.isNotEmpty() || otherThingsDone.isNotEmpty() || chapters.isNotEmpty()
     val fileName: String get() = "numbered-$year-review.txt"
 }
 
@@ -49,6 +51,8 @@ internal fun yearReview(snapshot: Snapshot, year: Int, today: LocalDate): YearRe
         weeksClosed = closed.size,
         completed = snapshot.commitments.filter { belongs(it.weekStart) && it.status == CommitmentStatus.Done }
             .sortedWith(compareBy<Commitment> { it.weekStart }.thenBy { it.id }),
+        otherThingsDone = snapshot.otherThingsDone.filter { belongs(it.weekStart) }
+            .sortedWith(compareBy<OtherThingDone> { it.weekStart }.thenBy { it.id }),
         notes = closed.filter { it.note.isNotBlank() }.sortedBy { it.weekStart },
         chapters = snapshot.chapters.mapNotNull { chapter ->
             val start = maxOf(chapter.startWeek, first)
@@ -64,6 +68,7 @@ internal fun reviewYears(snapshot: Snapshot, today: LocalDate): List<Int> {
     return buildSet {
         add(yearOf(currentWeek))
         snapshot.commitments.filter { it.weekStart <= currentWeek }.forEach { add(yearOf(it.weekStart)) }
+        snapshot.otherThingsDone.filter { it.weekStart <= currentWeek }.forEach { add(yearOf(it.weekStart)) }
         snapshot.reviews.filter { it.weekStart <= currentWeek }.forEach { add(yearOf(it.weekStart)) }
         snapshot.chapters.filter { it.startWeek <= currentWeek }.forEach { chapter ->
             val first = yearOf(chapter.startWeek)
@@ -79,7 +84,7 @@ internal fun reviewYears(snapshot: Snapshot, today: LocalDate): List<Int> {
 internal fun YearReview.summary(resources: Resources): String = resources.getString(
     R.string.lines_year_summary,
     resources.getQuantityString(R.plurals.lines_weeks_closed, weeksClosed, weeksClosed),
-    resources.getQuantityString(R.plurals.lines_things_done, completed.size, completed.size),
+    resources.getQuantityString(R.plurals.lines_things_done, completed.size + otherThingsDone.size, completed.size + otherThingsDone.size),
     resources.getQuantityString(R.plurals.lines_count, notes.size, notes.size),
 )
 
@@ -95,6 +100,15 @@ internal fun YearReview.document(resources: Resources, locale: Locale): String {
             appendLine()
             appendLine(resources.getString(R.string.review_completed))
             completed.groupBy { it.weekStart }.forEach { (week, entries) ->
+                appendLine(range(week, week.plusDays(6)))
+                entries.forEach { appendLine("- ${it.title}") }
+                appendLine()
+            }
+        }
+        if (otherThingsDone.isNotEmpty()) {
+            appendLine()
+            appendLine(resources.getString(R.string.other_things_done))
+            otherThingsDone.groupBy { it.weekStart }.forEach { (week, entries) ->
                 appendLine(range(week, week.plusDays(6)))
                 entries.forEach { appendLine("- ${it.title}") }
                 appendLine()

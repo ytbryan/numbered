@@ -149,7 +149,7 @@ class ReminderTest {
         runBlocking { container.reminders.deliver(Reminder.Plan) }
         val posted = notifications.allNotifications.single()
         assertEquals("What deserves this week?", posted.extras.getString("android.title"))
-        assertEquals("Week 1,924 has begun. Choose up to three things.", posted.extras.getString("android.text"))
+        assertEquals("Week 1,924 has begun. Choose your priorities.", posted.extras.getString("android.text"))
         assertNull(shadowOf(posted.contentIntent).savedIntent.data)
 
         app.getSystemService(NotificationManager::class.java).cancelAll()

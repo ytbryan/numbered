@@ -18,20 +18,24 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
+import com.numbered.app.appContainer
 import com.numbered.app.data.Commitment
 import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.ui.NoticeEffect
@@ -39,6 +43,7 @@ import com.numbered.app.ui.components.AddCommitmentSheet
 import com.numbered.app.ui.components.CommitmentCard
 import com.numbered.app.ui.components.EmptySquare
 import com.numbered.app.ui.components.MenuAction
+import com.numbered.app.ui.components.OtherThingsDoneSection
 import com.numbered.app.ui.components.PromptCard
 import com.numbered.app.ui.components.RenameDialog
 import com.numbered.app.ui.components.commitmentSubtitle
@@ -64,19 +69,29 @@ fun ThisWeekScreen(
 ) {
     val viewModel = containerViewModel { ThisWeekViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val progressStyle by LocalContext.current.appContainer.weekProgress.style.collectAsStateWithLifecycle()
     NoticeEffect(viewModel.notices)
     val current = state ?: return
     var adding by rememberSaveable { mutableStateOf(false) }
     var renamingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val listState = rememberLazyListState()
+    var shownProgressStyle by rememberSaveable { mutableStateOf(progressStyle) }
+    LaunchedEffect(progressStyle) {
+        if (shownProgressStyle != progressStyle) {
+            listState.scrollToItem(0)
+            shownProgressStyle = progressStyle
+        }
+    }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars),
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, top = 24.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item(key = "header") { WeekHeader(current, onSearch) }
+        item(key = "header") { WeekHeader(current, progressStyle, onSearch) }
         current.catchUp?.let { catchUp ->
             item(key = "catch-up") {
                 PromptCard(
@@ -133,6 +148,17 @@ fun ThisWeekScreen(
                     subtitle = pluralString(R.plurals.squares_left, current.squaresLeft, current.squaresLeft),
                     onClick = { adding = true },
                     modifier = Modifier.animateItem(),
+                )
+            }
+        }
+        if (current.otherThingsDoneEnabled || current.otherThingsDone.isNotEmpty()) {
+            item(key = "other-things-done") {
+                OtherThingsDoneSection(
+                    items = current.otherThingsDone,
+                    canAdd = current.otherThingsDoneEnabled,
+                    onAdd = viewModel::addOtherThingDone,
+                    onRename = viewModel::renameOtherThingDone,
+                    onRemove = viewModel::removeOtherThingDone,
                 )
             }
         }
@@ -212,8 +238,9 @@ fun ThisWeekScreen(
 }
 
 @Composable
-private fun WeekHeader(state: ThisWeekState, onSearch: () -> Unit) {
-    Column(Modifier.padding(bottom = 10.dp)) {
+private fun WeekHeader(state: ThisWeekState, progressStyle: WeekProgressStyle, onSearch: () -> Unit) {
+    Column(Modifier.padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        WeekProgressVisual(state, progressStyle)
         state.moment?.let {
             Text(
                 text = lifeWeekMomentText(it),

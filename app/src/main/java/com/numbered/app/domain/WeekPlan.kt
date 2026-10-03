@@ -2,8 +2,9 @@ package com.numbered.app.domain
 
 import java.time.Duration
 
-/** Each week holds at most this many commitments. Choosing less is the product. */
-const val MAX_COMMITMENTS_PER_WEEK = 3
+/** Three is the starting point; a person can choose a different weekly limit in Settings. */
+const val DEFAULT_PRIORITIES_PER_WEEK = 3
+const val MAX_PRIORITIES_PER_WEEK = 10
 
 /** Someday items untouched for this long ask whether they still deserve a square. */
 val SOMEDAY_REVIEW_AFTER: Duration = Duration.ofDays(12 * 7)

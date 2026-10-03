@@ -173,6 +173,12 @@ fun YearReviewScreen(onBack: () -> Unit, onOpenWeek: (LocalDate) -> Unit) {
                     item(key = "completed-$month") { MonthSection(review.year, month, entries, review.today) }
                 }
             }
+            if (review.otherThingsDone.isNotEmpty()) {
+                item(key = "other-things-done") { ReviewHeading(stringResource(R.string.other_things_done)) }
+                items(review.otherThingsDone.asReversed(), key = { "other-${it.id}" }) { entry ->
+                    NoteRow(entry.title, weekRange(entry.weekStart, review.today)) { onOpenWeek(entry.weekStart) }
+                }
+            }
         }
         if (choosing) AlertDialog(
             onDismissRequest = { choosing = false },

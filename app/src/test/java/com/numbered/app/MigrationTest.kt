@@ -121,6 +121,25 @@ class MigrationTest {
         }
     }
 
+    @Test fun version3AddsPlanningDefaultsAndKeepsExistingWeeks() {
+        val name = "migration-3-4.db"
+        helper.createDatabase(name, 3).use(::seedVersion1)
+        helper.runMigrationsAndValidate(name, 4, true, *MIGRATIONS).close()
+        val db = NumberedDatabase.open(context, name)
+        try {
+            runBlocking {
+                val profile = db.profiles().get()!!
+                assertEquals(3, profile.prioritiesPerWeek)
+                assertEquals(false, profile.otherThingsDoneEnabled)
+                assertEquals(2, db.commitments().week(WEEK).size)
+                assertEquals(emptyList<Any>(), db.otherThingsDone().all())
+            }
+        } finally {
+            db.close()
+            context.deleteDatabase(name)
+        }
+    }
+
     private fun seedVersion1(db: SupportSQLiteDatabase) {
         val week = WEEK.toEpochDay()
         db.execSQL(
@@ -148,6 +167,7 @@ class MigrationTest {
             1 to "23828907e852728555f8f59d986c2f97",
             2 to "b8169d580e770840a3abf439edef752a",
             3 to "11e9ceb29e61c4a6b91d2cc5c572eb8c",
+            4 to "d4c7b95f171c5f0fde4f8e1edf136132",
         )
     }
 }

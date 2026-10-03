@@ -38,4 +38,15 @@ internal val MIGRATIONS: Array<Migration> = arrayOf(
             )
         }
     },
+    object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `profile` ADD COLUMN `prioritiesPerWeek` INTEGER NOT NULL DEFAULT 3")
+            db.execSQL("ALTER TABLE `profile` ADD COLUMN `otherThingsDoneEnabled` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `other_things_done` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`weekStart` INTEGER NOT NULL, `title` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_other_things_done_weekStart` ON `other_things_done` (`weekStart`)")
+        }
+    },
 )

@@ -2,7 +2,8 @@ package com.numbered.app.data
 
 import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.domain.LifeCalendar
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
+import com.numbered.app.domain.DEFAULT_PRIORITIES_PER_WEEK
+import com.numbered.app.domain.MAX_PRIORITIES_PER_WEEK
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Base64
@@ -17,6 +18,7 @@ data class Snapshot(
     val someday: List<SomedayItem>,
     val reviews: List<WeekReview>,
     val chapters: List<Chapter> = emptyList(),
+    val otherThingsDone: List<OtherThingDone> = emptyList(),
     /** When the copy was taken, for files read back in. */
     val savedAt: Long = 0,
 )
@@ -52,8 +54,8 @@ sealed interface BackupRead {
  */
 object BackupFormat {
     const val NAME = "numbered"
-    /** 2 added chapters; 3 adds stable carry-over links. */
-    const val VERSION = 3
+    /** 2 added chapters; 3 added carry links; 4 adds planning preferences and other completed things. */
+    const val VERSION = 4
 
     /** Larger than decades of weekly use, and small enough to refuse a wrongly picked video. */
     const val MAX_BYTES = 16 * 1024 * 1024
@@ -98,7 +100,8 @@ object BackupFormat {
             version = VERSION,
             savedAt = snapshot.savedAt,
             profile = snapshot.profile.let {
-                ProfileJson(it.birthDate.toString(), it.horizonYears, it.firstDayOfWeek.key, it.gentle, it.startedOn.toString())
+                ProfileJson(it.birthDate.toString(), it.horizonYears, it.firstDayOfWeek.key, it.gentle,
+                    it.startedOn.toString(), it.prioritiesPerWeek, it.otherThingsDoneEnabled)
             },
             commitments = snapshot.commitments.map {
                 CommitmentJson(
@@ -117,6 +120,9 @@ object BackupFormat {
             chapters = snapshot.chapters.map {
                 ChapterJson(it.id, it.title, it.startWeek.toString(), it.endWeek?.toString(), it.createdAt)
             },
+            otherThingsDone = snapshot.otherThingsDone.map {
+                OtherThingDoneJson(it.id, it.weekStart.toString(), it.title, it.createdAt)
+            },
         ),
     )
 
@@ -126,9 +132,10 @@ object BackupFormat {
             ?: return if (SIGNATURE.containsMatchIn(text.take(SIGNATURE_WINDOW))) BackupRead.Damaged else BackupRead.NotABackup
         if (head.format != NAME || head.version == null) return BackupRead.NotABackup
         if (head.version > VERSION) return BackupRead.TooNew
+        if (head.version < 1) return BackupRead.Damaged
         if (head.encryption != null) return BackupRead.Locked(text)
         val snapshot = runCatching { reader.decodeFromString(BackupJson.serializer(), text).toSnapshot() }.getOrNull()
-        return if (snapshot != null && snapshot.followsTheRules()) BackupRead.Ok(snapshot) else BackupRead.Damaged
+        return if (snapshot != null && snapshot.followsTheRules(head.version)) BackupRead.Ok(snapshot) else BackupRead.Damaged
     }
 
     /** Opens a protected file. Slow on purpose, so call it off the main thread. */
@@ -156,6 +163,8 @@ object BackupFormat {
             firstDayOfWeek = dayOf(profile.firstDayOfWeek),
             gentle = profile.gentle,
             startedOn = LocalDate.parse(profile.startedOn),
+            prioritiesPerWeek = profile.prioritiesPerWeek,
+            otherThingsDoneEnabled = profile.otherThingsDoneEnabled,
         ),
         commitments = commitments.map {
             Commitment(
@@ -174,11 +183,14 @@ object BackupFormat {
         chapters = chapters.map {
             Chapter(it.id, it.title, LocalDate.parse(it.startWeek), it.endWeek?.let(LocalDate::parse), it.createdAt)
         },
+        otherThingsDone = otherThingsDone.map {
+            OtherThingDone(it.id, LocalDate.parse(it.weekStart), it.title, it.createdAt)
+        },
         savedAt = savedAt,
     )
 
     /** The same rules the app keeps while it runs, so an imported copy cannot break a screen. */
-    private fun Snapshot.followsTheRules(): Boolean {
+    private fun Snapshot.followsTheRules(version: Int): Boolean {
         val firstDay = profile.firstDayOfWeek
         fun LocalDate.startsWeek() = dayOfWeek == firstDay
         val occupiedPerWeek = commitments
@@ -193,10 +205,15 @@ object BackupFormat {
                 (parent == null || (parent.status == CommitmentStatus.Carried && parent.weekStart == entry.carriedFrom))
         } && commitments.mapNotNull { it.carriedFromId }.let { it.toSet().size == it.size }
         return validLinks && profile.horizonYears in LifeCalendar.HORIZON_CHOICES &&
+            profile.prioritiesPerWeek in 1..MAX_PRIORITIES_PER_WEEK &&
+            (version >= 4 || (profile.prioritiesPerWeek == DEFAULT_PRIORITIES_PER_WEEK &&
+                !profile.otherThingsDoneEnabled && otherThingsDone.isEmpty())) &&
             !profile.birthDate.isAfter(profile.startedOn) &&
             commitments.all { it.weekStart.startsWeek() && it.carriedFrom?.startsWeek() != false && it.title.isCleanTitle() } &&
             commitments.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
-            occupiedPerWeek.values.all { it <= MAX_COMMITMENTS_PER_WEEK } &&
+            occupiedPerWeek.values.all { it <= if (version < 4) DEFAULT_PRIORITIES_PER_WEEK else MAX_PRIORITIES_PER_WEEK } &&
+            otherThingsDone.all { it.weekStart.startsWeek() && it.title.isCleanTitle() } &&
+            otherThingsDone.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
             someday.all { it.title.isCleanTitle() } &&
             someday.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
             reviews.all { it.weekStart.startsWeek() } &&
@@ -247,6 +264,8 @@ private class BackupJson(
     val weekNotes: List<WeekNoteJson>,
     /** Added in version 2, so absent from version 1 files. */
     val chapters: List<ChapterJson> = emptyList(),
+    /** Added in version 4. */
+    val otherThingsDone: List<OtherThingDoneJson> = emptyList(),
 )
 
 @Serializable
@@ -256,6 +275,8 @@ private class ProfileJson(
     val firstDayOfWeek: String,
     val gentle: Boolean,
     val startedOn: String,
+    val prioritiesPerWeek: Int = DEFAULT_PRIORITIES_PER_WEEK,
+    val otherThingsDoneEnabled: Boolean = false,
 )
 
 @Serializable
@@ -288,6 +309,9 @@ private class ChapterJson(
     val endWeek: String? = null,
     val createdAt: Long,
 )
+
+@Serializable
+private class OtherThingDoneJson(val id: Long, val weekStart: String, val title: String, val createdAt: Long)
 
 @Serializable
 private class WeekNoteJson(val weekStart: String, val note: String, val closedAt: Long)

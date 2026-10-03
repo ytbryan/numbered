@@ -54,6 +54,16 @@
 
     <!-- This week -->
     <string name="this_week">This week</string>
+    <string name="week_visual_setting">Year progress on Week</string>
+    <string name="week_visual_summary">Show where this week falls in the year.</string>
+    <string name="week_visual_off">Off</string>
+    <string name="week_visual_circle">Circle</string>
+    <string name="week_visual_bars">Week bars</string>
+    <string name="week_visual_position">%1$d of %2$d</string>
+    <string name="week_visual_total">of %1$d</string>
+    <string name="week_visual_range">Week of %1$s</string>
+    <string name="week_visual_accessibility">Week %1$d of %2$d in %3$d</string>
+    <string name="week_visual_full_accessibility">%1$s. %2$s. %3$s.</string>
     <string name="last_day">Last day</string>
     <plurals name="days_left">
         <item quantity="one">%d day left</item>
@@ -61,6 +71,18 @@
     </plurals>
     <string name="add_first">Add something that matters</string>
     <string name="add_another">Add another</string>
+    <string name="priorities_per_week">Priorities per week</string>
+    <string name="priorities_per_week_help">Choose 1 to 10. Reducing the limit keeps what you already planned.</string>
+    <string name="other_things_done">Other things done</string>
+    <string name="other_things_done_help">Keep track of completed extras. Someday is for later ideas.</string>
+    <string name="add_other_thing_done">Add something done</string>
+    <string name="other_thing_done_hint">What else did you do?</string>
+    <string name="search_other_things_done">Other things done · %1$d</string>
+    <string name="widget_more_priorities">+%1$d more priorities</string>
+    <string name="action_decrease">−</string>
+    <string name="action_increase">+</string>
+    <string name="decrease_priorities">Fewer priorities per week</string>
+    <string name="increase_priorities">More priorities per week</string>
     <string name="add_ahead">Plan something for this week</string>
     <plurals name="squares_left">
         <item quantity="one">%d square left</item>
@@ -271,7 +293,7 @@
     <string name="action_open_settings">Open settings</string>
     <string name="notification_channel_name">Weekly reminders</string>
     <string name="notification_channel_description">A nudge to plan each week and to close it.</string>
-    <string name="notification_plan_text">Week %1$s has begun. Choose up to three things.</string>
+    <string name="notification_plan_text">Week %1$s has begun. Choose your priorities.</string>
     <string name="a11y_change_time">Change the time for %1$s</string>
 
     <!-- Export and import -->
@@ -345,7 +367,7 @@
     </plurals>
 
     <!-- Notices -->
-    <string name="notice_week_full">That week already has three. Finish, move, or let one go first.</string>
+    <string name="notice_week_full">That week has reached its priority limit. Move or let one go first.</string>
     <string name="notice_changed_elsewhere">That item has already changed. Try again.</string>
     <string name="notice_moved_next_week">Moved to next week</string>
     <string name="notice_moved_this_week">Moved to this week</string>

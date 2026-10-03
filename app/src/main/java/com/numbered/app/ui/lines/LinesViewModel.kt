@@ -3,6 +3,7 @@ package com.numbered.app.ui.lines
 import androidx.lifecycle.viewModelScope
 import com.numbered.app.AppContainer
 import com.numbered.app.data.WeekReview
+import com.numbered.app.data.OtherThingDone
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.LifeCalendar
 import com.numbered.app.domain.WeekSummary
@@ -32,14 +33,16 @@ fun linesByYear(
     calendar: LifeCalendar,
     reviews: Collection<WeekReview>,
     summaries: Map<LocalDate, WeekSummary>,
+    otherThingsDone: List<OtherThingDone> = emptyList(),
 ): List<LinesYear> {
     val doneByYear = summaries.entries.groupBy({ yearOf(it.key) }) { it.value.done }.mapValues { it.value.sum() }
+    val otherDoneByYear = otherThingsDone.groupingBy { yearOf(it.weekStart) }.eachCount()
     return reviews.groupBy { yearOf(it.weekStart) }
         .map { (year, closed) ->
             LinesYear(
                 year = year,
                 weeksClosed = closed.size,
-                thingsDone = doneByYear[year] ?: 0,
+                thingsDone = (doneByYear[year] ?: 0) + (otherDoneByYear[year] ?: 0),
                 lines = closed.filter { it.note.isNotBlank() }
                     .sortedByDescending { it.weekStart }
                     .map { Line(it.weekStart, calendar.indexOf(it.weekStart) + 1, it.note) },
@@ -65,7 +68,8 @@ class LinesViewModel(container: AppContainer) : NoticeViewModel() {
         container.today.value,
         repository.reviews(),
         repository.summaries(),
-    ) { profile, today, reviews, summaries ->
-        LinesState(today, linesByYear(profile.calendar(), reviews.values, summaries))
+        repository.allOtherThingsDone(),
+    ) { profile, today, reviews, summaries, otherDone ->
+        LinesState(today, linesByYear(profile.calendar(), reviews.values, summaries, otherDone))
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 }

@@ -41,7 +41,7 @@ internal class YearReviewViewModel(private val container: AppContainer, private 
     private val sharesChannel = Channel<Intent>(Channel.BUFFERED)
     val shares = sharesChannel.receiveAsFlow()
     private var pending: YearReview? = null
-    private val snapshots = container.database.invalidationTracker.createFlow("profile", "commitments", "week_reviews", "chapters")
+    private val snapshots = container.database.invalidationTracker.createFlow("profile", "commitments", "other_things_done", "week_reviews", "chapters")
         .map { container.repository.snapshot() }.filterNotNull()
     val state = combine(snapshots, container.today.value, year) { snapshot, today, selected ->
         val chosen = selected ?: yearOf(snapshot.profile.calendar().weekStartOf(today))

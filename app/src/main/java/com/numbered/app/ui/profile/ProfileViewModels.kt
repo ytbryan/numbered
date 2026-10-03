@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.numbered.app.AppContainer
 import com.numbered.app.data.Profile
 import com.numbered.app.domain.LifeCalendar
+import com.numbered.app.domain.MAX_PRIORITIES_PER_WEEK
 import com.numbered.app.reminders.Reminder
 import com.numbered.app.reminders.ReminderSettings
 import com.numbered.app.ui.NoticeViewModel
@@ -48,6 +49,15 @@ class SettingsViewModel(private val container: AppContainer) : NoticeViewModel()
     fun setHorizon(years: Int) = update { it.copy(horizonYears = years) }
 
     fun setGentle(gentle: Boolean) = update { it.copy(gentle = gentle) }
+
+    fun setPrioritiesPerWeek(count: Int) = launchWrite {
+        if (count !in 1..MAX_PRIORITIES_PER_WEEK) return@launchWrite
+        container.repository.setPrioritiesPerWeek(count)
+    }
+
+    fun setOtherThingsDoneEnabled(enabled: Boolean) = launchWrite {
+        container.repository.setOtherThingsDoneEnabled(enabled)
+    }
 
     val reminders: StateFlow<ReminderSettings> = container.reminders.store.settings
 

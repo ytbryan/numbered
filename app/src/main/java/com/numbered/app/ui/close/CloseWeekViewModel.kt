@@ -7,7 +7,6 @@ import com.numbered.app.data.PlanResult
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CloseChoice
 import com.numbered.app.domain.CommitmentStatus
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.ui.NoticeViewModel
 import java.time.LocalDate
 import kotlinx.coroutines.channels.Channel
@@ -71,7 +70,7 @@ class CloseWeekViewModel(container: AppContainer, private val weekStart: LocalDa
             done = commitments.filter { it.status == CommitmentStatus.Done },
             open = open,
             choices = chosen.filterKeys { id -> open.any { it.id == id } },
-            carryRoom = MAX_COMMITMENTS_PER_WEEK - (summaries[carryTo]?.occupied ?: 0),
+            carryRoom = (profile.prioritiesPerWeek - (summaries[carryTo]?.occupied ?: 0)).coerceAtLeast(0),
             existingNote = review?.note,
             alreadyClosed = review != null,
         )

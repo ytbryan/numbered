@@ -61,6 +61,7 @@ fun SearchScreen(
     var noteLimit by rememberSaveable(query) { mutableIntStateOf(30) }
     var ideaLimit by rememberSaveable(query) { mutableIntStateOf(30) }
     var chapterLimit by rememberSaveable(query) { mutableIntStateOf(30) }
+    var otherDoneLimit by rememberSaveable(query) { mutableIntStateOf(30) }
     LaunchedEffect(query) { viewModel.search(query) }
 
     Scaffold(topBar = {
@@ -104,6 +105,9 @@ fun SearchScreen(
                                 entry.title,
                                 stringResource(R.string.range_and_status, weekRange(entry.weekStart, current.today), commitmentStatus(entry.status)),
                             ) { onOpenWeek(entry.weekStart) }
+                        }
+                        results("other-done", matches.otherThingsDone, otherDoneLimit, { it.id }, { otherDoneLimit += 30 }, R.string.search_other_things_done) { entry ->
+                            SearchRow(entry.title, weekRange(entry.weekStart, current.today)) { onOpenWeek(entry.weekStart) }
                         }
                         results("notes", matches.notes, noteLimit, { it.weekStart.toEpochDay() }, { noteLimit += 30 }, R.string.search_notes) { note ->
                             SearchRow(note.note, weekRange(note.weekStart, current.today)) { onOpenWeek(note.weekStart) }

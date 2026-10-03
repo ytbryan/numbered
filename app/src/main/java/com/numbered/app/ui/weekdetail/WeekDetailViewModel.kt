@@ -5,12 +5,12 @@ import com.numbered.app.AppContainer
 import com.numbered.app.R
 import com.numbered.app.data.Chapter
 import com.numbered.app.data.Commitment
+import com.numbered.app.data.OtherThingDone
 import com.numbered.app.data.PlanResult
 import com.numbered.app.data.SomedayItem
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.domain.LifeWeekMoment
-import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.ui.Notice
 import com.numbered.app.ui.NoticeViewModel
 import java.time.LocalDate
@@ -33,6 +33,9 @@ data class WeekDetailState(
     val moment: LifeWeekMoment?,
     val time: WeekTime,
     val commitments: List<Commitment>,
+    val otherThingsDone: List<OtherThingDone>,
+    val otherThingsDoneEnabled: Boolean,
+    val priorityLimit: Int,
     val note: String?,
     val closed: Boolean,
     val beforeStart: Boolean,
@@ -42,7 +45,7 @@ data class WeekDetailState(
     val chapters: List<Chapter>,
 ) {
     val occupied: Int get() = commitments.count { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
-    val squaresLeft: Int get() = MAX_COMMITMENTS_PER_WEEK - occupied
+    val squaresLeft: Int get() = (priorityLimit - occupied).coerceAtLeast(0)
     val canAdd: Boolean get() = time != WeekTime.Past && squaresLeft > 0
     val canClose: Boolean get() = time != WeekTime.Future && (commitments.isNotEmpty() || closed)
 }
@@ -53,11 +56,11 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
 
     val state: StateFlow<WeekDetailState?> = combine(
         combine(repository.profile().filterNotNull(), container.today.value, ::Pair),
-        repository.week(weekStart),
+        combine(repository.week(weekStart), repository.otherThingsDone(weekStart), ::Pair),
         repository.review(weekStart),
         repository.somedayWaiting(),
         repository.chapters(),
-    ) { (profile, today), commitments, review, someday, chapters ->
+    ) { (profile, today), (commitments, otherDone), review, someday, chapters ->
         val calendar = profile.calendar()
         val currentWeek = calendar.weekStartOf(today)
         WeekDetailState(
@@ -73,6 +76,9 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
                 else -> WeekTime.Future
             },
             commitments = commitments,
+            otherThingsDone = otherDone,
+            otherThingsDoneEnabled = profile.otherThingsDoneEnabled,
+            priorityLimit = profile.prioritiesPerWeek,
             note = review?.note?.takeIf { it.isNotBlank() },
             closed = review != null,
             beforeStart = weekStart < calendar.weekStartOf(profile.startedOn),
@@ -83,6 +89,19 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun add(title: String) = launchWrite { report(repository.addCommitment(weekStart, title)) }
+
+    fun addOtherThingDone(title: String) = launchWrite { report(repository.addOtherThingDone(weekStart, title)) }
+
+    fun renameOtherThingDone(item: OtherThingDone, title: String) = launchWrite {
+        report(repository.renameOtherThingDone(item.id, title))
+    }
+
+    fun removeOtherThingDone(item: OtherThingDone) = launchWrite {
+        val removed = repository.removeOtherThingDone(item.id) ?: return@launchWrite
+        notify(Notice(R.string.notice_removed, listOf(removed.title)) {
+            launchWrite { repository.restoreOtherThingDone(removed) }
+        })
+    }
 
     fun addFromSomeday(item: SomedayItem) = launchWrite { report(repository.schedule(item.id, weekStart)) }
 

@@ -43,6 +43,7 @@ import com.numbered.app.ui.components.CardShape
 import com.numbered.app.ui.components.CommitmentCard
 import com.numbered.app.ui.components.EmptySquare
 import com.numbered.app.ui.components.MenuAction
+import com.numbered.app.ui.components.OtherThingsDoneSection
 import com.numbered.app.ui.components.RenameDialog
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.components.commitmentSubtitle
@@ -174,6 +175,19 @@ fun WeekDetailScreen(
                         title = stringResource(if (current.time == WeekTime.Future) R.string.add_ahead else R.string.add_another),
                         subtitle = pluralString(R.plurals.squares_left, current.squaresLeft, current.squaresLeft),
                         onClick = { adding = true },
+                    )
+                }
+            }
+            if (current.otherThingsDone.isNotEmpty() ||
+                (current.otherThingsDoneEnabled && current.time != WeekTime.Future)
+            ) {
+                item(key = "other-things-done") {
+                    OtherThingsDoneSection(
+                        items = current.otherThingsDone,
+                        canAdd = current.otherThingsDoneEnabled && current.time != WeekTime.Future,
+                        onAdd = viewModel::addOtherThingDone,
+                        onRename = viewModel::renameOtherThingDone,
+                        onRemove = viewModel::removeOtherThingDone,
                     )
                 }
             }

@@ -77,6 +77,35 @@ class RepositoryTest {
         assertEquals(3, week(thisWeek).size)
     }
 
+    @Test fun changingThePriorityLimitKeepsExistingWeeksAndControlsNewPlans() = runBlocking {
+        repository.saveProfile(LocalDate.of(1989, 12, 2), 80, false, DayOfWeek.MONDAY)
+        repository.setPrioritiesPerWeek(5)
+        repeat(5) { assertEquals(PlanResult.Ok, repository.addCommitment(thisWeek, "Thing $it")) }
+        assertEquals(PlanResult.WeekFull, repository.addCommitment(thisWeek, "Sixth"))
+        repository.setPrioritiesPerWeek(2)
+        assertEquals(5, week(thisWeek).size)
+        assertEquals(PlanResult.WeekFull, repository.addCommitment(thisWeek, "After lowering"))
+        assertEquals(PlanResult.Ok, repository.addCommitment(nextWeek, "Next week"))
+        assertEquals(2, repository.currentProfile()!!.prioritiesPerWeek)
+    }
+
+    @Test fun otherCompletedThingsNeverOccupyPrioritySlots() = runBlocking {
+        repository.saveProfile(LocalDate.of(1989, 12, 2), 80, false, DayOfWeek.MONDAY)
+        repository.setOtherThingsDoneEnabled(true)
+        assertEquals(PlanResult.Blank, repository.addOtherThingDone(thisWeek, "  "))
+        assertEquals(PlanResult.Ok, repository.addOtherThingDone(thisWeek, "  Helped   a friend "))
+        val item = repository.otherThingsDone(thisWeek).first().single()
+        assertEquals("Helped a friend", item.title)
+        repeat(3) { assertEquals(PlanResult.Ok, repository.addCommitment(thisWeek, "Priority $it")) }
+        assertEquals(PlanResult.WeekFull, repository.addCommitment(thisWeek, "Fourth priority"))
+        assertEquals(PlanResult.Ok, repository.renameOtherThingDone(item.id, "Helped Mum"))
+        assertEquals("Helped Mum", repository.otherThingsDone(thisWeek).first().single().title)
+        val removed = repository.removeOtherThingDone(item.id)!!
+        assertEquals(emptyList<Any>(), repository.otherThingsDone(thisWeek).first())
+        repository.restoreOtherThingDone(removed)
+        assertEquals(listOf("Helped Mum"), repository.otherThingsDone(thisWeek).first().map { it.title })
+    }
+
     @Test fun resolvedCommitmentsFreeTheirSquare() = runBlocking {
         repeat(3) { repository.addCommitment(thisWeek, "Thing $it") }
         repository.returnToSomeday(week(thisWeek).first().id)

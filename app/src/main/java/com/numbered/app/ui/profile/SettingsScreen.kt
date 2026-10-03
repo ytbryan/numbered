@@ -13,12 +13,21 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,6 +42,7 @@ import com.numbered.app.ui.locale
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.toLocalDate
 import com.numbered.app.appContainer
+import com.numbered.app.domain.MAX_PRIORITIES_PER_WEEK
 import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +54,8 @@ fun SettingsScreen() {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val themes = LocalContext.current.appContainer.themes
     val selectedTheme by themes.selection.collectAsStateWithLifecycle()
+    val weekProgress = LocalContext.current.appContainer.weekProgress
+    val selectedWeekProgress by weekProgress.style.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
     val data = containerViewModel { DataViewModel(it, resolver) }
     val lastExport by data.lastExport.collectAsStateWithLifecycle()
@@ -80,7 +92,53 @@ fun SettingsScreen() {
             BirthDateField(current.birthDate, today, viewModel::setBirthDate)
             HorizonField(current.horizonYears, current.birthDate, today, viewModel::setHorizon)
             GentleField(current.gentle, viewModel::setGentle)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.priorities_per_week), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    stringResource(R.string.priorities_per_week_help),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val decreaseLabel = stringResource(R.string.decrease_priorities)
+                    val increaseLabel = stringResource(R.string.increase_priorities)
+                    TextButton(
+                        onClick = { viewModel.setPrioritiesPerWeek(current.prioritiesPerWeek - 1) },
+                        enabled = current.prioritiesPerWeek > 1,
+                        modifier = Modifier.semantics { contentDescription = decreaseLabel },
+                    ) { Text(stringResource(R.string.action_decrease)) }
+                    Text(
+                        current.prioritiesPerWeek.toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                    )
+                    TextButton(
+                        onClick = { viewModel.setPrioritiesPerWeek(current.prioritiesPerWeek + 1) },
+                        enabled = current.prioritiesPerWeek < MAX_PRIORITIES_PER_WEEK,
+                        modifier = Modifier.semantics { contentDescription = increaseLabel },
+                    ) { Text(stringResource(R.string.action_increase)) }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().toggleable(
+                    value = current.otherThingsDoneEnabled,
+                    role = Role.Switch,
+                    onValueChange = viewModel::setOtherThingsDoneEnabled,
+                ).padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f).padding(end = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.other_things_done), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(R.string.other_things_done_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = current.otherThingsDoneEnabled, onCheckedChange = null)
+            }
             ThemePicker(selectedTheme, themes::select)
+            WeekProgressPicker(selectedWeekProgress, weekProgress::select)
             AppLockSetting()
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             RemindersSection(
