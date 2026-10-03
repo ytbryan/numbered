@@ -6,3 +6,7 @@ local.properties
 .idea/
 .kotlin/
 captures/
+*.apk
+*.aab
+*.jks
+*.keystore

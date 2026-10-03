@@ -4,8 +4,12 @@ A weekly planner where the week is the unit, not the task.
 Choose up to three commitments a week by default, close each week with one line, and watch your life fill in on a grid of weeks.
 Named after Psalm 90:12.
 
-The iOS app lives in [`number_ios`](number_ios/README.md).
-It shares these rules and the export file, so a copy moves between the two.
+## Download
+
+Download the Android APK from the [latest GitHub release](https://github.com/ytbryan/numbered/releases/latest).
+On Android 8 or later, open the APK and allow installation from your browser or file manager when prompted.
+
+The source code is available under the [MIT license](LICENSE).
 
 ## Screens
 
@@ -93,6 +97,7 @@ Lint treats warnings as errors, and deliberate exceptions live in `app/lint.xml`
 
 Release builds are minified and unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.
 Bump `versionCode` and `versionName` in `app/build.gradle.kts` for every release.
+Keep the release signing key and its passwords backed up securely, since updates to an installed app must use the same key.
 
 `ScreenCaptureTest` drives the real app on seeded data with Robolectric and writes every screen to `app/build/screens/`, mostly at 366dp wide and 145% text.
 
