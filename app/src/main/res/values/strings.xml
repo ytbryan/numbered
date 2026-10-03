@@ -78,7 +78,10 @@
     <string name="add_other_thing_done">Add something done</string>
     <string name="other_thing_done_hint">What else did you do?</string>
     <string name="search_other_things_done">Other things done · %1$d</string>
-    <string name="widget_more_priorities">+%1$d more priorities</string>
+    <plurals name="widget_more_priorities">
+        <item quantity="one">+%d more priority</item>
+        <item quantity="other">+%d more priorities</item>
+    </plurals>
     <string name="action_decrease">−</string>
     <string name="action_increase">+</string>
     <string name="decrease_priorities">Fewer priorities per week</string>

@@ -1,7 +1,7 @@
 # Numbered
 
 A weekly planner where the week is the unit, not the task.
-Choose up to three commitments a week, close each week with one line, and watch your life fill in on a grid of weeks.
+Choose up to three commitments a week by default, close each week with one line, and watch your life fill in on a grid of weeks.
 Named after Psalm 90:12.
 
 The iOS app lives in [`number_ios`](number_ios/README.md).
@@ -9,7 +9,8 @@ It shares these rules and the export file, so a copy moves between the two.
 
 ## Screens
 
-- **This week**: up to three commitments, a prompt to close any unclosed past week, next week, and stale Someday items.
+- **This week**: your chosen number of priorities, a prompt to close any unclosed past week, next week, and stale Someday items.
+- **Other things done**: an optional list for completed work outside the week's priorities, off by default.
 - **Life**: every week of your life, 52 to a row, coloured by what you finished. Tap or drag to inspect a week.
 - **Someday**: ideas without dates. Items untouched for 12 weeks ask whether they still deserve a square.
 - **Close week**: decide what happens to each unfinished commitment (done, carry, Someday, or let go) and write one line.
@@ -41,28 +42,28 @@ A short explanation and help button sit above it; the help sheet holds the guida
 Someday searches across waiting and let-go ideas, with oldest, newest, and recently kept sorting.
 Share text or a link from another Android app to edit it and save it to Someday, then return to that app.
 Shared ideas can be saved before setup.
-Search on This week finds commitments, weekly notes, all Someday ideas, and chapters, with links to open each result.
+Search on This week finds commitments, other things done, weekly notes, all Someday ideas, and chapters, with links to open each result.
 Moving a commitment to next week or back to Someday, and scheduling a Someday idea, offer Undo.
 Undo restores the original entry and removes the entry created by the move, provided neither has changed and the original week still has room.
 Carry-over history opens from the commitment menu and follows its weeks even after a rename.
 Older entries are linked only when their original title and carry time identify one source.
 Missing or ambiguous earlier entries are shown explicitly.
 Database version 3 adds these links without replacing saved data.
-Backup format version 3 includes them and still reads versions 1 and 2.
+Backup format version 4 also includes planning preferences and other things done, and still reads versions 1 through 3.
 Year in review opens from Your lines, with a year picker and a preview of completed commitments, notes, and overlapping chapters.
 Weekly notes appear first and open their original week; completed commitments are grouped into expandable months.
 Save the preview as a UTF-8 text file or share it using Android’s share sheet.
 Reviews use the same week-based years as Your lines and include recorded data through the current week.
 Saved and shared summaries contain the selected year’s previewed content without birth dates, drafts, or Someday items.
 
-Settings keeps short descriptions beside controls, with fuller explanations in help sheets and the name’s origin under About Numbered.
+Settings keeps short descriptions beside controls, including the weekly priority limit and Other things done, with fuller explanations in help sheets and the name’s origin under About Numbered.
 Onboarding introduces the three steps briefly.
 The empty Chapters section offers a New chapter action for the selected week.
 Catch up marks reflection fields as optional even while typing.
 
 ## Rules worth knowing
 
-- A week holds at most three open or done commitments. Every write that could break this runs in one transaction in `NumberedRepository`.
+- A week holds up to the chosen limit of open or done commitments, from 1 to 10, with 3 as the default. Every write that could break this runs in one transaction in `NumberedRepository`.
 - Letting go and returning to Someday are decisions, so they do not count against a week.
 - Weeks are keyed by their start date, and the first day of the week is fixed at setup, so editing the birth date never moves saved weeks.
 - Everything is local (Room, `numbered.db`) and included in Android device backups. There is no account.

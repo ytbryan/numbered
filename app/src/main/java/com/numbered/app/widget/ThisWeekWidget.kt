@@ -214,7 +214,11 @@ fun WidgetContent(state: WidgetState?, locked: Boolean = false) {
         }
         if (state.items.size > shown.size) {
             Text(
-                context.getString(R.string.widget_more_priorities, state.items.size - shown.size),
+                context.resources.getQuantityString(
+                    R.plurals.widget_more_priorities,
+                    state.items.size - shown.size,
+                    state.items.size - shown.size,
+                ),
                 style = TextStyle(color = colors.primary, fontSize = 12.sp),
                 modifier = GlanceModifier.fillMaxWidth().clickable(openApp),
                 maxLines = 1,
