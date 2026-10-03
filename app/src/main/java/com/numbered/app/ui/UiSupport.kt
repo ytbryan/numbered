@@ -24,6 +24,7 @@ import com.numbered.app.AppContainer
 import com.numbered.app.R
 import com.numbered.app.appContainer
 import com.numbered.app.data.PlanResult
+import com.numbered.app.domain.LifeWeekMoment
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -106,6 +107,24 @@ fun formatCount(value: Int): String = NumberFormat.getIntegerInstance(locale()).
 @ReadOnlyComposable
 fun pluralString(@PluralsRes id: Int, count: Int, vararg args: Any): String =
     LocalResources.current.getQuantityString(id, count, *args)
+
+@Composable
+fun lifeWeekMomentText(moment: LifeWeekMoment): String = when (moment) {
+    is LifeWeekMoment.BeforeBirthday -> stringResource(
+        when (moment.weeks) {
+            1 -> R.string.life_week_before_one
+            2 -> R.string.life_week_before_two
+            3 -> R.string.life_week_before_three
+            else -> R.string.life_week_before_four
+        },
+        moment.age,
+    )
+    is LifeWeekMoment.BirthdayWeek -> stringResource(R.string.life_week_birthday, moment.age)
+    is LifeWeekMoment.FirstFullWeek -> stringResource(R.string.life_week_after, moment.age)
+    is LifeWeekMoment.HalfwayThrough -> if (moment.age == 0) {
+        stringResource(R.string.life_week_halfway_first)
+    } else stringResource(R.string.life_week_halfway, moment.age)
+}
 
 private fun pattern(locale: Locale, skeleton: String): DateTimeFormatter =
     DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)

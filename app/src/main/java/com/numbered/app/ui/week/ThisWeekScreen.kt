@@ -47,7 +47,9 @@ import com.numbered.app.ui.components.TodayDate
 import com.numbered.app.ui.components.WeekDays
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
+import com.numbered.app.ui.lifeWeekMomentText
 import com.numbered.app.ui.pluralString
+import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.weekRange
 import java.time.LocalDate
 
@@ -92,7 +94,11 @@ fun ThisWeekScreen(
         current.unclosed?.let { unclosed ->
             item(key = "unclosed") {
                 PromptCard(
-                    title = stringResource(R.string.unclosed_title, formatCount(unclosed.weekNumber)),
+                    title = if (unclosed.weekStart == current.weekStart.minusWeeks(1)) {
+                        stringResource(R.string.unclosed_last_week)
+                    } else {
+                        stringResource(R.string.unclosed_week_of, shortDate(unclosed.weekStart, current.today))
+                    },
                     body = if (unclosed.open > 0) {
                         pluralString(R.plurals.unclosed_body_open, unclosed.open, unclosed.open)
                     } else {
@@ -208,13 +214,13 @@ fun ThisWeekScreen(
 @Composable
 private fun WeekHeader(state: ThisWeekState, onSearch: () -> Unit) {
     Column(Modifier.padding(bottom = 10.dp)) {
-        Text(
-            text = state.horizonWeeks?.let {
-                stringResource(R.string.week_of_horizon, formatCount(state.weekNumber), formatCount(it))
-            } ?: stringResource(R.string.week_number, formatCount(state.weekNumber)),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        state.moment?.let {
+            Text(
+                text = lifeWeekMomentText(it),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = stringResource(R.string.this_week),

@@ -1,6 +1,12 @@
 package com.numbered.app.ui.life
 
 import android.text.format.DateFormat
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,13 +37,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.FormatQuote
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,8 +53,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,6 +82,7 @@ import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.components.TodayDate
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
+import com.numbered.app.ui.lifeWeekMomentText
 import com.numbered.app.ui.locale
 import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
@@ -81,6 +91,7 @@ import com.numbered.app.ui.weekRange
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +100,6 @@ fun LifeScreen(
     onOpenChapter: (Long) -> Unit,
     onNewChapter: (LocalDate) -> Unit,
     onOpenLines: () -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
     val viewModel = containerViewModel { LifeViewModel(it) }
     val grid by viewModel.grid.collectAsStateWithLifecycle()
@@ -99,11 +109,25 @@ fun LifeScreen(
     var enlarged by rememberSaveable { mutableStateOf(false) }
     var choosingYear by rememberSaveable { mutableStateOf(false) }
     var showHelp by rememberSaveable { mutableStateOf(false) }
+    var weekDetailsExpanded by rememberSaveable { mutableStateOf(false) }
+    var revealNumber by remember { mutableIntStateOf(0) }
     val index = selected?.index ?: state.currentIndex
     val year = state.calendar.weekStart(index).plusDays(3).year
     val firstYear = state.calendar.weekStart(0).plusDays(3).year
     val lastYear = state.calendar.weekStart(state.tones.lastIndex).plusDays(3).year
     val window = if (enlarged) yearWindow(state.calendar, year, state.tones.size) else state.tones.indices
+
+    fun revealWeek() {
+        weekDetailsExpanded = true
+        revealNumber++
+    }
+
+    LaunchedEffect(revealNumber) {
+        if (revealNumber > 0) {
+            delay(4_500)
+            weekDetailsExpanded = false
+        }
+    }
 
     fun jumpToYear(value: Int) {
         val target = yearWindow(state.calendar, value, state.tones.size)
@@ -186,9 +210,6 @@ fun LifeScreen(
                 IconButton(onClick = onOpenLines) {
                     Icon(Icons.Outlined.FormatQuote, contentDescription = stringResource(R.string.lines_title))
                 }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
-                }
             }
             TodayDate(state.today, Modifier.padding(top = 4.dp))
             Text(
@@ -208,7 +229,10 @@ fun LifeScreen(
                 enlarged = enlarged,
                 onEnlarge = { enlarged = it },
                 onJump = { choosingYear = true },
-                onCurrent = { viewModel.select(state.currentIndex) },
+                onCurrent = {
+                    viewModel.select(state.currentIndex)
+                    revealWeek()
+                },
             )
             if (enlarged) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -233,7 +257,10 @@ fun LifeScreen(
                 decadeRows = if (enlarged) emptyList() else state.decadeRows,
                 selectedIndex = index - window.first,
                 marks = state.chapterStarts.filter { it in window }.map { it - window.first }.toSet(),
-                onSelect = { viewModel.select(it + window.first) },
+                onSelect = {
+                    viewModel.select(it + window.first)
+                    revealWeek()
+                },
                 description = if (enlarged) stringResource(R.string.a11y_year_grid, year) else stringResource(
                     R.string.a11y_life_grid,
                     formatCount(state.currentIndex),
@@ -256,12 +283,22 @@ fun LifeScreen(
             Chapters(state, onOpenChapter, { onNewChapter(state.calendar.weekStart(index)) })
         }
         selected?.let { week ->
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             SelectedWeekPanel(
                 week = week,
                 today = state.today,
-                onPrevious = { viewModel.step(-1) },
-                onNext = { viewModel.step(1) },
+                expanded = weekDetailsExpanded,
+                onToggle = {
+                    revealNumber = 0
+                    weekDetailsExpanded = !weekDetailsExpanded
+                },
+                onPrevious = {
+                    viewModel.step(-1)
+                    revealWeek()
+                },
+                onNext = {
+                    viewModel.step(1)
+                    revealWeek()
+                },
                 onOpen = { onOpenWeek(week.start) },
             )
         }
@@ -393,62 +430,98 @@ private fun LegendItem(color: Color, label: String) {
 private fun SelectedWeekPanel(
     week: SelectedWeek,
     today: LocalDate,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onOpen: () -> Unit,
 ) {
-    // The summary opens the week and the arrows step through weeks. They are siblings, not nested,
-    // so each is its own target for touch and for TalkBack.
     val openLabel = stringResource(R.string.a11y_open_week)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val toggleLabel = stringResource(if (expanded) R.string.life_collapse_week_details else R.string.life_expand_week_details)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shadowElevation = 4.dp,
     ) {
-        Column(
-            Modifier
-                .weight(1f)
-                .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen)
-                .padding(start = ScreenPadding, end = 8.dp, top = 12.dp, bottom = 12.dp)
-                .semantics { liveRegion = LiveRegionMode.Polite },
-        ) {
-            Text(
-                text = stringResource(R.string.week_and_age, formatCount(week.index + 1), week.age),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = stringResource(R.string.range_and_status, weekRange(week.start, today), statusText(week)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (week.chapters.isNotEmpty()) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = week.chapters.joinToString(" · "),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    text = stringResource(R.string.week_and_age, formatCount(week.index + 1), week.age),
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(onClickLabel = toggleLabel, role = Role.Button, onClick = onToggle)
+                        .padding(start = ScreenPadding, end = 4.dp, top = 14.dp, bottom = 14.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
                 )
+                IconButton(onClick = onToggle) {
+                    Icon(
+                        if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                        contentDescription = stringResource(
+                            if (expanded) R.string.life_collapse_week_details else R.string.life_expand_week_details,
+                        ),
+                    )
+                }
             }
-            val detail = week.note?.let { stringResource(R.string.quoted, it) }
-                ?: week.commitments.takeIf { it.isNotEmpty() }?.joinToString(" · ") { it.title }
-            if (detail != null) {
-                Text(
-                    text = detail,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(240)) + fadeIn(animationSpec = tween(180)),
+                exit = shrinkVertically(animationSpec = tween(240)) + fadeOut(animationSpec = tween(120)),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen)
+                            .padding(start = ScreenPadding, end = 8.dp, bottom = 12.dp),
+                    ) {
+                        week.moment?.let {
+                            Text(
+                                text = lifeWeekMomentText(it),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.range_and_status, weekRange(week.start, today), statusText(week)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (week.chapters.isNotEmpty()) {
+                            Text(
+                                text = week.chapters.joinToString(" · "),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        val detail = week.note?.let { stringResource(R.string.quoted, it) }
+                            ?: week.commitments.takeIf { it.isNotEmpty() }?.joinToString(" · ") { it.title }
+                        if (detail != null) {
+                            Text(
+                                text = detail,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    IconButton(onClick = onPrevious) {
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.a11y_previous_week))
+                    }
+                    IconButton(onClick = onNext) {
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = stringResource(R.string.a11y_next_week))
+                    }
+                }
             }
-        }
-        IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, contentDescription = stringResource(R.string.a11y_previous_week))
-        }
-        IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = stringResource(R.string.a11y_next_week))
         }
     }
 }

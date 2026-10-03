@@ -2,9 +2,17 @@ package com.numbered.app.domain
 
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.Month
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
+
+sealed interface LifeWeekMoment {
+    data class BeforeBirthday(val weeks: Int, val age: Int) : LifeWeekMoment
+    data class BirthdayWeek(val age: Int) : LifeWeekMoment
+    data class FirstFullWeek(val age: Int) : LifeWeekMoment
+    data class HalfwayThrough(val age: Int) : LifeWeekMoment
+}
 
 /**
  * Maps calendar dates onto the weeks of one life.
@@ -44,6 +52,31 @@ class LifeCalendar(
 
     /** Whole years of age on [date]. */
     fun ageOn(date: LocalDate): Int = ChronoUnit.YEARS.between(birthDate, date).toInt().coerceAtLeast(0)
+
+    /** Uses the same March 1 age boundary as [ageOn] for 29 February births in common years. */
+    private fun birthdayAtAge(age: Int): LocalDate {
+        val date = birthDate.plusYears(age.toLong())
+        return if (birthDate.month == Month.FEBRUARY && birthDate.dayOfMonth == 29 && !date.isLeapYear) {
+            date.plusDays(1)
+        } else date
+    }
+
+    /** Only weeks near an age milestone get a narrative label. Counts are calendar weeks. */
+    fun momentOf(week: LocalDate): LifeWeekMoment? {
+        val start = weekStartOf(week)
+        val age = ageOn(start.plusDays(6))
+        if (age > 0) {
+            val birthdayWeek = weekStartOf(birthdayAtAge(age))
+            if (start == birthdayWeek) return LifeWeekMoment.BirthdayWeek(age)
+            if (start == birthdayWeek.plusWeeks(1)) return LifeWeekMoment.FirstFullWeek(age)
+        }
+        if (start == weekStartOf(birthdayAtAge(age).plusMonths(6))) {
+            return LifeWeekMoment.HalfwayThrough(age)
+        }
+        val nextAge = age + 1
+        val weeksBefore = ChronoUnit.WEEKS.between(start, weekStartOf(birthdayAtAge(nextAge))).toInt()
+        return if (weeksBefore in 1..4) LifeWeekMoment.BeforeBirthday(weeksBefore, nextAge) else null
+    }
 
     /** Years lived on [date], truncated (never rounded up) to one decimal place. */
     fun yearsLivedTenths(date: LocalDate): Int {

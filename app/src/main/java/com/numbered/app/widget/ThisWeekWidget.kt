@@ -53,7 +53,6 @@ import com.numbered.app.ui.closeWeekDeepLink
 import com.numbered.app.ui.theme.DarkColors
 import com.numbered.app.ui.theme.LightColors
 import com.numbered.app.ui.week.ThisWeekState
-import java.text.NumberFormat
 import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -69,7 +68,6 @@ data class WidgetItem(val id: Long, val title: String, val done: Boolean)
 /** Everything the widget shows, read in one go so it renders without waiting. */
 data class WidgetState(
     val weekStart: LocalDate,
-    val weekNumber: Int,
     val daysLeft: Int,
     val items: List<WidgetItem>,
     val offerClose: Boolean,
@@ -87,7 +85,6 @@ suspend fun loadWidgetState(repository: NumberedRepository, clock: Clock): Widge
     val closed = repository.review(weekStart).first() != null
     return WidgetState(
         weekStart = weekStart,
-        weekNumber = calendar.indexOf(today) + 1,
         daysLeft = daysLeft,
         items = repository.week(weekStart).first()
             .filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
@@ -194,7 +191,7 @@ fun WidgetContent(state: WidgetState?, locked: Boolean = false) {
                 modifier = GlanceModifier.defaultWeight(),
             )
             Text(
-                context.getString(R.string.widget_week_and_days, NumberFormat.getIntegerInstance().format(state.weekNumber), daysLeft),
+                daysLeft,
                 style = TextStyle(color = colors.onSurfaceVariant, fontSize = 12.sp),
                 maxLines = 1,
             )

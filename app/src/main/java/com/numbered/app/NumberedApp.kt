@@ -17,6 +17,7 @@ import java.time.ZoneId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,13 +30,15 @@ class NumberedApp : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this, NumberedDatabase.open(this), DeviceClock())
-        container.reminders.createChannel()
-        container.scope.launch { container.reminders.reschedule() }
-        container.scope.launch { keepWidgetsCurrent(this@NumberedApp, container) }
+        val started = container
+        started.reminders.createChannel()
+        started.scope.launch { started.reminders.reschedule() }
+        started.scope.launch { keepWidgetsCurrent(this@NumberedApp, started) }
     }
 
     @VisibleForTesting
     fun replaceContainer(replacement: AppContainer) {
+        container.scope.cancel()
         container = replacement
     }
 }

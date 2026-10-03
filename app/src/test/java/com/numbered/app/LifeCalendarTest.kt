@@ -1,6 +1,7 @@
 package com.numbered.app
 
 import com.numbered.app.domain.LifeCalendar
+import com.numbered.app.domain.LifeWeekMoment
 import java.time.DayOfWeek
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
@@ -68,6 +69,31 @@ class LifeCalendarTest {
         assertEquals(21, leap.ageOn(LocalDate.of(2021, 3, 1)))
         assertEquals(209, leap.yearsLivedTenths(LocalDate.of(2021, 2, 28)))
         assertEquals(210, leap.yearsLivedTenths(LocalDate.of(2021, 3, 1)))
+    }
+
+    @Test fun birthdayWeeksHaveMeaningfulLabelsWithTheWeekNumberStillAvailable() {
+        val birthdayWeek = LocalDate.of(2026, 11, 30)
+        (1..4).forEach { weeks ->
+            assertEquals(
+                LifeWeekMoment.BeforeBirthday(weeks, 37),
+                monday.momentOf(birthdayWeek.minusWeeks(weeks.toLong())),
+            )
+        }
+        assertEquals(LifeWeekMoment.BirthdayWeek(37), monday.momentOf(birthdayWeek))
+        assertEquals(LifeWeekMoment.FirstFullWeek(37), monday.momentOf(birthdayWeek.plusWeeks(1)))
+        assertEquals(LifeWeekMoment.HalfwayThrough(36), monday.momentOf(LocalDate.of(2026, 6, 1)))
+        assertEquals(null, monday.momentOf(LocalDate.of(2026, 10, 1)))
+        val sunday = LifeCalendar(birth, 80, DayOfWeek.SUNDAY)
+        assertEquals(LifeWeekMoment.BeforeBirthday(1, 37), sunday.momentOf(LocalDate.of(2026, 11, 22)))
+        assertEquals(LifeWeekMoment.BirthdayWeek(37), sunday.momentOf(LocalDate.of(2026, 11, 29)))
+    }
+
+    @Test fun leapDayMilestonesUseTheSameMarchFirstBoundaryAsAge() {
+        val leap = LifeCalendar(LocalDate.of(2000, 2, 29), 80, DayOfWeek.MONDAY)
+        assertEquals(LifeWeekMoment.BeforeBirthday(1, 21), leap.momentOf(LocalDate.of(2021, 2, 22)))
+        assertEquals(LifeWeekMoment.BirthdayWeek(21), leap.momentOf(LocalDate.of(2021, 3, 1)))
+        assertEquals(LifeWeekMoment.FirstFullWeek(21), leap.momentOf(LocalDate.of(2021, 3, 8)))
+        assertEquals(LifeWeekMoment.HalfwayThrough(0), leap.momentOf(LocalDate.of(2000, 8, 28)))
     }
 
     @Test fun decadeLabelsLandOnEveryTenthRowBecauseEachRowHoldsItsBirthday() {

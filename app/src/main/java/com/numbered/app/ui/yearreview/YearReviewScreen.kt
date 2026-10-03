@@ -15,14 +15,18 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,20 +53,28 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
+import com.numbered.app.data.Commitment
 import com.numbered.app.ui.LocalSnackbar
 import com.numbered.app.ui.NoticeEffect
 import com.numbered.app.ui.components.CardShape
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.containerViewModel
+import com.numbered.app.ui.formatCount
+import com.numbered.app.ui.locale
+import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.weekRange
+import java.time.LocalDate
+import java.time.Month
+import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun YearReviewScreen(onBack: () -> Unit) {
+fun YearReviewScreen(onBack: () -> Unit, onOpenWeek: (LocalDate) -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val viewModel = containerViewModel { YearReviewViewModel(it, context.applicationContext as Application) }
@@ -140,16 +152,10 @@ fun YearReviewScreen(onBack: () -> Unit) {
             if (!review.hasContent) item(key = "empty") {
                 Text(stringResource(R.string.review_empty), Modifier.padding(top = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (review.completed.isNotEmpty()) {
-                item(key = "completed") { ReviewHeading(stringResource(R.string.review_completed)) }
-                items(review.completed.groupBy { it.weekStart }.entries.toList(), key = { "completed-${it.key}" }) { (week, entries) ->
-                    ReviewRow(entries.map { it.title }, weekRange(week, review.today))
-                }
-            }
             if (review.notes.isNotEmpty()) {
                 item(key = "notes") { ReviewHeading(stringResource(R.string.review_notes)) }
-                items(review.notes, key = { "note-${it.weekStart}" }) { note ->
-                    ReviewRow(listOf(note.note), weekRange(note.weekStart, review.today))
+                items(review.notes.asReversed(), key = { "note-${it.weekStart}" }) { note ->
+                    NoteRow(note.note, weekRange(note.weekStart, review.today)) { onOpenWeek(note.weekStart) }
                 }
             }
             if (review.chapters.isNotEmpty()) {
@@ -159,6 +165,12 @@ fun YearReviewScreen(onBack: () -> Unit) {
                         listOf(chapter.chapter.title),
                         stringResource(R.string.chapter_span, shortDate(chapter.start, review.today), shortDate(minOf(chapter.end.plusDays(6), review.today), review.today)),
                     )
+                }
+            }
+            if (review.completed.isNotEmpty()) {
+                item(key = "completed") { ReviewHeading(stringResource(R.string.review_completed)) }
+                review.completed.groupBy { it.weekStart.plusDays(3).month }.forEach { (month, entries) ->
+                    item(key = "completed-$month") { MonthSection(review.year, month, entries, review.today) }
                 }
             }
         }
@@ -176,6 +188,56 @@ fun YearReviewScreen(onBack: () -> Unit) {
             },
             confirmButton = { TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun NoteRow(note: String, dates: String, onOpenWeek: () -> Unit) {
+    Surface(onClick = onOpenWeek, shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(dates, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(note, style = MaterialTheme.typography.bodyLarge)
+            }
+            Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun MonthSection(year: Int, month: Month, entries: List<Commitment>, today: LocalDate) {
+    var expanded by rememberSaveable(year, month) { mutableStateOf(false) }
+    val name = month.getDisplayName(TextStyle.FULL_STANDALONE, locale())
+    val expansion = stringResource(if (expanded) R.string.a11y_expanded else R.string.a11y_collapsed)
+    Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Surface(
+                onClick = { expanded = !expanded },
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.semantics { stateDescription = expansion },
+            ) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(name, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            pluralString(R.plurals.lines_things_done, entries.size, formatCount(entries.size)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null)
+                }
+            }
+            if (expanded) {
+                entries.groupBy { it.weekStart }.forEach { (week, commitments) ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(weekRange(week, today), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        commitments.forEach { Text(it.title, style = MaterialTheme.typography.bodyLarge) }
+                    }
+                }
+            }
+        }
     }
 }
 

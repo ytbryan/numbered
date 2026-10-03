@@ -6,6 +6,7 @@ import com.numbered.app.data.Chapter
 import com.numbered.app.data.Commitment
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.LifeCalendar
+import com.numbered.app.domain.LifeWeekMoment
 import com.numbered.app.domain.WeekSummary
 import com.numbered.app.domain.WeekTone
 import com.numbered.app.domain.weekTone
@@ -44,6 +45,7 @@ data class SelectedWeek(
     val index: Int,
     val start: LocalDate,
     val age: Int,
+    val moment: LifeWeekMoment?,
     val tone: WeekTone,
     val summary: WeekSummary,
     val commitments: List<Commitment>,
@@ -102,6 +104,7 @@ class LifeViewModel(container: AppContainer) : NoticeViewModel() {
                 index = index,
                 start = start,
                 age = grid.calendar.ageOn(start.plusDays(6)),
+                moment = grid.calendar.momentOf(start),
                 tone = grid.tones[index],
                 summary = WeekSummary.of(commitments.map(Commitment::status)),
                 commitments = commitments,

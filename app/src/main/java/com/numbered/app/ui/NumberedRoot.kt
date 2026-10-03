@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarViewWeek
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -106,6 +107,7 @@ private val Tabs = listOf(
     Tab(ThisWeekRoute, ThisWeekRoute::class, R.string.tab_this_week, Icons.Outlined.CalendarViewWeek),
     Tab(LifeRoute, LifeRoute::class, R.string.tab_life, Icons.Outlined.GridView),
     Tab(SomedayRoute(), SomedayRoute::class, R.string.tab_someday, Icons.Outlined.Inbox),
+    Tab(SettingsRoute, SettingsRoute::class, R.string.settings, Icons.Outlined.Settings),
 )
 
 @Composable
@@ -201,7 +203,6 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     onOpenChapter = { id -> nav.navigate(ChapterRoute(id, 0)) },
                     onNewChapter = { nav.navigate(ChapterRoute(ChapterViewModel.NEW, it.toEpochDay())) },
                     onOpenLines = { nav.navigate(LinesRoute) },
-                    onOpenSettings = { nav.navigate(SettingsRoute) },
                 )
             }
             composable<SomedayRoute> { entry -> SomedayScreen(initialQuery = entry.toRoute<SomedayRoute>().query) }
@@ -259,7 +260,12 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     onYearReview = { nav.navigate(YearReviewRoute) },
                 )
             }
-            composable<YearReviewRoute> { YearReviewScreen(onBack = { nav.popBackStack() }) }
+            composable<YearReviewRoute> {
+                YearReviewScreen(
+                    onBack = { nav.popBackStack() },
+                    onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
+                )
+            }
             composable<CatchUpRoute> {
                 CatchUpScreen(
                     onBack = { nav.popBackStack() },
@@ -269,7 +275,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                     },
                 )
             }
-            composable<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }
+            composable<SettingsRoute> { SettingsScreen() }
         }
     }
 }

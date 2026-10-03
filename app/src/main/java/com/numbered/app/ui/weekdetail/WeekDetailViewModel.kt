@@ -9,6 +9,7 @@ import com.numbered.app.data.PlanResult
 import com.numbered.app.data.SomedayItem
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CommitmentStatus
+import com.numbered.app.domain.LifeWeekMoment
 import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.ui.Notice
 import com.numbered.app.ui.NoticeViewModel
@@ -29,6 +30,7 @@ data class WeekDetailState(
     val weekStart: LocalDate,
     val weekNumber: Int,
     val age: Int,
+    val moment: LifeWeekMoment?,
     val time: WeekTime,
     val commitments: List<Commitment>,
     val note: String?,
@@ -64,6 +66,7 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
             weekStart = weekStart,
             weekNumber = calendar.indexOf(weekStart) + 1,
             age = calendar.ageOn(weekStart.plusDays(6)),
+            moment = calendar.momentOf(weekStart),
             time = when {
                 weekStart < currentWeek -> WeekTime.Past
                 weekStart == currentWeek -> WeekTime.Current

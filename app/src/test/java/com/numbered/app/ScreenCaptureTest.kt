@@ -3,6 +3,7 @@ package com.numbered.app
 import android.Manifest
 import android.app.Activity
 import android.app.AlarmManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -130,6 +131,7 @@ class ScreenCaptureTest {
             val away = description.getAnnotation(AwayFor::class.java)?.weeks?.toLong() ?: 0
             val clock = clockOn(today.plusWeeks(away))
             val app = RuntimeEnvironment.getApplication() as NumberedApp
+            app.getSharedPreferences("reminders", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -308,8 +310,7 @@ class ScreenCaptureTest {
     }
 
     private fun openSettings() {
-        tap("Life")
-        compose.onNodeWithContentDescription("Settings").performClick()
+        tap("Settings")
         awaitText("Weeks start on Monday")
     }
 
@@ -318,6 +319,7 @@ class ScreenCaptureTest {
         scrollTo("Chapters")
         awaitText("Name a season of your life.")
         tap("Week 1,923 · age 36")
+        compose.onNodeWithText("Sep 28", substring = true).performClick()
         tap("Start a chapter here")
         awaitText("New chapter")
         compose.onNode(hasSetTextAction()).performTextInput("Moved to Singapore")
@@ -367,9 +369,19 @@ class ScreenCaptureTest {
         compose.onNode(hasSetTextAction()).performTextInput("osaka")
         awaitText("4\u00A0lines")
         compose.onNodeWithContentDescription("Year in review").performClick()
-        awaitText("Completed commitments")
+        awaitText("Weekly notes")
         compose.onNodeWithText("32\u00A0weeks closed · 77\u00A0things done · 16\u00A0lines").assertIsDisplayed()
+        compose.onNodeWithText("Too many meetings, still finished the draft.").assertIsDisplayed()
         capture("year-review")
+        tap("Too many meetings, still finished the draft.")
+        awaitText("Too many meetings, still finished the draft.")
+        compose.onNodeWithContentDescription("Back").performClick()
+        awaitText("Year in review")
+        scrollTo("Completed commitments")
+        compose.onAllNodesWithText("Past goal 0-0").assertCountEquals(0)
+        compose.onNodeWithText("January", substring = true).performClick()
+        awaitText("Past goal 0-0")
+        capture("year-review-expanded-month")
         tap("Save file")
         val output = files.newFile("review.txt")
         val request = answerFilePicker(Intent.ACTION_CREATE_DOCUMENT, output)
@@ -405,11 +417,15 @@ class ScreenCaptureTest {
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("2026")
         compose.onNodeWithContentDescription("Year in review").performClick()
-        awaitText("Completed commitments")
+        awaitText("Weekly notes")
         compose.onNodeWithContentDescription("Choose year").performClick()
         tap("2025")
-        awaitText("Finished in 2025")
+        awaitText("Last year’s reflection")
         capture("year-review-earlier")
+        scrollTo("Completed commitments")
+        compose.onAllNodesWithText("Finished in 2025").assertCountEquals(0)
+        compose.onNodeWithText("June", substring = true).performClick()
+        awaitText("Finished in 2025")
         tap("Save file")
         val output = files.newFile("old-review.txt")
         val request = answerFilePicker(Intent.ACTION_CREATE_DOCUMENT, output)
@@ -443,7 +459,7 @@ class ScreenCaptureTest {
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("2026")
         compose.onNodeWithContentDescription("Year in review").performClick()
-        awaitText("Completed commitments")
+        awaitText("Weekly notes")
         tap("Save file")
         val activity = shadowOf(compose.activity)
         val cancelled = activity.nextStartedActivityForResult
@@ -462,8 +478,9 @@ class ScreenCaptureTest {
     }
 
     @Test fun thisWeek() {
-        awaitText("Week 1,923 of 4,175")
-        compose.onNodeWithText("Week 1,922 is still open").assertIsDisplayed()
+        awaitText("Renew passport photos")
+        compose.onAllNodesWithText("Week 1,923").assertCountEquals(0)
+        compose.onNodeWithText("Last week is still open").assertIsDisplayed()
         capture("this-week")
         scrollTo("Review")
         capture("this-week-bottom")
@@ -471,19 +488,19 @@ class ScreenCaptureTest {
 
     @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi", fontScale = 1.0f)
     fun thisWeekAtDefaultSize() {
-        awaitText("Week 1,923 of 4,175")
+        awaitText("Renew passport photos")
         capture("this-week-default-size")
     }
 
     @Test @Config(qualifiers = "w366dp-h813dp-night-xxhdpi", fontScale = 1.45f)
     fun thisWeekDark() {
-        awaitText("Week 1,923 of 4,175")
+        awaitText("Renew passport photos")
         capture("this-week-dark")
     }
 
     @Test @OnDate("2026-10-03")
     fun weekendOffersTheClose() {
-        awaitText("Week 1,923 of 4,175")
+        awaitText("Renew passport photos")
         scrollTo("Close the week")
         compose.onNodeWithText("Close the week").assertIsDisplayed()
         capture("this-week-weekend")
@@ -513,8 +530,8 @@ class ScreenCaptureTest {
         compose.onNode(hasSetTextAction()).performTextInput("Ran all three sessions.")
         tap("Close week")
         compose.waitForIdle()
-        awaitText("Week 1,923 of 4,175")
-        awaitGone("Week 1,922 is still open")
+        awaitText("Renew passport photos")
+        awaitGone("Last week is still open")
         awaitText("Draft the conference talk")
         capture("after-close")
     }
@@ -535,8 +552,15 @@ class ScreenCaptureTest {
         }
         awaitGone("Week 1,923 · age 36")
         capture("life-selected")
-        compose.onNodeWithContentDescription("Next week").performClick()
+        compose.mainClock.advanceTimeBy(5_000)
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Show week details").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Next week").assertDoesNotExist()
+        capture("life-selected-collapsed")
         compose.onNode(hasText("· age", substring = true)).performClick()
+        compose.onNodeWithContentDescription("Hide week details").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Next week").performClick()
+        compose.onNodeWithText("Before Numbered", substring = true).performClick()
         awaitText("This week was lived before you started Numbered.")
         capture("week-detail-before")
     }
@@ -574,8 +598,8 @@ class ScreenCaptureTest {
         tap("This week")
         scrollTo("Close week")
         tap("Close week")
-        awaitText("Week 1,923 of 4,175")
-        awaitGone("Week 1,922 is still open")
+        awaitText("Renew passport photos")
+        awaitGone("Last week is still open")
         assertNull(container.drafts.read(lastWeek))
     }
 
@@ -614,8 +638,8 @@ class ScreenCaptureTest {
         tap("This week")
         scrollTo("Close week")
         tap("Close week")
-        awaitText("Week 1,923 of 4,175")
-        awaitGone("Week 1,922 is still open")
+        awaitText("Renew passport photos")
+        awaitGone("Last week is still open")
         assertEquals(note, runBlocking { container.repository.snapshot()!!.reviews.single { it.weekStart == lastWeek }.note })
         assertNull(container.drafts.read(lastWeek))
     }
@@ -671,8 +695,33 @@ class ScreenCaptureTest {
     @Test fun currentWeekDetail() {
         tap("Life")
         tap("Week 1,923 · age 36")
+        compose.onNodeWithText("Sep 28", substring = true).performClick()
         awaitText("Renew passport photos")
         capture("week-detail-current")
+    }
+
+    @OnDate("2026-11-26")
+    @Test fun birthdayCountdownConnectsThisWeekLifeAndWeekDetail() {
+        awaitText("One week before turning 37")
+        capture("this-week-before-birthday")
+        tap("Life")
+        awaitText("One week before turning 37")
+        capture("life-before-birthday")
+        tap("One week before turning 37")
+        awaitText("One week before turning 37")
+        capture("week-detail-before-birthday")
+    }
+
+    @OnDate("2026-12-03")
+    @Test fun birthdayWeekHasItsOwnLabel() {
+        awaitText("The week you turn 37")
+        capture("this-week-birthday")
+    }
+
+    @OnDate("2026-06-03")
+    @Test fun halfwayWeekHasItsOwnLabel() {
+        awaitText("Halfway through 36")
+        capture("this-week-halfway")
     }
 
     @Test fun pastWeekDetail() {
@@ -696,8 +745,8 @@ class ScreenCaptureTest {
 
     @Test @Gentle
     fun lifeGridGentle() {
-        awaitText("Week 1,923")
-        compose.onAllNodesWithText("Week 1,923 of 4,175").assertCountEquals(0)
+        awaitText("Renew passport photos")
+        compose.onAllNodesWithText("Week 1,923").assertCountEquals(0)
         tap("Life")
         capture("life-gentle")
     }
@@ -950,8 +999,8 @@ class ScreenCaptureTest {
         compose.onNodeWithText("37 weeks planned · 32 weeks closed · 5 waiting in Someday").assertIsDisplayed()
         capture("onboarding-restore")
         tap("Restore")
-        awaitText("Week 1,923 of 4,175")
-        compose.onNodeWithText("Week 1,922 is still open").assertIsDisplayed()
+        awaitText("Renew passport photos")
+        compose.onNodeWithText("Last week is still open").assertIsDisplayed()
         capture("after-restore")
     }
 

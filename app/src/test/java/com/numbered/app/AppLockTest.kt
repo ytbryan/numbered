@@ -134,8 +134,7 @@ class AppLockTest {
     @Test fun enablingAndDisablingRequireSuccessfulAuthenticationAndPersistOnlyThePreference() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             await("Private commitment")
-            compose.onNodeWithText("Life").performClick()
-            compose.onNodeWithContentDescription("Settings").performClick()
+            compose.onNodeWithText("Settings").performClick()
             await("App lock")
             compose.onNodeWithText("App lock").performScrollTo()
             compose.onNodeWithText("App lock").performClick()

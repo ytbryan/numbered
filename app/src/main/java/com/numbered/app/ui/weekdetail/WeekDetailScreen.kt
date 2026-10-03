@@ -48,6 +48,7 @@ import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.components.commitmentSubtitle
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
+import com.numbered.app.ui.lifeWeekMomentText
 import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.weekRange
 import java.time.LocalDate
@@ -90,7 +91,13 @@ fun WeekDetailScreen(
         ) {
             item(key = "header") {
                 Column(Modifier.padding(bottom = 10.dp)) {
-                    Text(weekRange(current.weekStart, current.today), style = MaterialTheme.typography.headlineSmall)
+                    current.moment?.let {
+                        Text(lifeWeekMomentText(it), style = MaterialTheme.typography.headlineSmall)
+                    }
+                    Text(
+                        weekRange(current.weekStart, current.today),
+                        style = if (current.moment == null) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
+                    )
                     Text(
                         text = stringResource(R.string.age_and_time, current.age, timeLabel(current)),
                         style = MaterialTheme.typography.bodyMedium,

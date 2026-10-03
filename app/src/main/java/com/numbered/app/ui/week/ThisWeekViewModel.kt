@@ -8,6 +8,7 @@ import com.numbered.app.data.PlanResult
 import com.numbered.app.data.SomedayItem
 import com.numbered.app.data.calendar
 import com.numbered.app.domain.CommitmentStatus
+import com.numbered.app.domain.LifeWeekMoment
 import com.numbered.app.domain.MAX_COMMITMENTS_PER_WEEK
 import com.numbered.app.domain.WeekSummary
 import com.numbered.app.domain.isStale
@@ -25,7 +26,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 
 /** A past week that still needs closing, because it has unfinished commitments or no review. */
-data class UnclosedWeek(val weekStart: LocalDate, val weekNumber: Int, val open: Int)
+data class UnclosedWeek(val weekStart: LocalDate, val open: Int)
 
 /** Several past weeks left open, offered as one catch-up instead of one week at a time. */
 data class CatchUp(val weeks: Int, val open: Int)
@@ -34,9 +35,7 @@ data class ThisWeekState(
     val today: LocalDate,
     val zone: ZoneId,
     val weekStart: LocalDate,
-    val weekNumber: Int,
-    /** Null in gentle mode, which never mentions the horizon. */
-    val horizonWeeks: Int?,
+    val moment: LifeWeekMoment?,
     val daysLeft: Int,
     val commitments: List<Commitment>,
     /** The one past week to close, when it is the only one. */
@@ -69,7 +68,6 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
     }.flatMapLatest { (profile, today) ->
         val calendar = profile.calendar()
         val weekStart = calendar.weekStartOf(today)
-        val currentIndex = calendar.indexOf(today)
         val nextWeekStart = weekStart.plusWeeks(1)
         combine(
             repository.week(weekStart),
@@ -83,12 +81,11 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
                 today = today,
                 zone = container.clock.zone,
                 weekStart = weekStart,
-                weekNumber = currentIndex + 1,
-                horizonWeeks = calendar.horizonWeeks.takeUnless { profile.gentle },
+                moment = calendar.momentOf(weekStart),
                 daysLeft = ChronoUnit.DAYS.between(today, weekStart.plusDays(6)).toInt() + 1,
                 commitments = week.filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done },
                 unclosed = unclosed.singleOrNull()?.let { start ->
-                    UnclosedWeek(start, calendar.indexOf(start) + 1, summaries[start]?.open ?: 0)
+                    UnclosedWeek(start, summaries[start]?.open ?: 0)
                 },
                 catchUp = unclosed.takeIf { it.size > 1 }?.let { weeks ->
                     CatchUp(weeks.size, weeks.sumOf { summaries[it]?.open ?: 0 })

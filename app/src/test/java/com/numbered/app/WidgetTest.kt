@@ -80,7 +80,6 @@ class WidgetTest {
             thursday.repository.setDone(thursday.repository.week(thisWeek).first().first().id, true)
         }
         val midWeek = load(thursday)!!
-        assertEquals(1923, midWeek.weekNumber)
         assertEquals(4, midWeek.daysLeft)
         assertEquals(listOf("Renew passport photos" to true, "Finish the grant draft" to false), midWeek.items.map { it.title to it.done })
         assertEquals(1, midWeek.squaresLeft)
@@ -126,7 +125,7 @@ class WidgetTest {
         setContext(app)
         setAppWidgetSize(DpSize(300.dp, 200.dp))
         provideComposable {
-            WidgetContent(WidgetState(thisWeek, 1923, 1, listOf(WidgetItem(1, "Private commitment", false)), true), locked = true)
+            WidgetContent(WidgetState(thisWeek, 1, listOf(WidgetItem(1, "Private commitment", false)), true), locked = true)
         }
         onNode(hasText("Numbered is locked. Tap to unlock.")).assertExists()
         onNode(hasText("Private commitment")).assertDoesNotExist()
@@ -140,7 +139,6 @@ class WidgetTest {
             WidgetContent(
                 WidgetState(
                     weekStart = thisWeek,
-                    weekNumber = 1923,
                     daysLeft = 1,
                     items = listOf(WidgetItem(1, "Renew passport photos", true), WidgetItem(2, "Finish the grant draft", false)),
                     offerClose = true,
@@ -148,7 +146,7 @@ class WidgetTest {
             )
         }
         onNode(hasText("Last day")).assertExists()
-        onNode(hasText("Week 1,923 · Last day")).assertExists()
+        onNode(hasText("Last day")).assertExists()
         onNode(hasText("+ Add another")).assertExists()
         onNode(hasText("Close the week →")).assertExists()
     }

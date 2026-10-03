@@ -29,7 +29,10 @@ App lock controls access to the app; exported files and Android database backups
 - **Widget**: this week on the home screen. Tick commitments off, add one, or close the week near its end.
 
 Life offers both a whole-life overview and larger week squares for one calendar year, with year navigation and a shortcut back to this week.
+The selected-week drawer has a [reusable interaction specification](docs/new-app-life-week-drawer.md) for new apps.
 This week names today and highlights it in a seven-day strip ordered by your chosen week start.
+Weeks near birthdays and at the six-month midpoint show age-relative labels.
+Lifetime week numbers remain on Life and week detail for orientation.
 Life also shows today and the current calendar week within its year.
 Lifetime totals sit below the grid.
 A short explanation and help button sit above it; the help sheet holds the guidance, colour key, and age-horizon note.
@@ -45,6 +48,7 @@ Missing or ambiguous earlier entries are shown explicitly.
 Database version 3 adds these links without replacing saved data.
 Backup format version 3 includes them and still reads versions 1 and 2.
 Year in review opens from Your lines, with a year picker and a preview of completed commitments, notes, and overlapping chapters.
+Weekly notes appear first and open their original week; completed commitments are grouped into expandable months.
 Save the preview as a UTF-8 text file or share it using Android’s share sheet.
 Reviews use the same week-based years as Your lines and include recorded data through the current week.
 Saved and shared summaries contain the selected year’s previewed content without birth dates, drafts, or Someday items.

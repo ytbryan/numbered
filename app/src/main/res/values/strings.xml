@@ -3,7 +3,7 @@
     <string name="app_name">Numbered</string>
 
     <!-- Navigation -->
-    <string name="tab_this_week">This week</string>
+    <string name="tab_this_week">Week</string>
     <string name="tab_life">Life</string>
     <string name="tab_someday">Someday</string>
     <string name="settings">Settings</string>
@@ -42,7 +42,14 @@
     <!-- Shared formats -->
     <string name="quoted">“%1$s”</string>
     <string name="week_number">Week %1$s</string>
-    <string name="week_of_horizon">Week %1$s of %2$s</string>
+    <string name="life_week_before_one">One week before turning %1$d</string>
+    <string name="life_week_before_two">Two weeks before turning %1$d</string>
+    <string name="life_week_before_three">Three weeks before turning %1$d</string>
+    <string name="life_week_before_four">Four weeks before turning %1$d</string>
+    <string name="life_week_birthday">The week you turn %1$d</string>
+    <string name="life_week_after">First full week at %1$d</string>
+    <string name="life_week_halfway">Halfway through %1$d</string>
+    <string name="life_week_halfway_first">Halfway through your first year</string>
     <string name="years_decimal">%1$s years</string>
 
     <!-- This week -->
@@ -67,7 +74,8 @@
     <string name="done_on">Done %1$s</string>
     <string name="carried_from">Carried from the week of %1$s</string>
     <string name="carried_from_last_week">Carried from last week</string>
-    <string name="unclosed_title">Week %1$s is still open</string>
+    <string name="unclosed_last_week">Last week is still open</string>
+    <string name="unclosed_week_of">The week of %1$s is still open</string>
     <plurals name="unclosed_body_open">
         <item quantity="one">%d unfinished</item>
         <item quantity="other">%d unfinished</item>
@@ -122,6 +130,8 @@
     <string name="legend_planned">Planned</string>
     <string name="legend_ahead">Ahead</string>
     <string name="week_and_age">Week %1$s · age %2$d</string>
+    <string name="life_expand_week_details">Show week details</string>
+    <string name="life_collapse_week_details">Hide week details</string>
     <string name="range_and_status">%1$s · %2$s</string>
     <string name="status_this_week_done" tools:ignore="PluralsCandidate">%1$d of %2$d done so far</string>
     <string name="status_this_week_empty">Nothing planned yet</string>
@@ -250,7 +260,6 @@
     <string name="widget_add_first">+ Add something</string>
     <string name="widget_add">+ Add another</string>
     <string name="widget_close">Close the week →</string>
-    <string name="widget_week_and_days">Week %1$s · %2$s</string>
 
     <!-- Reminders -->
     <string name="reminders_title">Reminders</string>
