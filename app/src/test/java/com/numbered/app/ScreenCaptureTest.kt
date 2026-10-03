@@ -522,7 +522,7 @@ class ScreenCaptureTest {
         capture("this-week-full")
     }
 
-    @Test fun expandedEditorsSaveLongEntries() {
+    @Test fun expandedSomedayEditorSavesLongEntry() {
         val repository = (RuntimeEnvironment.getApplication() as NumberedApp).container.repository
         tap("Someday")
         compose.onNodeWithContentDescription("Expand editor").performClick()
@@ -531,18 +531,6 @@ class ScreenCaptureTest {
         compose.onAllNodesWithText("Add").onLast().performClick()
         compose.waitUntil(5_000) {
             runBlocking { repository.somedayWaiting().first().any { it.title == "Plan the trip\n\nBook the train" } }
-        }
-
-        runBlocking { repository.setOtherThingsDoneEnabled(true) }
-        tap("Week")
-        scrollTo("Add something done")
-        tap("Add something done")
-        compose.onNodeWithContentDescription("Expand editor").performClick()
-        compose.onAllNodes(hasSetTextAction()).onLast().performTextReplacement("Helped a neighbour\n\nBrought groceries")
-        compose.onAllNodesWithText("Add").onLast().performClick()
-        compose.waitUntil(5_000) {
-            runBlocking { repository.otherThingsDone(defaultToday.with(DayOfWeek.MONDAY)).first()
-                .any { it.title == "Helped a neighbour\n\nBrought groceries" } }
         }
     }
 

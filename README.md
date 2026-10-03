@@ -90,9 +90,13 @@ To change an entity, bump `NumberedDatabase.VERSION`, add the migration to `MIGR
 ```bash
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest lintDebug assembleRelease
+python3 scripts/check_release_security.py
+python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
-CI (`.github/workflows/ci.yml`) runs the second line on every push to `main` and every pull request, and uploads the screens and reports.
+CI (`.github/workflows/ci.yml`) runs the release security checks after the build on every push to `main` and every pull request, and uploads the screens and reports.
+The security checks examine the merged release manifest for unexpected permissions, exported components, and debug settings, and check that Android backups and shared review files stay within their intended paths.
+These checks catch changes to those boundaries; they cannot prove that all application and dependency code is free of backdoors.
 Lint treats warnings as errors, and deliberate exceptions live in `app/lint.xml`.
 
 Release builds are unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.

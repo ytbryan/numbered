@@ -27,8 +27,13 @@ jobs:
       # Also validates the Gradle wrapper checksum.
       - uses: gradle/actions/setup-gradle@v6
 
-      # Unit and screen tests, lint with warnings as errors, and the minified release build.
+      # Unit and screen tests, lint with warnings as errors, and the release build.
       - run: ./gradlew testDebugUnitTest lintDebug assembleRelease
+
+      - name: Check release security boundaries
+        run: |
+          python3 scripts/check_release_security.py
+          python3 -m unittest discover -s scripts -p 'test_*.py'
 
       # Room regenerates the exported schema on every build, so a schema change must be committed.
       - name: Check the exported database schema is committed

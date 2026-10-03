@@ -7,4 +7,8 @@
     <issue id="GradleDependency">
         <ignore regexp="compose-bom|core-ktx|lifecycle-runtime-compose|lifecycle-viewmodel-compose|navigation-compose" />
     </issue>
+    <!-- Kotlin was intentionally pinned to 2.3.20 alongside the current KSP version. -->
+    <issue id="NewerVersionAvailable">
+        <ignore regexp="org\.jetbrains\.kotlin\..* than 2\.3\.20" />
+    </issue>
 </lint>

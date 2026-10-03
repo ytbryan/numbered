@@ -29,7 +29,7 @@ import com.numbered.app.R
 
 /** Opens the same draft in a larger writing space. */
 @Composable
-fun ExpandTextButton(onClick: () -> Unit, enabled: Boolean = true) {
+fun ExpandTextButton(enabled: Boolean = true, onClick: () -> Unit) {
     IconButton(onClick = onClick, enabled = enabled) {
         Icon(Icons.Outlined.OpenInFull, contentDescription = stringResource(R.string.action_expand_editor))
     }
