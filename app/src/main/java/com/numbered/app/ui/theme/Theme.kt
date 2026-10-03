@@ -1,6 +1,5 @@
 package com.numbered.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -15,10 +14,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import com.numbered.app.domain.WeekTone
 
-/**
- * Numbered keeps a fixed palette instead of dynamic colour, because the life grid's colours carry
- * meaning and must read the same on every phone.
- */
+/** Week colours are explicit so the grid keeps its meaning across devices and themes. */
 internal val LightColors = lightColorScheme(
     primary = Color(0xFF0F6E56),
     onPrimary = Color(0xFFFFFFFF),
@@ -75,6 +71,118 @@ internal val DarkColors = darkColorScheme(
     outlineVariant = Color(0xFF3D3934),
 )
 
+private val WarmPaperColors = LightColors.copy(
+    primary = Color(0xFF51447A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFE6DFF6),
+    onPrimaryContainer = Color(0xFF302454),
+    secondary = Color(0xFF835719),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFF7E8C9),
+    onSecondaryContainer = Color(0xFF57390C),
+    tertiary = Color(0xFF446574),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFD9EAF0),
+    onTertiaryContainer = Color(0xFF1F4555),
+    background = Color(0xFFFFFAEF),
+    onBackground = Color(0xFF28231F),
+    surface = Color(0xFFFFFAEF),
+    onSurface = Color(0xFF28231F),
+    surfaceVariant = Color(0xFFF3EBD8),
+    onSurfaceVariant = Color(0xFF625B50),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFFCF5E6),
+    surfaceContainer = Color(0xFFF7EEDC),
+    surfaceContainerHigh = Color(0xFFF0E6D2),
+    surfaceContainerHighest = Color(0xFFE9DDC7),
+    outline = Color(0xFF81796D),
+    outlineVariant = Color(0xFFDBD1BD),
+)
+
+private val DeepInkColors = DarkColors.copy(
+    primary = Color(0xFF9BC9ED),
+    onPrimary = Color(0xFF0C304C),
+    primaryContainer = Color(0xFF244762),
+    onPrimaryContainer = Color(0xFFD1E8FA),
+    secondary = Color(0xFFFFB49D),
+    onSecondary = Color(0xFF632719),
+    secondaryContainer = Color(0xFF703A2B),
+    onSecondaryContainer = Color(0xFFFFDDD2),
+    tertiary = Color(0xFFC5B7F4),
+    onTertiary = Color(0xFF332B62),
+    tertiaryContainer = Color(0xFF4A407D),
+    onTertiaryContainer = Color(0xFFE9E1FF),
+    background = Color(0xFF111B27),
+    onBackground = Color(0xFFF0F3F8),
+    surface = Color(0xFF111B27),
+    onSurface = Color(0xFFF0F3F8),
+    surfaceVariant = Color(0xFF253242),
+    onSurfaceVariant = Color(0xFFBECAD7),
+    surfaceContainerLowest = Color(0xFF0B141F),
+    surfaceContainerLow = Color(0xFF192533),
+    surfaceContainer = Color(0xFF202D3C),
+    surfaceContainerHigh = Color(0xFF2A3849),
+    surfaceContainerHighest = Color(0xFF354557),
+    outline = Color(0xFF93A4B5),
+    outlineVariant = Color(0xFF455466),
+)
+
+private val SoftSageColors = LightColors.copy(
+    primary = Color(0xFF275D50),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFD1E7DB),
+    onPrimaryContainer = Color(0xFF163B32),
+    secondary = Color(0xFF74558B),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE9DDF1),
+    onSecondaryContainer = Color(0xFF4D3163),
+    tertiary = Color(0xFF96602D),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFF4E2CA),
+    onTertiaryContainer = Color(0xFF623D18),
+    background = Color(0xFFF4F8F2),
+    onBackground = Color(0xFF1D2A22),
+    surface = Color(0xFFF4F8F2),
+    onSurface = Color(0xFF1D2A22),
+    surfaceVariant = Color(0xFFE2EBDF),
+    onSurfaceVariant = Color(0xFF526158),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFEEF4EC),
+    surfaceContainer = Color(0xFFE7F0E5),
+    surfaceContainerHigh = Color(0xFFDFE9DD),
+    surfaceContainerHighest = Color(0xFFD5E2D3),
+    outline = Color(0xFF77867B),
+    outlineVariant = Color(0xFFC7D7C8),
+)
+
+private val HighContrastColors = LightColors.copy(
+    primary = Color(0xFF003FB3),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFD9E5FF),
+    onPrimaryContainer = Color(0xFF001F64),
+    secondary = Color(0xFF8C3000),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFE0CF),
+    onSecondaryContainer = Color(0xFF542000),
+    tertiary = Color(0xFF5632A0),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFE9DDFF),
+    onTertiaryContainer = Color(0xFF301066),
+    background = Color.White,
+    onBackground = Color.Black,
+    surface = Color.White,
+    onSurface = Color.Black,
+    surfaceVariant = Color(0xFFEAEAEA),
+    onSurfaceVariant = Color(0xFF303030),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFF6F6F6),
+    surfaceContainer = Color(0xFFEBEBEB),
+    surfaceContainerHigh = Color(0xFFDEDEDE),
+    surfaceContainerHighest = Color(0xFFD2D2D2),
+    outline = Color(0xFF3B3B3B),
+    outlineVariant = Color(0xFF8D8D8D),
+)
+
 /** Colours for each kind of week on the life grid. */
 @Immutable
 data class WeekColors(
@@ -113,6 +221,42 @@ private val DarkWeekColors = WeekColors(
     ahead = Color(0xFF2A2824),
 )
 
+private val WarmPaperWeekColors = LightWeekColors.copy(
+    lived = Color(0xFFD2C7B2),
+    someDone = Color(0xFFC4B4E1),
+    allDone = Color(0xFF51447A),
+    current = Color(0xFF9C641A),
+    pinned = Color(0xFF457488),
+    ahead = Color(0xFFF2E9D8),
+)
+
+private val DeepInkWeekColors = DarkWeekColors.copy(
+    lived = Color(0xFF435267),
+    someDone = Color(0xFF47789C),
+    allDone = Color(0xFF9BC9ED),
+    current = Color(0xFFFFB49D),
+    pinned = Color(0xFFC5B7F4),
+    ahead = Color(0xFF202D3C),
+)
+
+private val SoftSageWeekColors = LightWeekColors.copy(
+    lived = Color(0xFFB9C9BB),
+    someDone = Color(0xFF9AC7AC),
+    allDone = Color(0xFF275D50),
+    current = Color(0xFF9B6434),
+    pinned = Color(0xFF8D6BA4),
+    ahead = Color(0xFFE5EEE4),
+)
+
+private val HighContrastWeekColors = LightWeekColors.copy(
+    lived = Color(0xFF777777),
+    someDone = Color(0xFF83B8FF),
+    allDone = Color(0xFF003FB3),
+    current = Color(0xFFB23D00),
+    pinned = Color(0xFF6843B5),
+    ahead = Color(0xFFE6E6E6),
+)
+
 val LocalWeekColors = staticCompositionLocalOf { LightWeekColors }
 
 /**
@@ -131,11 +275,31 @@ private val NumberedTypography = BaseTypography.copy(
     titleLarge = BaseTypography.titleLarge.copy(fontWeight = FontWeight.Medium),
 )
 
+val ThemeOption.isDark: Boolean get() = this == ThemeOption.DeepInk
+
+private val ThemeOption.colors: ColorScheme
+    get() = when (this) {
+        ThemeOption.FocusLight -> LightColors
+        ThemeOption.WarmPaper -> WarmPaperColors
+        ThemeOption.DeepInk -> DeepInkColors
+        ThemeOption.SoftSage -> SoftSageColors
+        ThemeOption.HighContrast -> HighContrastColors
+    }
+
+private val ThemeOption.weekColors: WeekColors
+    get() = when (this) {
+        ThemeOption.FocusLight -> LightWeekColors
+        ThemeOption.WarmPaper -> WarmPaperWeekColors
+        ThemeOption.DeepInk -> DeepInkWeekColors
+        ThemeOption.SoftSage -> SoftSageWeekColors
+        ThemeOption.HighContrast -> HighContrastWeekColors
+    }
+
 @Composable
-fun NumberedTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalWeekColors provides if (darkTheme) DarkWeekColors else LightWeekColors) {
+fun NumberedTheme(theme: ThemeOption, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalWeekColors provides theme.weekColors) {
         MaterialTheme(
-            colorScheme = if (darkTheme) DarkColors else LightColors,
+            colorScheme = theme.colors,
             typography = NumberedTypography,
             content = content,
         )

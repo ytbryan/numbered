@@ -8,15 +8,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.fragment.app.FragmentActivity
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.numbered.app.appContainer
 import com.numbered.app.ui.theme.NumberedTheme
+import com.numbered.app.ui.theme.isDark
 import kotlinx.coroutines.launch
 
 /** Every app entry point uses the same gate, including Android sharing and widget deep links. */
@@ -55,7 +58,14 @@ abstract class LockedActivity : FragmentActivity() {
 
     protected fun setLockedContent(content: @Composable () -> Unit) {
         setContent {
-            NumberedTheme {
+            val theme by appContainer.themes.selection.collectAsState()
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !theme.isDark
+                    isAppearanceLightNavigationBars = !theme.isDark
+                }
+            }
+            NumberedTheme(theme) {
                 // The gate must react even while stopped; private content is never behind a lock overlay.
                 val enabled by appContainer.appLock.enabled.collectAsState()
                 val state by session.state.collectAsState()

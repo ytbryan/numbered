@@ -32,6 +32,7 @@ import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.locale
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.toLocalDate
+import com.numbered.app.appContainer
 import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +42,8 @@ fun SettingsScreen() {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
+    val themes = LocalContext.current.appContainer.themes
+    val selectedTheme by themes.selection.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
     val data = containerViewModel { DataViewModel(it, resolver) }
     val lastExport by data.lastExport.collectAsStateWithLifecycle()
@@ -77,6 +80,7 @@ fun SettingsScreen() {
             BirthDateField(current.birthDate, today, viewModel::setBirthDate)
             HorizonField(current.horizonYears, current.birthDate, today, viewModel::setHorizon)
             GentleField(current.gentle, viewModel::setGentle)
+            ThemePicker(selectedTheme, themes::select)
             AppLockSetting()
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             RemindersSection(

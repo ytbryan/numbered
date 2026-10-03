@@ -45,6 +45,8 @@ import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.domain.CommitmentStatus.Carried
 import com.numbered.app.domain.CommitmentStatus.Done
 import com.numbered.app.domain.CommitmentStatus.Open
+import com.numbered.app.ui.theme.ThemeOption
+import com.numbered.app.ui.theme.ThemeStore
 import java.io.File
 import java.time.Clock
 import java.time.DayOfWeek
@@ -132,6 +134,7 @@ class ScreenCaptureTest {
             val clock = clockOn(today.plusWeeks(away))
             val app = RuntimeEnvironment.getApplication() as NumberedApp
             app.getSharedPreferences("reminders", Context.MODE_PRIVATE).edit().clear().commit()
+            app.getSharedPreferences("theme", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -884,6 +887,19 @@ class ScreenCaptureTest {
         compose.onNodeWithText("Named after Psalm", substring = true).assertExists()
         capture("settings-about")
         compose.onNodeWithText("Done").performScrollTo().performClick()
+    }
+
+    @Test fun themePickerShowsFiveChoicesAndSavesSelection() {
+        openSettings()
+        tap("Theme")
+        awaitText("Choose a theme")
+        capture("theme-picker")
+        scrollTo("High Contrast")
+        tap("High Contrast")
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        assertEquals(ThemeOption.HighContrast, app.container.themes.selection.value)
+        assertEquals(ThemeOption.HighContrast, ThemeStore(app).selection.value)
+        capture("theme-high-contrast")
     }
 
     @Test fun importInSettingsReplacesEverything() {
