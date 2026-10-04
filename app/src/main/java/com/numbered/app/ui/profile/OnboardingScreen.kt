@@ -41,12 +41,11 @@ import java.time.temporal.WeekFields
 @Composable
 fun OnboardingScreen(
     today: LocalDate,
-    onStart: (LocalDate, Int, Boolean, DayOfWeek) -> Unit,
+    onStart: (LocalDate, Int, DayOfWeek) -> Unit,
     onRestore: () -> Unit,
 ) {
     var birthEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
     var horizon by rememberSaveable { mutableIntStateOf(LifeCalendar.HORIZON_CHOICES.first()) }
-    var gentle by rememberSaveable { mutableStateOf(false) }
     var showError by rememberSaveable { mutableStateOf(false) }
     val birthDate = birthEpochDay?.let(LocalDate::ofEpochDay)
     // Weeks start on the locale's first day, fixed at setup so stored weeks never shift.
@@ -86,7 +85,6 @@ fun OnboardingScreen(
             )
         }
         HorizonField(horizon, birthDate, today) { horizon = it }
-        GentleField(gentle) { gentle = it }
         Text(
             stringResource(R.string.privacy_note),
             style = MaterialTheme.typography.bodySmall,
@@ -94,7 +92,7 @@ fun OnboardingScreen(
         )
         Button(
             onClick = {
-                if (birthDate == null) showError = true else onStart(birthDate, horizon, gentle, firstDay)
+                if (birthDate == null) showError = true else onStart(birthDate, horizon, firstDay)
             },
             modifier = Modifier
                 .fillMaxWidth()

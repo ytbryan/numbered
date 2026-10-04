@@ -60,6 +60,10 @@ class NumberedRepository(
 
     private suspend fun priorityLimit(): Int = profiles.get()?.prioritiesPerWeek ?: DEFAULT_PRIORITIES_PER_WEEK
 
+    suspend fun createProfile(birthDate: LocalDate, horizonYears: Int, firstDayOfWeek: DayOfWeek) {
+        saveProfile(birthDate, horizonYears, gentle = true, firstDayOfWeek)
+    }
+
     /** Creates the profile, or updates the personal details while keeping the week layout fixed. */
     suspend fun saveProfile(birthDate: LocalDate, horizonYears: Int, gentle: Boolean, firstDayOfWeek: DayOfWeek) {
         db.withTransaction {

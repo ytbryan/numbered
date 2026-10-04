@@ -60,6 +60,8 @@ fun SettingsScreen() {
     val selectedTheme by themes.selection.collectAsStateWithLifecycle()
     val weekProgress = LocalContext.current.appContainer.weekProgress
     val selectedWeekProgress by weekProgress.style.collectAsStateWithLifecycle()
+    val ageDisplay = LocalContext.current.appContainer.ageDisplay
+    val decimalAgeEnabled by ageDisplay.decimalEnabled.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
     val data = containerViewModel { DataViewModel(it, resolver) }
     val lastExport by data.lastExport.collectAsStateWithLifecycle()
@@ -102,6 +104,24 @@ fun SettingsScreen() {
             )
             HorizonField(current.horizonYears, current.birthDate, today, viewModel::setHorizon)
             GentleField(current.gentle, viewModel::setGentle)
+            Row(
+                modifier = Modifier.fillMaxWidth().toggleable(
+                    value = decimalAgeEnabled,
+                    role = Role.Switch,
+                    onValueChange = ageDisplay::setDecimalEnabled,
+                ).padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f).padding(end = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(R.string.decimal_age), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(R.string.decimal_age_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = decimalAgeEnabled, onCheckedChange = null)
+            }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.priorities_per_week), style = MaterialTheme.typography.titleSmall)
                 Text(

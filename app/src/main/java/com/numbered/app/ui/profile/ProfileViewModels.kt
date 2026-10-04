@@ -29,8 +29,8 @@ class RootViewModel(private val container: AppContainer) : NoticeViewModel() {
 
     val today: StateFlow<LocalDate> = container.today.value
 
-    fun completeSetup(birthDate: LocalDate, horizonYears: Int, gentle: Boolean, firstDayOfWeek: DayOfWeek) = launchWrite {
-        container.repository.saveProfile(birthDate, horizonYears, gentle, firstDayOfWeek)
+    fun completeSetup(birthDate: LocalDate, horizonYears: Int, firstDayOfWeek: DayOfWeek) = launchWrite {
+        container.repository.createProfile(birthDate, horizonYears, firstDayOfWeek)
     }
 }
 

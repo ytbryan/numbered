@@ -2,10 +2,8 @@ package com.numbered.app.ui.week
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,21 +26,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.numbered.app.R
-import com.numbered.app.ui.formatCount
-import com.numbered.app.ui.weekRange
 
 @Composable
 internal fun WeekProgressVisual(state: ThisWeekState, style: WeekProgressStyle) {
     if (style == WeekProgressStyle.Off) return
     val week = state.calendarWeek
     val position = stringResource(R.string.week_visual_position, week.number, week.total)
-    val range = stringResource(R.string.week_visual_range, weekRange(state.weekStart, state.today))
-    val description = stringResource(
-        R.string.week_visual_full_accessibility,
-        stringResource(R.string.week_and_age, formatCount(state.lifeWeekNumber), state.age),
-        stringResource(R.string.week_visual_accessibility, week.number, week.total, week.year),
-        range,
-    )
+    val description = stringResource(R.string.week_visual_accessibility, week.number, week.total, week.year)
     val accent = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -52,14 +42,9 @@ internal fun WeekProgressVisual(state: ThisWeekState, style: WeekProgressStyle) 
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                stringResource(R.string.week_and_age, formatCount(state.lifeWeekNumber), state.age),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            when (style) {
-                WeekProgressStyle.Bars -> {
+        when (style) {
+            WeekProgressStyle.Bars -> {
+                Column(Modifier.padding(16.dp)) {
                     Canvas(Modifier.fillMaxWidth().height(34.dp)) {
                         val gap = 2.dp.toPx()
                         val barWidth = (size.width - gap * (week.total - 1)) / week.total
@@ -75,35 +60,35 @@ internal fun WeekProgressVisual(state: ThisWeekState, style: WeekProgressStyle) 
                             )
                         }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(range, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(position, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text(
+                        position,
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-                WeekProgressStyle.Circle -> {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
-                            Canvas(Modifier.size(80.dp)) {
-                                val stroke = 7.dp.toPx()
-                                val inset = stroke / 2f
-                                val arcSize = Size(size.width - stroke, size.height - stroke)
-                                drawArc(track.copy(alpha = 0.25f), -90f, 360f, false, Offset(inset, inset), arcSize,
-                                    style = Stroke(stroke, cap = StrokeCap.Round))
-                                drawArc(accent, -90f, 360f * week.number / week.total, false, Offset(inset, inset), arcSize,
-                                    style = Stroke(stroke, cap = StrokeCap.Round))
-                            }
-                            Text(week.number.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(stringResource(R.string.week_visual_total, week.total), style = MaterialTheme.typography.titleMedium)
-                            Text(weekRange(state.weekStart, state.today), style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-                WeekProgressStyle.Off -> Unit
             }
+            WeekProgressStyle.Circle -> {
+                Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+                        Canvas(Modifier.size(96.dp)) {
+                            val stroke = 8.dp.toPx()
+                            val inset = stroke / 2f
+                            val arcSize = Size(size.width - stroke, size.height - stroke)
+                            drawArc(track.copy(alpha = 0.25f), -90f, 360f, false, Offset(inset, inset), arcSize,
+                                style = Stroke(stroke, cap = StrokeCap.Round))
+                            drawArc(accent, -90f, 360f * week.number / week.total, false, Offset(inset, inset), arcSize,
+                                style = Stroke(stroke, cap = StrokeCap.Round))
+                        }
+                        Text(
+                            stringResource(R.string.week_visual_fraction, week.number, week.total),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            }
+            WeekProgressStyle.Off -> Unit
         }
     }
 }

@@ -29,7 +29,7 @@ data class WeekDetailState(
     val zone: ZoneId,
     val weekStart: LocalDate,
     val weekNumber: Int,
-    val age: Int,
+    val ageTenths: Int,
     val moment: LifeWeekMoment?,
     val time: WeekTime,
     val commitments: List<Commitment>,
@@ -68,7 +68,7 @@ class WeekDetailViewModel(private val container: AppContainer, private val weekS
             zone = container.clock.zone,
             weekStart = weekStart,
             weekNumber = calendar.indexOf(weekStart) + 1,
-            age = calendar.ageOn(weekStart.plusDays(6)),
+            ageTenths = calendar.yearsLivedTenths(if (weekStart == currentWeek) today else weekStart.plusDays(6)),
             moment = calendar.momentOf(weekStart),
             time = when {
                 weekStart < currentWeek -> WeekTime.Past

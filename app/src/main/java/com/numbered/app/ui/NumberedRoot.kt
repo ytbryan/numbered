@@ -131,7 +131,7 @@ fun NumberedRoot() {
 
 /** Onboarding, with a way to restore an exported copy on a new phone instead. */
 @Composable
-private fun Setup(today: LocalDate, snackbar: SnackbarHostState, onStart: (LocalDate, Int, Boolean, DayOfWeek) -> Unit) {
+private fun Setup(today: LocalDate, snackbar: SnackbarHostState, onStart: (LocalDate, Int, DayOfWeek) -> Unit) {
     val resolver = LocalContext.current.applicationContext.contentResolver
     val data = containerViewModel { DataViewModel(it, resolver) }
     NoticeEffect(data.notices)

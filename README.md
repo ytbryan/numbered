@@ -37,7 +37,11 @@ Life offers both a whole-life overview and larger week squares for one calendar 
 The selected-week drawer has a [reusable interaction specification](docs/new-app-life-week-drawer.md) for new apps.
 This week names today and highlights it in a seven-day strip ordered by your chosen week start.
 Settings can add a circular or week-by-week bar view of calendar-year progress above This week.
+New profiles start in Gentle mode, which hides future weeks; the setting can be changed later in Settings.
 Years with 53 calendar weeks show all 53 marks.
+Point-in-time ages show one decimal place by default, truncated so they never advance before a birthday.
+Settings can turn Decimal ages off to show whole years; this display preference stays on the phone.
+Birthday milestones, grid labels, and age limits use whole years.
 Weeks near birthdays and at the six-month midpoint show age-relative labels.
 Lifetime week numbers remain on Life and week detail for orientation.
 Life also shows today and the current calendar week within its year.

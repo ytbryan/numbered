@@ -51,6 +51,8 @@
     <string name="life_week_after">First full week at %1$d</string>
     <string name="life_week_halfway">Halfway through %1$d</string>
     <string name="life_week_halfway_first">Halfway through your first year</string>
+    <string name="decimal_age">Decimal ages</string>
+    <string name="decimal_age_help">Show ages with one decimal place, such as 32.4. Turn off to show whole years.</string>
     <string name="years_decimal">%1$s years</string>
 
     <!-- This week -->
@@ -61,10 +63,8 @@
     <string name="week_visual_circle">Circle</string>
     <string name="week_visual_bars">Week bars</string>
     <string name="week_visual_position">%1$d of %2$d</string>
-    <string name="week_visual_total">of %1$d</string>
-    <string name="week_visual_range">Week of %1$s</string>
+    <string name="week_visual_fraction">%1$d/%2$d</string>
     <string name="week_visual_accessibility">Week %1$d of %2$d in %3$d</string>
-    <string name="week_visual_full_accessibility">%1$s. %2$s. %3$s.</string>
     <string name="last_day">Last day</string>
     <plurals name="days_left">
         <item quantity="one">%d day left</item>
@@ -155,7 +155,7 @@
     <string name="legend_this_week">This week</string>
     <string name="legend_planned">Planned</string>
     <string name="legend_ahead">Ahead</string>
-    <string name="week_and_age">Week %1$s · age %2$d</string>
+    <string name="week_and_age">Week %1$s · age %2$s</string>
     <string name="life_expand_week_details">Show week details</string>
     <string name="life_collapse_week_details">Hide week details</string>
     <string name="range_and_status">%1$s · %2$s</string>
@@ -176,7 +176,7 @@
     <string name="chapters_empty">Name a season of your life.</string>
     <string name="chapter_span">%1$s – %2$s</string>
     <string name="chapter_span_ongoing">%1$s – now</string>
-    <string name="chapter_age_span">Age %1$d · %2$s</string>
+    <string name="chapter_age_span">Age %1$s · %2$s</string>
     <string name="legend_chapter">Chapter starts</string>
     <string name="chapter_new">New chapter</string>
     <string name="chapter_edit">Edit chapter</string>
@@ -216,7 +216,7 @@
     <string name="a11y_clear_search">Clear search</string>
 
     <!-- Week detail -->
-    <string name="age_and_time">Age %1$d · %2$s</string>
+    <string name="age_and_time">Age %1$s · %2$s</string>
     <string name="time_this_week">This week</string>
     <string name="time_ahead">Ahead</string>
     <string name="time_before_numbered">Before Numbered</string>
@@ -265,7 +265,7 @@
     <string name="onboarding_hook">About 4,000 weeks. Spend this one on purpose.</string>
     <string name="onboarding_body">Choose up to three.\nWrite one line.\nSee your weeks.</string>
     <string name="birth_date">Birth date</string>
-    <string name="birth_date_hidden">Hidden</string>
+    <string name="birth_date_hidden">********</string>
     <string name="a11y_show_birth_date">Show birth date</string>
     <string name="a11y_hide_birth_date">Hide birth date</string>
     <string name="birth_date_choose">Choose your birth date</string>
@@ -348,8 +348,8 @@
     <string name="lock_save_failed">Could not save the lock setting. Try again.</string>
     <string name="lock_android_settings">Android Settings</string>
     <string name="lock_widget">Numbered is locked. Tap to unlock.</string>
+    <string name="life_week_view">Week view</string>
     <string name="life_whole">Whole life</string>
-    <string name="life_larger">Larger weeks</string>
     <string name="life_jump_year">Jump to year</string>
     <string name="life_jump_this_week">This week</string>
     <string name="life_previous_year">Previous year</string>

@@ -7,6 +7,8 @@ import androidx.annotation.StringRes
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -102,6 +104,12 @@ fun locale(): Locale = LocalConfiguration.current.locales[0]
 @Composable
 @ReadOnlyComposable
 fun formatCount(value: Int): String = NumberFormat.getIntegerInstance(locale()).format(value)
+
+@Composable
+fun ageText(tenths: Int): String {
+    val decimalEnabled by LocalContext.current.appContainer.ageDisplay.decimalEnabled.collectAsStateWithLifecycle()
+    return formatAgeTenths(tenths, decimalEnabled, locale())
+}
 
 @Composable
 @ReadOnlyComposable

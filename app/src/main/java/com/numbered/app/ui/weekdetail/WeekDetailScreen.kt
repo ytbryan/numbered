@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.numbered.app.ui.ageText
 import com.numbered.app.R
 import com.numbered.app.data.Commitment
 import com.numbered.app.domain.CommitmentStatus
@@ -100,7 +101,7 @@ fun WeekDetailScreen(
                         style = if (current.moment == null) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = stringResource(R.string.age_and_time, current.age, timeLabel(current)),
+                        text = stringResource(R.string.age_and_time, ageText(current.ageTenths), timeLabel(current)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

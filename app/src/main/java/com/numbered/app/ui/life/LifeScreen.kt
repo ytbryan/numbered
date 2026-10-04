@@ -75,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.numbered.app.ui.ageText
 import com.numbered.app.R
 import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.domain.WeekTone
@@ -89,7 +90,6 @@ import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.theme.LocalWeekColors
 import com.numbered.app.ui.weekRange
-import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
@@ -107,7 +107,7 @@ fun LifeScreen(
     val selected by viewModel.selected.collectAsStateWithLifecycle()
     val state = grid ?: return
     val calendarWeek = state.calendar.calendarWeek(state.today)
-    var enlarged by rememberSaveable { mutableStateOf(false) }
+    var enlarged by rememberSaveable { mutableStateOf(true) }
     var choosingYear by rememberSaveable { mutableStateOf(false) }
     var showHelp by rememberSaveable { mutableStateOf(false) }
     var weekDetailsExpanded by rememberSaveable { mutableStateOf(false) }
@@ -310,8 +310,8 @@ fun LifeScreen(
 @Composable
 private fun GridControls(enlarged: Boolean, onEnlarge: (Boolean) -> Unit, onJump: () -> Unit, onCurrent: () -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(selected = enlarged, onClick = { onEnlarge(true) }, label = { Text(stringResource(R.string.life_week_view)) })
         FilterChip(selected = !enlarged, onClick = { onEnlarge(false) }, label = { Text(stringResource(R.string.life_whole)) })
-        FilterChip(selected = enlarged, onClick = { onEnlarge(true) }, label = { Text(stringResource(R.string.life_larger)) })
         TextButton(onClick = onJump) { Text(stringResource(R.string.life_jump_year)) }
         if (enlarged) TextButton(onClick = onCurrent) { Text(stringResource(R.string.life_jump_this_week)) }
     }
@@ -319,11 +319,7 @@ private fun GridControls(enlarged: Boolean, onEnlarge: (Boolean) -> Unit, onJump
 
 @Composable
 private fun yearsText(tenths: Int): String {
-    val format = NumberFormat.getNumberInstance(locale()).apply {
-        minimumFractionDigits = 1
-        maximumFractionDigits = 1
-    }
-    return stringResource(R.string.years_decimal, format.format(tenths / 10.0))
+    return stringResource(R.string.years_decimal, ageText(tenths))
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -403,7 +399,7 @@ private fun Chapters(state: LifeGridState, onOpen: (Long) -> Unit, onNew: () -> 
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(chapter.title, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        stringResource(R.string.chapter_age_span, state.calendar.ageOn(chapter.startWeek), span),
+                        stringResource(R.string.chapter_age_span, ageText(state.calendar.yearsLivedTenths(chapter.startWeek)), span),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -449,7 +445,7 @@ private fun SelectedWeekPanel(
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(R.string.week_and_age, formatCount(week.index + 1), week.age),
+                    text = stringResource(R.string.week_and_age, formatCount(week.index + 1), ageText(week.ageTenths)),
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

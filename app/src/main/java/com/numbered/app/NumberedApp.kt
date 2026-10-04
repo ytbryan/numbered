@@ -10,6 +10,7 @@ import com.numbered.app.data.BackupSafety
 import com.numbered.app.reminders.Reminders
 import com.numbered.app.widget.keepWidgetsCurrent
 import com.numbered.app.security.AppLock
+import com.numbered.app.ui.AgeDisplayStore
 import com.numbered.app.ui.theme.ThemeStore
 import com.numbered.app.ui.week.WeekProgressStore
 import java.time.Clock
@@ -52,6 +53,7 @@ class AppContainer(context: Context, val database: NumberedDatabase, val clock: 
     val backupSafety = BackupSafety(context.applicationContext)
     val appLock = AppLock(context.applicationContext)
     val themes = ThemeStore(context.applicationContext)
+    val ageDisplay = AgeDisplayStore(context.applicationContext)
     val weekProgress = WeekProgressStore(context.applicationContext)
 
     /** Work that outlives a screen, such as scheduling reminders. */

@@ -231,6 +231,12 @@ class RepositoryTest {
         assertEquals(LocalDate.of(2026, 10, 1), profile.startedOn)
     }
 
+    @Test fun newProfilesStartInGentleMode() = runBlocking {
+        repository.createProfile(LocalDate.of(1989, 12, 2), 80, DayOfWeek.MONDAY)
+
+        assertEquals(true, repository.profile().first()!!.gentle)
+    }
+
     @Test fun summariesCountEachWeek() = runBlocking {
         repeat(2) { repository.addCommitment(lastWeek, "Last $it") }
         repository.setDone(week(lastWeek).first().id, true)

@@ -44,7 +44,7 @@ data class LifeGridState(
 data class SelectedWeek(
     val index: Int,
     val start: LocalDate,
-    val age: Int,
+    val ageTenths: Int,
     val moment: LifeWeekMoment?,
     val tone: WeekTone,
     val summary: WeekSummary,
@@ -103,7 +103,7 @@ class LifeViewModel(container: AppContainer) : NoticeViewModel() {
             SelectedWeek(
                 index = index,
                 start = start,
-                age = grid.calendar.ageOn(start.plusDays(6)),
+                ageTenths = grid.calendar.yearsLivedTenths(if (index == grid.currentIndex) grid.today else start.plusDays(6)),
                 moment = grid.calendar.momentOf(start),
                 tone = grid.tones[index],
                 summary = WeekSummary.of(commitments.map(Commitment::status)),

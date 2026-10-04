@@ -15,6 +15,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -136,6 +137,7 @@ class ScreenCaptureTest {
             app.getSharedPreferences("reminders", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("theme", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("week_progress", Context.MODE_PRIVATE).edit().clear().commit()
+            app.getSharedPreferences("age_display", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -325,7 +327,7 @@ class ScreenCaptureTest {
         tap("Life")
         scrollTo("Chapters")
         awaitText("Name a season of your life.")
-        tap("Week 1,923 · age 36")
+        tap("Week 1,923 · age 36.8")
         compose.onNodeWithText("Sep 28", substring = true).performClick()
         tap("Start a chapter here")
         awaitText("New chapter")
@@ -339,7 +341,7 @@ class ScreenCaptureTest {
         capture("week-detail-chapter")
         compose.onNodeWithContentDescription("Back").performClick()
         scrollTo("Moved to Singapore")
-        compose.onNodeWithText("Age 36 · Sep 2026 – now").assertIsDisplayed()
+        compose.onNodeWithText("Age 36.8 · Sep 2026 – now").assertIsDisplayed()
         capture("life-chapters")
 
         tap("Moved to Singapore")
@@ -353,6 +355,9 @@ class ScreenCaptureTest {
 
     @Test fun linesGatherEveryWeeklyNote() {
         tap("Life")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Your lines").fetchSemanticsNodes().size == 1
+        }
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("2026")
         capture("lines")
@@ -371,6 +376,9 @@ class ScreenCaptureTest {
         val app = RuntimeEnvironment.getApplication() as NumberedApp
         val before = runBlocking { app.container.repository.snapshot()!! }
         tap("Life")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Your lines").fetchSemanticsNodes().size == 1
+        }
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("2026")
         compose.onNode(hasSetTextAction()).performTextInput("osaka")
@@ -421,6 +429,9 @@ class ScreenCaptureTest {
             app.container.database.reviews().upsert(WeekReview(oldWeek, "Last year’s reflection", 1))
         }
         tap("Life")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Your lines").fetchSemanticsNodes().size == 1
+        }
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("2026")
         compose.onNodeWithContentDescription("Year in review").performClick()
@@ -450,6 +461,9 @@ class ScreenCaptureTest {
             app.container.repository.replaceAll(original.copy(commitments = emptyList(), reviews = emptyList(), chapters = emptyList()))
         }
         tap("Life")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Your lines").fetchSemanticsNodes().size == 1
+        }
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("Your lines")
         compose.onNodeWithContentDescription("Year in review").performClick()
@@ -463,6 +477,9 @@ class ScreenCaptureTest {
         val app = RuntimeEnvironment.getApplication() as NumberedApp
         val before = runBlocking { app.container.repository.snapshot()!! }
         tap("Life")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Your lines").fetchSemanticsNodes().size == 1
+        }
         compose.onNodeWithContentDescription("Your lines").performClick()
         awaitText("2026")
         compose.onNodeWithContentDescription("Year in review").performClick()
@@ -558,7 +575,7 @@ class ScreenCaptureTest {
     @Test fun lifeGrid() {
         tap("Life")
         awaitText("36.8 years · 1,922 weeks lived")
-        awaitText("Week 1,923 · age 36")
+        awaitText("Week 1,923 · age 36.8")
         capture("life")
         compose.onNodeWithText("Colour key").assertDoesNotExist()
         compose.onNodeWithContentDescription("Your life, in weeks").performClick()
@@ -566,10 +583,11 @@ class ScreenCaptureTest {
         capture("life-help")
         compose.onNodeWithText("Done").performScrollTo().performClick()
         compose.onNodeWithText("Colour key").assertDoesNotExist()
+        tap("Whole life")
         compose.onNodeWithContentDescription("Life grid", substring = true).performTouchInput {
             click(Offset(width * 0.6f, height * 0.3f))
         }
-        awaitGone("Week 1,923 · age 36")
+        awaitGone("Week 1,923 · age 36.8")
         capture("life-selected")
         compose.mainClock.advanceTimeBy(5_000)
         compose.waitForIdle()
@@ -600,7 +618,7 @@ class ScreenCaptureTest {
         tap("Life")
         compose.onNodeWithContentDescription("Today · Friday, Oct 2", useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithText("2026 · week 39 of 52").assertIsDisplayed()
-        awaitText("Week 1,923 · age 36")
+        awaitText("Week 1,923 · age 36.8")
         capture("life-today")
     }
 
@@ -687,9 +705,12 @@ class ScreenCaptureTest {
         assertEquals("", reviews[firstWeek.plusWeeks(2)]!!.note)
     }
 
-    @Test fun largerGridSelectsTheCorrectWeekAndJumpsBetweenYears() {
+    @Test fun weekViewIsTheDefaultFirstOptionAndJumpsBetweenYears() {
         tap("Life")
-        tap("Larger weeks")
+        compose.onNodeWithText("Week view").assertIsSelected()
+        val weekView = compose.onNodeWithText("Week view").fetchSemanticsNode()
+        val wholeLife = compose.onNodeWithText("Whole life").fetchSemanticsNode()
+        assertTrue(weekView.boundsInRoot.left < wholeLife.boundsInRoot.left)
         compose.onNodeWithText("2026").assertIsDisplayed()
         capture("life-larger")
         compose.onNodeWithContentDescription("Weeks in 2026", substring = true).performTouchInput {
@@ -698,7 +719,7 @@ class ScreenCaptureTest {
         val first = com.numbered.app.ui.life.yearWindow(
             com.numbered.app.domain.LifeCalendar(LocalDate.of(1989, 12, 2), 80, DayOfWeek.MONDAY), 2026, 4175,
         ).first
-        awaitText("Week ${java.text.NumberFormat.getIntegerInstance(java.util.Locale.US).format(first + 1)} · age 36")
+        awaitText("Week ${java.text.NumberFormat.getIntegerInstance(java.util.Locale.US).format(first + 1)} · age 36.0")
         compose.onNodeWithContentDescription("Previous year").performClick()
         awaitText("2025")
         tap("Jump to year")
@@ -706,14 +727,14 @@ class ScreenCaptureTest {
         compose.onNodeWithContentDescription("Weeks in 2024", substring = true).assertExists()
         capture("life-year-jump")
         tap("This week")
-        awaitText("Week 1,923 · age 36")
+        awaitText("Week 1,923 · age 36.8")
         tap("Whole life")
         compose.onNodeWithContentDescription("Life grid", substring = true).assertExists()
     }
 
     @Test fun currentWeekDetail() {
         tap("Life")
-        tap("Week 1,923 · age 36")
+        tap("Week 1,923 · age 36.8")
         compose.onNodeWithText("Sep 28", substring = true).performClick()
         awaitText("Renew passport photos")
         capture("week-detail-current")
@@ -724,7 +745,7 @@ class ScreenCaptureTest {
         awaitText("One week before turning 37")
         capture("this-week-before-birthday")
         tap("Life")
-        awaitText("Week 1,931 · age 36")
+        awaitText("Week 1,931 · age 36.9")
         compose.onNodeWithContentDescription("Show week details", useUnmergedTree = true).performClick()
         awaitText("One week before turning 37")
         capture("life-before-birthday")
@@ -747,13 +768,13 @@ class ScreenCaptureTest {
 
     @Test fun pastWeekDetail() {
         tap("Life")
-        awaitText("Week 1,923 · age 36")
+        awaitText("Week 1,923 · age 36.8")
         compose.onNodeWithContentDescription("Show week details").performClick()
         // Three quick taps with no waiting in between must still move three weeks.
         compose.onNodeWithContentDescription("Previous week").performClick()
         compose.onNodeWithContentDescription("Previous week").performClick()
         compose.onNodeWithContentDescription("Previous week").performClick()
-        awaitText("Week 1,920 · age 36")
+        awaitText("Week 1,920 · age 36.7")
         capture("life-previous")
         compose.onNodeWithText("Sep 7", substring = true).performClick()
         capture("week-detail-past")
@@ -894,6 +915,29 @@ class ScreenCaptureTest {
         capture("chapter-from-life")
     }
 
+    @Test fun decimalAgesDefaultOnAndCanBeToggledAcrossScreens() {
+        tap("Life")
+        awaitText("36.8 years · 1,922 weeks lived")
+        awaitText("Week 1,923 · age 36.8")
+        openSettings()
+        scrollTo("Decimal ages")
+        compose.onNodeWithText("Decimal ages").assertIsDisplayed().performClick()
+        tap("Life")
+        awaitText("36 years · 1,922 weeks lived")
+        compose.onNodeWithText("Week 1,923 · age 36").assertExists()
+        tap("Week 1,923 · age 36")
+        compose.onNodeWithText("Sep 28", substring = true).performClick()
+        awaitText("Age 36 ·")
+        compose.onNodeWithContentDescription("Back").performClick()
+        openSettings()
+        scrollTo("Decimal ages")
+        capture("settings-decimal-ages-off")
+        tap("Decimal ages")
+        tap("Life")
+        awaitText("36.8 years · 1,922 weeks lived")
+        compose.onNodeWithText("Week 1,923 · age 36.8").assertExists()
+    }
+
     @Test fun settings() {
         openSettings()
         capture("settings")
@@ -910,19 +954,19 @@ class ScreenCaptureTest {
 
     @Test fun birthDateStartsHiddenAndCanBeRevealedAndHiddenAgain() {
         openSettings()
-        compose.onNodeWithText("Hidden").assertIsDisplayed()
+        compose.onNodeWithText("********").assertIsDisplayed()
         compose.onAllNodesWithText("1989", substring = true).assertCountEquals(0)
 
         compose.onNodeWithContentDescription("Show birth date").performClick()
         awaitText("1989")
         compose.onNodeWithContentDescription("Hide birth date").performClick()
-        compose.onNodeWithText("Hidden").assertIsDisplayed()
+        compose.onNodeWithText("********").assertIsDisplayed()
         compose.onAllNodesWithText("1989", substring = true).assertCountEquals(0)
 
         compose.onNodeWithContentDescription("Show birth date").performClick()
         tap("Week")
         openSettings()
-        compose.onNodeWithText("Hidden").assertIsDisplayed()
+        compose.onNodeWithText("********").assertIsDisplayed()
         compose.onAllNodesWithText("1989", substring = true).assertCountEquals(0)
     }
 
@@ -937,6 +981,7 @@ class ScreenCaptureTest {
         tap("Week")
         capture("week-progress-circle")
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
+        compose.onNode(hasText("· age", substring = true)).assertDoesNotExist()
         openSettings()
         scrollTo("Week bars")
         tap("Week bars")
@@ -944,6 +989,7 @@ class ScreenCaptureTest {
             com.numbered.app.ui.week.WeekProgressStore(app).style.value)
         tap("Week")
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
+        compose.onNode(hasText("· age", substring = true)).assertDoesNotExist()
         capture("week-progress-bars")
         openSettings()
         scrollTo("Off")
@@ -974,6 +1020,7 @@ class ScreenCaptureTest {
 
     @Test fun themePickerShowsFiveChoicesAndSavesSelection() {
         openSettings()
+        scrollTo("Theme")
         tap("Theme")
         awaitText("Choose a theme")
         capture("theme-picker")
@@ -1106,6 +1153,7 @@ class ScreenCaptureTest {
     @Test @FreshInstall
     fun onboarding() {
         awaitText("Choose your birth date")
+        compose.onNodeWithText("Gentle mode").assertDoesNotExist()
         capture("onboarding")
         scrollTo("Start")
         tap("Start")
