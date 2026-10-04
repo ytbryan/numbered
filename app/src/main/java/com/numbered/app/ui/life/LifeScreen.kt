@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -77,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.ui.ageText
 import com.numbered.app.R
+import com.numbered.app.appContainer
 import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.domain.WeekTone
 import com.numbered.app.ui.components.CardShape
@@ -89,6 +91,7 @@ import com.numbered.app.ui.locale
 import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.theme.LocalWeekColors
+import com.numbered.app.ui.week.WeekProgressStyle
 import com.numbered.app.ui.weekRange
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -106,6 +109,7 @@ fun LifeScreen(
     val grid by viewModel.grid.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
     val state = grid ?: return
+    val progressStyle by LocalContext.current.appContainer.weekProgress.style.collectAsStateWithLifecycle()
     val calendarWeek = state.calendar.calendarWeek(state.today)
     var enlarged by rememberSaveable { mutableStateOf(true) }
     var choosingYear by rememberSaveable { mutableStateOf(false) }
@@ -213,12 +217,14 @@ fun LifeScreen(
                 }
             }
             TodayDate(state.today, Modifier.padding(top = 4.dp))
-            Text(
-                stringResource(R.string.today_week_of_year, calendarWeek.number, calendarWeek.total, calendarWeek.year),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            if (progressStyle == WeekProgressStyle.Off) {
+                Text(
+                    stringResource(R.string.today_week_of_year, calendarWeek.number, calendarWeek.total, calendarWeek.year),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.life_help_summary), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))

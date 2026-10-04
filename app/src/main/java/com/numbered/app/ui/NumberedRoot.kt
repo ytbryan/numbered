@@ -45,6 +45,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.numbered.app.R
+import com.numbered.app.appContainer
+import com.numbered.app.data.calendar
 import com.numbered.app.ui.chapter.ChapterScreen
 import com.numbered.app.ui.chapter.ChapterViewModel
 import com.numbered.app.ui.close.CatchUpScreen
@@ -63,6 +65,7 @@ import com.numbered.app.ui.profile.SettingsScreen
 import com.numbered.app.ui.profile.rememberImport
 import com.numbered.app.ui.someday.SomedayScreen
 import com.numbered.app.ui.week.ThisWeekScreen
+import com.numbered.app.ui.week.YearProgressPull
 import com.numbered.app.ui.weekdetail.WeekDetailScreen
 import java.text.NumberFormat
 import java.time.DayOfWeek
@@ -157,6 +160,11 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
+    val container = LocalContext.current.appContainer
+    val profile by container.repository.profile().collectAsStateWithLifecycle(initialValue = null)
+    val today by container.today.value.collectAsStateWithLifecycle()
+    val progressStyle by container.weekProgress.style.collectAsStateWithLifecycle()
+    val calendarWeek = profile?.calendar()?.calendarWeek(today)
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val onTab = Tabs.any { tab -> destination?.hasRoute(tab.routeClass) == true }
@@ -182,11 +190,17 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
             }
         },
     ) { padding ->
-        NavHost(
-            navController = nav,
-            startDestination = ThisWeekRoute,
+        YearProgressPull(
+            week = calendarWeek,
+            style = progressStyle,
+            enabled = onTab,
             modifier = Modifier.padding(padding),
         ) {
+            NavHost(
+                navController = nav,
+                startDestination = ThisWeekRoute,
+                modifier = Modifier.fillMaxSize(),
+            ) {
             composable<ThisWeekRoute> {
                 ThisWeekScreen(
                     onOpenWeek = { nav.navigate(WeekRoute(it.toEpochDay())) },
@@ -276,6 +290,7 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
                 )
             }
             composable<SettingsRoute> { SettingsScreen() }
+            }
         }
     }
 }

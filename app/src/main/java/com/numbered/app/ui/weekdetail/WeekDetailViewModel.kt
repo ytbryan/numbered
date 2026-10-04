@@ -46,7 +46,7 @@ data class WeekDetailState(
 ) {
     val occupied: Int get() = commitments.count { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
     val squaresLeft: Int get() = (priorityLimit - occupied).coerceAtLeast(0)
-    val canAdd: Boolean get() = time != WeekTime.Past && squaresLeft > 0
+    val canAdd: Boolean get() = !beforeStart && squaresLeft > 0
     val canClose: Boolean get() = time != WeekTime.Future && (commitments.isNotEmpty() || closed)
 }
 

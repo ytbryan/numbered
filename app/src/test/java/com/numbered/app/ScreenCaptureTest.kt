@@ -14,10 +14,13 @@ import android.view.WindowManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.down
 import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assert
@@ -29,11 +32,13 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.moveBy
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.up
 import com.numbered.app.data.BackupFormat
 import com.numbered.app.data.Commitment
 import com.numbered.app.data.NumberedDatabase
@@ -792,6 +797,21 @@ class ScreenCaptureTest {
         capture("week-detail-past")
     }
 
+    @Test fun pastWeekWithRoomAllowsAddingAPlan() {
+        tap("Life")
+        awaitText("Week 1,923 · age 36.8")
+        compose.onNodeWithContentDescription("Show week details").performClick()
+        compose.onNodeWithContentDescription("Previous week").performClick()
+        awaitText("Week 1,922")
+        compose.onNodeWithText("Sep 21", substring = true).performClick()
+        awaitText("Draft the conference talk")
+        compose.onNodeWithText("Add another").assertIsDisplayed()
+        tap("Add another")
+        compose.onNode(hasSetTextAction()).performTextInput("Write the follow-up notes")
+        tap("Add")
+        awaitText("Write the follow-up notes")
+    }
+
     @Test @Config(qualifiers = "w366dp-h813dp-night-xxhdpi", fontScale = 1.45f)
     fun lifeGridDark() {
         tap("Life")
@@ -983,7 +1003,7 @@ class ScreenCaptureTest {
     }
 
     @Test fun weekProgressChoiceUpdatesWeekAndPersists() {
-        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
         openSettings()
         scrollTo("Circle")
         capture("settings-week-progress")
@@ -991,18 +1011,48 @@ class ScreenCaptureTest {
         val app = RuntimeEnvironment.getApplication() as NumberedApp
         assertEquals(com.numbered.app.ui.week.WeekProgressStyle.Circle, app.container.weekProgress.style.value)
         tap("Week")
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
+        val week = compose.onAllNodes(hasScrollToNodeAction()).onFirst()
+        week.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, height * 0.65f))
+        }
         capture("week-progress-circle")
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
+        week.performTouchInput { up() }
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
         compose.onNode(hasText("· age", substring = true)).assertDoesNotExist()
+        tap("Life")
+        awaitText("Your life")
+        compose.onNodeWithText("2026 · week 40 of 53").assertDoesNotExist()
+        val life = compose.onAllNodes(hasScrollAction()).onFirst()
+        life.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, height * 0.65f))
+        }
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
+        life.performTouchInput { up() }
+        compose.waitForIdle()
+        tap("Week")
         openSettings()
         scrollTo("Week bars")
         tap("Week bars")
         assertEquals(com.numbered.app.ui.week.WeekProgressStyle.Bars,
             com.numbered.app.ui.week.WeekProgressStore(app).style.value)
         tap("Week")
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
+        val barsWeek = compose.onAllNodes(hasScrollToNodeAction()).onFirst()
+        barsWeek.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, height * 0.65f))
+        }
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
         compose.onNode(hasText("· age", substring = true)).assertDoesNotExist()
         capture("week-progress-bars")
+        barsWeek.performTouchInput { up() }
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
         openSettings()
         scrollTo("Off")
         tap("Off")

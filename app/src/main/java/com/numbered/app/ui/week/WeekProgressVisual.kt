@@ -3,41 +3,111 @@ package com.numbered.app.ui.week
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.pullToRefresh
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.numbered.app.R
+import com.numbered.app.domain.CalendarWeek
+import com.numbered.app.ui.components.ScreenPadding
+import kotlin.math.roundToInt
 
 @Composable
-internal fun WeekProgressVisual(state: ThisWeekState, style: WeekProgressStyle) {
+internal fun YearProgressPull(
+    week: CalendarWeek?,
+    style: WeekProgressStyle,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val pullState = rememberPullToRefreshState()
+    var indicatorHeight by remember(style) { mutableIntStateOf(0) }
+    val progress = pullState.distanceFraction.coerceIn(0f, 1f)
+    val available = enabled && week != null && style != WeekProgressStyle.Off
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pullToRefresh(
+                isRefreshing = false,
+                state = pullState,
+                enabled = available,
+                onRefresh = {},
+            ),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .offset { IntOffset(0, (indicatorHeight * progress).roundToInt()) },
+            content = content,
+        )
+        if (available) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .zIndex(1f)
+                    .onSizeChanged { indicatorHeight = it.height }
+                    .offset { IntOffset(0, (-indicatorHeight * (1f - progress)).roundToInt()) }
+                    .alpha(progress)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(start = ScreenPadding, end = ScreenPadding, top = 24.dp),
+            ) {
+                WeekProgressVisual(week, style, visible = progress > 0f)
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekProgressVisual(week: CalendarWeek, style: WeekProgressStyle, visible: Boolean) {
     if (style == WeekProgressStyle.Off) return
-    val week = state.calendarWeek
     val position = stringResource(R.string.week_visual_position, week.number, week.total)
     val description = stringResource(R.string.week_visual_accessibility, week.number, week.total, week.year)
     val accent = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(
-        modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (visible) 1f else 0f)
+            .clearAndSetSemantics {
+                if (visible) contentDescription = description else hideFromAccessibility()
+            },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
