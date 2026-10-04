@@ -77,6 +77,18 @@ class RepositoryTest {
         assertEquals(3, week(thisWeek).size)
     }
 
+    @Test fun weeklyCommitmentsKeepTheirChosenOrder() = runBlocking {
+        listOf("First", "Second", "Third").forEach { repository.addCommitment(thisWeek, it) }
+        val original = week(thisWeek)
+        repository.reorderCommitments(thisWeek, listOf(original[2].id, original[0].id, original[1].id))
+        assertEquals(listOf("Third", "First", "Second"), titles(thisWeek))
+
+        repository.addCommitment(nextWeek, "Different week")
+        repository.reorderCommitments(thisWeek, listOf(original[0].id))
+        assertEquals(listOf("Third", "First", "Second"), titles(thisWeek))
+        assertEquals(listOf("Different week"), titles(nextWeek))
+    }
+
     @Test fun changingThePriorityLimitKeepsExistingWeeksAndControlsNewPlans() = runBlocking {
         repository.saveProfile(LocalDate.of(1989, 12, 2), 80, false, DayOfWeek.MONDAY)
         repository.setPrioritiesPerWeek(5)

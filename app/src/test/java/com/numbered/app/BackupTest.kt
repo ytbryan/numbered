@@ -87,7 +87,7 @@ class BackupTest {
         val text = BackupFormat.encode(seeded())
         listOf(
             "\"format\": \"numbered\"",
-            "\"version\": 4",
+            "\"version\": 5",
             "\"birthDate\": \"1989-12-02\"",
             "\"firstDayOfWeek\": \"monday\"",
             "\"status\": \"carried\"",
@@ -125,7 +125,7 @@ class BackupTest {
     }
 
     @Test fun newerFilesAreRefusedWithoutGuessing() {
-        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 5, "somethingNew": true}"""))
+        assertEquals(BackupRead.TooNew, BackupFormat.decode("""{"format": "numbered", "version": 6, "somethingNew": true}"""))
     }
 
     @Test fun damagedFilesChangeNothing() {

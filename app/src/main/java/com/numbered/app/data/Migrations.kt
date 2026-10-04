@@ -49,4 +49,10 @@ internal val MIGRATIONS: Array<Migration> = arrayOf(
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_other_things_done_weekStart` ON `other_things_done` (`weekStart`)")
         }
     },
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `commitments` ADD COLUMN `sortOrder` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("UPDATE `commitments` SET `sortOrder` = `id`")
+        }
+    },
 )

@@ -38,6 +38,7 @@ App lock controls access to the app; exported files and Android database backups
 Life offers both a whole-life overview and larger week squares for one calendar year, with year navigation and a shortcut back to this week.
 The selected-week drawer has a [reusable interaction specification](docs/new-app-life-week-drawer.md) for new apps.
 This week names today and highlights it in a seven-day strip ordered by your chosen week start.
+Press and drag a commitment by its three-dot handle to reorder the week; the chosen order is saved and included in exports.
 Settings can add a circular or week-by-week bar view of calendar-year progress, revealed by pulling down at the top of any main tab.
 Settings can also give This week, Your life, and Someday their own typeface, weight, and solid or gradient colour treatment.
 New profiles start in Gentle mode, which hides future weeks; the setting can be changed later in Settings.

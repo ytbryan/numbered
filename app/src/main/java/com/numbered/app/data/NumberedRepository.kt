@@ -158,7 +158,14 @@ class NumberedRepository(
         val clean = title.cleanTitle() ?: return PlanResult.Blank
         return db.withTransaction {
             if (commitments.occupied(weekStart) >= priorityLimit()) return@withTransaction PlanResult.WeekFull
-            commitments.insert(Commitment(weekStart = weekStart, title = clean, createdAt = clock.millis()))
+            commitments.insert(
+                Commitment(
+                    weekStart = weekStart,
+                    title = clean,
+                    createdAt = clock.millis(),
+                    sortOrder = commitments.maxSortOrder(weekStart) + 1,
+                ),
+            )
             PlanResult.Ok
         }
     }
@@ -182,6 +189,14 @@ class NumberedRepository(
             commitments.update(commitment.copy(title = clean))
             PlanResult.Ok
         }
+    }
+
+    suspend fun reorderCommitments(weekStart: LocalDate, orderedIds: List<Long>) = db.withTransaction {
+        val visibleIds = commitments.week(weekStart)
+            .filter { it.status == CommitmentStatus.Open || it.status == CommitmentStatus.Done }
+            .map(Commitment::id)
+        if (orderedIds.size != visibleIds.size || orderedIds.toSet() != visibleIds.toSet()) return@withTransaction
+        orderedIds.forEachIndexed { index, id -> commitments.setSortOrder(id, index.toLong()) }
     }
 
     /** Removes a mistaken entry entirely. Returns it so the caller can offer Undo. */
@@ -232,7 +247,14 @@ class NumberedRepository(
             ?: return@withTransaction PlanningMove(PlanResult.Missing)
         if (commitments.occupied(weekStart) >= priorityLimit()) return@withTransaction PlanningMove(PlanResult.WeekFull)
         someday.delete(id)
-        val createdId = commitments.insert(Commitment(weekStart = weekStart, title = item.title, createdAt = clock.millis()))
+        val createdId = commitments.insert(
+            Commitment(
+                weekStart = weekStart,
+                title = item.title,
+                createdAt = clock.millis(),
+                sortOrder = commitments.maxSortOrder(weekStart) + 1,
+            ),
+        )
         PlanningMove(PlanResult.Ok, PlanningUndo(originalSomeday = item, createdCommitment = commitments.get(createdId)))
     }
 
@@ -362,7 +384,14 @@ class NumberedRepository(
     private suspend fun carryUnchecked(commitment: Commitment, toWeek: LocalDate, now: Long): Long {
         commitments.update(commitment.copy(status = CommitmentStatus.Carried, resolvedAt = now))
         return commitments.insert(
-            Commitment(weekStart = toWeek, title = commitment.title, createdAt = now, carriedFrom = commitment.weekStart, carriedFromId = commitment.id),
+            Commitment(
+                weekStart = toWeek,
+                title = commitment.title,
+                createdAt = now,
+                carriedFrom = commitment.weekStart,
+                carriedFromId = commitment.id,
+                sortOrder = commitments.maxSortOrder(toWeek) + 1,
+            ),
         )
     }
 

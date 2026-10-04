@@ -431,6 +431,7 @@
     <!-- Accessibility -->
     <string name="a11y_life_grid">Life grid. %1$s of %2$s weeks shown have been lived. Tap a square to select a week.</string>
     <string name="a11y_mark_done">%1$s</string>
+    <string name="a11y_position">Position %1$d</string>
     <string name="a11y_more_for">More options for %1$s</string>
     <string name="a11y_open_week">Open week</string>
     <string name="a11y_previous_week">Previous week</string>

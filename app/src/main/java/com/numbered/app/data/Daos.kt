@@ -22,10 +22,10 @@ interface ProfileDao {
 
 @Dao
 interface CommitmentDao {
-    @Query("SELECT * FROM commitments WHERE weekStart = :weekStart ORDER BY id")
+    @Query("SELECT * FROM commitments WHERE weekStart = :weekStart ORDER BY sortOrder, id")
     fun observeWeek(weekStart: LocalDate): Flow<List<Commitment>>
 
-    @Query("SELECT * FROM commitments WHERE weekStart = :weekStart ORDER BY id")
+    @Query("SELECT * FROM commitments WHERE weekStart = :weekStart ORDER BY sortOrder, id")
     suspend fun week(weekStart: LocalDate): List<Commitment>
 
     @Query("SELECT * FROM commitments ORDER BY weekStart DESC, id")
@@ -36,6 +36,12 @@ interface CommitmentDao {
 
     @Query("SELECT * FROM commitments WHERE id = :id")
     suspend fun get(id: Long): Commitment?
+
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM commitments WHERE weekStart = :weekStart")
+    suspend fun maxSortOrder(weekStart: LocalDate): Long
+
+    @Query("UPDATE commitments SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Long)
 
     /** Commitments that occupy one of the week's squares. */
     @Query("SELECT COUNT(*) FROM commitments WHERE weekStart = :weekStart AND status IN ('Open', 'Done')")

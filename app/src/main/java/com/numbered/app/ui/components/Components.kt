@@ -1,6 +1,9 @@
 package com.numbered.app.ui.components
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
@@ -49,6 +53,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.numbered.app.R
@@ -76,10 +81,18 @@ fun CommitmentCard(
     onToggleDone: ((Boolean) -> Unit)?,
     actions: List<MenuAction>,
     modifier: Modifier = Modifier,
+    dragHandleModifier: Modifier = Modifier,
+    isDragging: Boolean = false,
+    positionNumber: Int? = null,
 ) {
     val done = commitment.status == CommitmentStatus.Done
     val resolved = !done && commitment.status != CommitmentStatus.Open
     val colors = MaterialTheme.colorScheme
+    val dragElevation by animateDpAsState(
+        targetValue = if (isDragging) 10.dp else 0.dp,
+        animationSpec = tween(90),
+        label = "commitment drag elevation",
+    )
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = CardShape,
@@ -89,6 +102,7 @@ fun CommitmentCard(
             else -> colors.card
         },
         border = if (done) null else BorderStroke(1.dp, colors.outlineVariant),
+        shadowElevation = dragElevation,
     ) {
         Row(
             modifier = Modifier.heightIn(min = 64.dp).padding(start = 4.dp, end = 4.dp),
@@ -105,20 +119,37 @@ fun CommitmentCard(
             )
             if (onToggleDone != null && !resolved) {
                 val toggleLabel = stringResource(R.string.a11y_mark_done, commitment.title)
+                val positionDescription = positionNumber?.let { stringResource(R.string.a11y_position, it) }
                 IconButton(
                     onClick = { onToggleDone(!done) },
                     modifier = Modifier.semantics {
                         contentDescription = toggleLabel
-                        stateDescription = statusLabel
+                        stateDescription = positionDescription ?: statusLabel
                         role = Role.Checkbox
                     },
                 ) {
-                    Icon(
-                        imageVector = if (done) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-                        contentDescription = null,
-                        tint = if (done) colors.primary else colors.outline,
-                        modifier = Modifier.size(26.dp),
-                    )
+                    if (positionNumber != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .border(2.dp, colors.primary, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = positionNumber.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.primary,
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = if (done) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
+                            contentDescription = null,
+                            tint = if (done) colors.primary else colors.outline,
+                            modifier = Modifier.size(26.dp),
+                        )
+                    }
                 }
             } else {
                 Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
@@ -159,7 +190,12 @@ fun CommitmentCard(
                 }
             }
             if (actions.isNotEmpty()) {
-                OverflowMenu(actions, stringResource(R.string.a11y_more_for, commitment.title))
+                OverflowMenu(
+                    actions,
+                    stringResource(R.string.a11y_more_for, commitment.title),
+                    dragHandleModifier,
+                    isDragging,
+                )
             } else {
                 Spacer(Modifier.width(12.dp))
             }
@@ -168,11 +204,20 @@ fun CommitmentCard(
 }
 
 @Composable
-fun OverflowMenu(actions: List<MenuAction>, description: String) {
+fun OverflowMenu(
+    actions: List<MenuAction>,
+    description: String,
+    modifier: Modifier = Modifier,
+    isDragging: Boolean = false,
+) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) {
-            Icon(Icons.Outlined.MoreVert, contentDescription = description)
+        IconButton(onClick = { open = true }, modifier = modifier) {
+            Icon(
+                Icons.Outlined.MoreVert,
+                contentDescription = description,
+                tint = if (isDragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             actions.forEach { action ->

@@ -153,6 +153,11 @@ class ThisWeekViewModel(private val container: AppContainer) : NoticeViewModel()
         report(repository.rename(commitment.id, title))
     }
 
+    fun reorder(orderedIds: List<Long>) = launchWrite {
+        val weekStart = state.value?.weekStart ?: return@launchWrite
+        repository.reorderCommitments(weekStart, orderedIds)
+    }
+
     fun moveToNextWeek(commitment: Commitment) = launchWrite {
         val next = state.value?.nextWeekStart ?: return@launchWrite
         val move = repository.carryWithUndo(commitment.id, next)

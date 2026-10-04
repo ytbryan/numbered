@@ -1,5 +1,7 @@
 package com.numbered.app.ui.week
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,20 +19,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
 import com.numbered.app.data.Commitment
@@ -73,6 +85,18 @@ fun ThisWeekScreen(
     var adding by rememberSaveable { mutableStateOf(false) }
     var renamingId by rememberSaveable { mutableStateOf<Long?>(null) }
     val listState = rememberLazyListState()
+    var orderedIds by remember(current.weekStart) { mutableStateOf(current.commitments.map(Commitment::id)) }
+    var draggingId by remember { mutableStateOf<Long?>(null) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val latestOrderedIds by rememberUpdatedState(orderedIds)
+    val haptics = LocalHapticFeedback.current
+    val incomingIds = current.commitments.map(Commitment::id)
+    LaunchedEffect(incomingIds, draggingId) {
+        if (draggingId == null) orderedIds = incomingIds
+    }
+    val commitmentsById = current.commitments.associateBy(Commitment::id)
+    val displayedCommitments = orderedIds.mapNotNull(commitmentsById::get)
+        .takeIf { it.size == current.commitments.size } ?: current.commitments
 
     LazyColumn(
         state = listState,
@@ -115,7 +139,18 @@ fun ThisWeekScreen(
                     )
                 }
             }
-            items(current.commitments, key = Commitment::id) { commitment ->
+            itemsIndexed(displayedCommitments, key = { _, commitment -> commitment.id }) { index, commitment ->
+                val isDragging = draggingId == commitment.id
+                val dragScale by animateFloatAsState(
+                    targetValue = if (isDragging) 1.018f else 1f,
+                    animationSpec = tween(90),
+                    label = "commitment drag scale",
+                )
+                val placementModifier = if (isDragging) {
+                    Modifier
+                } else {
+                    Modifier.animateItem(placementSpec = tween(100))
+                }
                 CommitmentCard(
                     commitment = commitment,
                     subtitle = commitmentSubtitle(commitment, current.zone, current.today),
@@ -129,7 +164,67 @@ fun ThisWeekScreen(
                         }
                         add(MenuAction(stringResource(R.string.action_remove)) { viewModel.remove(commitment) })
                     },
-                    modifier = Modifier.animateItem(),
+                    modifier = placementModifier
+                        .zIndex(if (isDragging) 1f else 0f)
+                        .graphicsLayer {
+                            translationY = if (isDragging) dragOffset else 0f
+                            scaleX = dragScale
+                            scaleY = dragScale
+                        },
+                    isDragging = isDragging,
+                    positionNumber = if (draggingId != null) index + 1 else null,
+                    dragHandleModifier = Modifier.pointerInput(commitment.id, current.weekStart) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                draggingId = commitment.id
+                                dragOffset = 0f
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            },
+                            onDragCancel = {
+                                draggingId = null
+                                dragOffset = 0f
+                                orderedIds = incomingIds
+                            },
+                            onDragEnd = {
+                                val savedOrder = latestOrderedIds
+                                draggingId = null
+                                dragOffset = 0f
+                                viewModel.reorder(savedOrder)
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffset += amount.y
+                                val order = latestOrderedIds
+                                val from = order.indexOf(commitment.id)
+                                val direction = when {
+                                    amount.y > 0f -> 1
+                                    amount.y < 0f -> -1
+                                    else -> 0
+                                }
+                                val to = from + direction
+                                if (direction != 0 && from >= 0 && to in order.indices) {
+                                    val visibleItems = listState.layoutInfo.visibleItemsInfo
+                                    val draggedInfo = visibleItems.firstOrNull { it.key == commitment.id }
+                                    val targetInfo = visibleItems.firstOrNull { it.key == order[to] }
+                                    if (draggedInfo != null && targetInfo != null) {
+                                        val draggedCenter = draggedInfo.offset + dragOffset + draggedInfo.size / 2f
+                                        val targetCenter = targetInfo.offset + targetInfo.size / 2f
+                                        val crossedTarget = if (direction > 0) {
+                                            draggedCenter > targetCenter
+                                        } else {
+                                            draggedCenter < targetCenter
+                                        }
+                                        if (crossedTarget) {
+                                            orderedIds = order.toMutableList().apply {
+                                                add(to, removeAt(from))
+                                            }
+                                            dragOffset -= targetInfo.offset - draggedInfo.offset
+                                        }
+                                    }
+                                }
+                            },
+                        )
+                    },
                 )
             }
             if (current.squaresLeft > 0) {

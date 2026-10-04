@@ -190,6 +190,29 @@ class ScreenCaptureTest {
         compose.onNodeWithText("Finish the grant draft").assertIsDisplayed()
     }
 
+    @Test fun draggingCommitmentHandleSavesTheNewOrder() {
+        awaitText("Finish the grant draft")
+        val handle = compose.onNodeWithContentDescription("More options for Finish the grant draft", useUnmergedTree = true)
+        handle.performTouchInput {
+            down(center)
+            advanceEventTime(600)
+            moveBy(Offset(0f, -420f))
+            advanceEventTime(100)
+            up()
+        }
+        compose.waitForIdle()
+
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        val firstOrder = runBlocking { app.container.repository.week(LocalDate.of(2026, 9, 28)).first() }
+        assertEquals(listOf("Finish the grant draft", "Renew passport photos"), firstOrder.map { it.title })
+
+        compose.activityRule.scenario.recreate()
+        awaitText("Finish the grant draft")
+        val reopenedOrder = runBlocking { app.container.repository.week(LocalDate.of(2026, 9, 28)).first() }
+        assertEquals(firstOrder.map { it.id }, reopenedOrder.map { it.id })
+        capture("week-reordered")
+    }
+
     private fun millis(date: LocalDate, hour: Int = 12) = date.atTime(hour, 0).atZone(zone).toInstant().toEpochMilli()
 
     private suspend fun seed(db: NumberedDatabase, today: LocalDate, gentle: Boolean, firstDay: DayOfWeek = DayOfWeek.MONDAY) {

@@ -54,8 +54,8 @@ sealed interface BackupRead {
  */
 object BackupFormat {
     const val NAME = "numbered"
-    /** 2 added chapters; 3 added carry links; 4 adds planning preferences and other completed things. */
-    const val VERSION = 4
+    /** 2 added chapters; 3 added carry links; 4 added planning settings; 5 adds commitment order. */
+    const val VERSION = 5
 
     /** Larger than decades of weekly use, and small enough to refuse a wrongly picked video. */
     const val MAX_BYTES = 16 * 1024 * 1024
@@ -113,6 +113,7 @@ object BackupFormat {
                     resolvedAt = it.resolvedAt,
                     carriedFrom = it.carriedFrom?.toString(),
                     carriedFromId = it.carriedFromId,
+                    sortOrder = it.sortOrder,
                 )
             },
             someday = snapshot.someday.map { SomedayJson(it.id, it.title, it.createdAt, it.keptAt, it.letGoAt) },
@@ -176,6 +177,7 @@ object BackupFormat {
                 resolvedAt = it.resolvedAt,
                 carriedFrom = it.carriedFrom?.let(LocalDate::parse),
                 carriedFromId = it.carriedFromId,
+                sortOrder = it.sortOrder ?: it.id,
             )
         },
         someday = someday.map { SomedayItem(it.id, it.title, it.createdAt, it.keptAt, it.letGoAt) },
@@ -290,6 +292,8 @@ private class CommitmentJson(
     val carriedFrom: String? = null,
     /** Added in version 3; older copies keep their original week-only provenance. */
     val carriedFromId: Long? = null,
+    /** Added in version 5. Older copies retain their id order. */
+    val sortOrder: Long? = null,
 )
 
 @Serializable

@@ -42,6 +42,8 @@ data class Commitment(
     val carriedFrom: LocalDate? = null,
     /** Stable provenance, including after either entry is renamed or removed. */
     val carriedFromId: Long? = null,
+    /** Position within its week. Existing entries are migrated in their original id order. */
+    val sortOrder: Long = 0,
 )
 
 /** A completed thing recorded after the fact, separate from the week's chosen priorities. */

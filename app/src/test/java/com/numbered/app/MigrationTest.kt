@@ -140,6 +140,29 @@ class MigrationTest {
         }
     }
 
+    @Test fun version4PreservesCommitmentOrder() {
+        val name = "migration-4-5.db"
+        helper.createDatabase(name, 4).use { db ->
+            val week = WEEK.toEpochDay()
+            db.execSQL(
+                "INSERT INTO commitments (id, weekStart, title, status, createdAt, resolvedAt, carriedFrom, carriedFromId) " +
+                    "VALUES (8, ?, 'Second', 'Open', 1, NULL, NULL, NULL), " +
+                    "(3, ?, 'First', 'Open', 1, NULL, NULL, NULL)",
+                arrayOf(week, week),
+            )
+        }
+        helper.runMigrationsAndValidate(name, 5, true, *MIGRATIONS).close()
+        val db = NumberedDatabase.open(context, name)
+        try {
+            runBlocking {
+                assertEquals(listOf("First", "Second"), db.commitments().week(WEEK).map { it.title })
+            }
+        } finally {
+            db.close()
+            context.deleteDatabase(name)
+        }
+    }
+
     private fun seedVersion1(db: SupportSQLiteDatabase) {
         val week = WEEK.toEpochDay()
         db.execSQL(
@@ -168,6 +191,7 @@ class MigrationTest {
             2 to "b8169d580e770840a3abf439edef752a",
             3 to "11e9ceb29e61c4a6b91d2cc5c572eb8c",
             4 to "d4c7b95f171c5f0fde4f8e1edf136132",
+            5 to "cd07747e2f37fc3915735a4b555d387b",
         )
     }
 }
