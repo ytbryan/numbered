@@ -1029,12 +1029,10 @@ class ScreenCaptureTest {
         val app = RuntimeEnvironment.getApplication() as NumberedApp
         assertEquals(PackageManager.PERMISSION_DENIED, app.checkSelfPermission(Manifest.permission.INTERNET))
         compose.onNodeWithText("OFFLINE").assertIsDisplayed()
-        compose.onNodeWithText("Internet access blocked").assertIsDisplayed()
         capture("offline-banner")
         compose.mainClock.advanceTimeBy(5_000)
         compose.waitForIdle()
         compose.onNodeWithText("OFFLINE").assertDoesNotExist()
-        compose.onNodeWithText("Internet access blocked").assertDoesNotExist()
         capture("offline-strip")
 
         openSettings()

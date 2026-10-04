@@ -12,14 +12,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -363,28 +361,20 @@ private fun OfflineBanner(pullProgress: Float) {
                 enter = fadeIn(tween(120)),
                 exit = fadeOut(tween(120)),
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .heightIn(min = OFFLINE_PANEL_HEIGHT)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                Box(Modifier.fillMaxSize()) {
                     Icon(
                         Icons.Outlined.CloudOff,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 16.dp)
+                            .size(20.dp),
                     )
                     Text(
                         stringResource(R.string.offline_status),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 12.dp),
-                    )
-                    Text(
-                        stringResource(R.string.offline_status_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 10.dp),
+                        modifier = Modifier.align(Alignment.Center),
                     )
                 }
             }

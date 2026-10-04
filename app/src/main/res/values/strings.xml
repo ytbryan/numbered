@@ -283,7 +283,6 @@
     <string name="data_title">Your data</string>
     <string name="privacy_note">Your weeks stay on this phone and in your device backups. No account needed.</string>
     <string name="offline_status">OFFLINE</string>
-    <string name="offline_status_summary">Internet access blocked</string>
     <string name="offline_protection">Offline only</string>
     <string name="offline_protection_help">Numbered does not request internet access, so Android blocks all incoming and outgoing connections.</string>
     <string name="offline_protection_state">Always on</string>
