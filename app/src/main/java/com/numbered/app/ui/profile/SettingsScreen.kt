@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,12 +48,14 @@ import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.security.AppLockSetting
 import com.numbered.app.ui.NoticeEffect
 import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.components.StyledTabTitle
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.locale
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.toLocalDate
 import com.numbered.app.appContainer
 import com.numbered.app.domain.MAX_PRIORITIES_PER_WEEK
+import com.numbered.app.ui.theme.TitleTab
 import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +76,9 @@ fun SettingsScreen() {
     val weekFidget = LocalContext.current.appContainer.weekFidget
     val weekFidgetStyle by weekFidget.style.collectAsStateWithLifecycle()
     val weekFidgetStrength by weekFidget.strength.collectAsStateWithLifecycle()
+    val lifeFidget = LocalContext.current.appContainer.lifeFidget
+    val lifeFidgetStyle by lifeFidget.style.collectAsStateWithLifecycle()
+    val lifeFidgetStrength by lifeFidget.strength.collectAsStateWithLifecycle()
     val ageDisplay = LocalContext.current.appContainer.ageDisplay
     val decimalAgeEnabled by ageDisplay.decimalEnabled.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
@@ -88,7 +95,7 @@ fun SettingsScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings)) },
+                title = { StyledTabTitle(TitleTab.Settings, stringResource(R.string.settings)) },
                 actions = {
                     ExplanationHelp(
                         title = stringResource(R.string.settings_help_title),
@@ -195,7 +202,14 @@ fun SettingsScreen() {
                 onSelect = weekFidget::setStyle,
                 onStrength = weekFidget::setStrength,
             )
+            LifeFidgetStylePicker(
+                selected = lifeFidgetStyle,
+                strength = lifeFidgetStrength,
+                onSelect = lifeFidget::setStyle,
+                onStrength = lifeFidget::setStrength,
+            )
             AppLockSetting()
+            OfflineProtectionSetting()
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             RemindersSection(
                 settings = reminders,
@@ -270,6 +284,46 @@ fun SettingsScreen() {
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun OfflineProtectionSetting() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            Icons.Outlined.CloudOff,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Column(
+            Modifier.weight(1f).padding(start = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.offline_protection), style = MaterialTheme.typography.titleSmall)
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(start = 10.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.offline_protection_state),
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.offline_protection_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

@@ -88,6 +88,7 @@ import com.numbered.app.ui.components.TodayDate
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
 import com.numbered.app.ui.lifeWeekMomentText
+import com.numbered.app.ui.week.WeekFidgetStrength
 import com.numbered.app.ui.locale
 import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
@@ -112,6 +113,8 @@ fun LifeScreen(
     val selected by viewModel.selected.collectAsStateWithLifecycle()
     val state = grid ?: return
     val progressStyle by LocalContext.current.appContainer.weekProgress.style.collectAsStateWithLifecycle()
+    val lifeFidgetStyle by LocalContext.current.appContainer.lifeFidget.style.collectAsStateWithLifecycle()
+    val lifeFidgetStrength by LocalContext.current.appContainer.lifeFidget.strength.collectAsStateWithLifecycle()
     val calendarWeek = state.calendar.calendarWeek(state.today)
     var enlarged by rememberSaveable { mutableStateOf(true) }
     var choosingYear by rememberSaveable { mutableStateOf(false) }
@@ -278,6 +281,8 @@ fun LifeScreen(
                 previousLabel = stringResource(R.string.a11y_previous_week),
                 nextLabel = stringResource(R.string.a11y_next_week),
                 columns = if (enlarged) 7 else 52,
+                fidgetStyle = if (enlarged) lifeFidgetStyle else LifeFidgetStyle.Off,
+                fidgetStrength = lifeFidgetStrength,
             )
             Spacer(Modifier.height(20.dp))
             Text(

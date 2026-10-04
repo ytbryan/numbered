@@ -14,6 +14,7 @@ import com.numbered.app.security.AppLock
 import com.numbered.app.security.KeystoreVault
 import com.numbered.app.security.PassphraseVault
 import com.numbered.app.ui.AgeDisplayStore
+import com.numbered.app.ui.life.LifeFidgetStore
 import com.numbered.app.ui.theme.ThemeStore
 import com.numbered.app.ui.theme.TitleStyleStore
 import com.numbered.app.ui.week.WeekProgressStore
@@ -68,6 +69,7 @@ class AppContainer(
     val ageDisplay = AgeDisplayStore(context.applicationContext)
     val weekProgress = WeekProgressStore(context.applicationContext)
     val weekFidget = WeekFidgetStore(context.applicationContext)
+    val lifeFidget = LifeFidgetStore(context.applicationContext)
 
     /** Work that outlives a screen, such as scheduling reminders. */
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

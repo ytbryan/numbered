@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.graphics.Canvas
@@ -56,6 +57,7 @@ import com.numbered.app.ui.theme.TitleFont
 import com.numbered.app.ui.theme.TitleTab
 import com.numbered.app.ui.theme.TitleTreatment
 import com.numbered.app.ui.theme.TitleWeight
+import com.numbered.app.ui.life.LifeFidgetStyle
 import com.numbered.app.ui.week.WeekFidgetStyle
 import com.numbered.app.ui.week.WeekFidgetStrength
 import java.io.File
@@ -154,6 +156,7 @@ class ScreenCaptureTest {
             app.getSharedPreferences("age_display", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("title_styles", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("week_fidget", Context.MODE_PRIVATE).edit().clear().commit()
+            app.getSharedPreferences("life_fidget", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -883,7 +886,9 @@ class ScreenCaptureTest {
         compose.onNodeWithContentDescription("Clear search").performClick()
         awaitText("Still worth a square?")
         compose.onNodeWithContentDescription("Search ideas").performClick()
-        compose.onAllNodesWithText("Learn to sail").assertCountEquals(2)
+        compose.onAllNodes(hasScrollToNodeAction()).onFirst()
+            .performScrollToNode(hasText("Learn to sail") and !hasSetTextAction())
+        compose.onNode(hasText("Learn to sail") and !hasSetTextAction()).performScrollTo().assertIsDisplayed()
     }
 
     @Test fun somedaySortChangesTheVisibleOrder() {
@@ -1020,6 +1025,27 @@ class ScreenCaptureTest {
         compose.onAllNodesWithText("Psalm", substring = true).assertCountEquals(0)
     }
 
+    @Test fun offlineProtectionIsVisibleAndEnforcedByAndroid() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        assertEquals(PackageManager.PERMISSION_DENIED, app.checkSelfPermission(Manifest.permission.INTERNET))
+        compose.onNodeWithText("OFFLINE").assertIsDisplayed()
+        compose.onNodeWithText("Internet access blocked").assertIsDisplayed()
+        capture("offline-banner")
+        compose.mainClock.advanceTimeBy(5_000)
+        compose.waitForIdle()
+        compose.onNodeWithText("OFFLINE").assertDoesNotExist()
+        compose.onNodeWithText("Internet access blocked").assertDoesNotExist()
+        capture("offline-strip")
+
+        openSettings()
+        val explanation = "Numbered does not request internet access, so Android blocks all incoming and outgoing connections."
+        scrollTo(explanation)
+        compose.onNodeWithText("Offline only").assertIsDisplayed()
+        compose.onNodeWithText("Always on").assertIsDisplayed()
+        compose.onNodeWithText(explanation).assertIsDisplayed()
+        capture("settings-offline-protection")
+    }
+
     @Test fun fidgetWeekStripIsOptionalAndRemembered() {
         val app = RuntimeEnvironment.getApplication() as NumberedApp
         assertEquals(WeekFidgetStyle.Off, app.container.weekFidget.style.value)
@@ -1054,11 +1080,38 @@ class ScreenCaptureTest {
         assertEquals(before, after)
     }
 
+    @Test fun lifeWeekGridFidgetIsOptionalAndRemembered() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        assertEquals(LifeFidgetStyle.Off, app.container.lifeFidget.style.value)
+        openSettings()
+        scrollTo("Life grid fidget")
+        tap("Life grid fidget")
+        listOf("Week Pop", "Ripple Field", "Comet Trail", "Domino Row").forEach(::awaitText)
+        capture("settings-life-fidget-styles")
+        tap("Comet Trail")
+        tap("Extreme")
+        assertEquals(LifeFidgetStyle.CometTrail, app.container.lifeFidget.style.value)
+        assertEquals(WeekFidgetStrength.Extreme, app.container.lifeFidget.strength.value)
+        compose.activity.onBackPressedDispatcher.onBackPressed()
+
+        tap("Life")
+        awaitText("Your life")
+        val before = runBlocking { app.container.repository.snapshot()!!.commitments }
+        compose.onNodeWithContentDescription("Weeks in 2026", substring = true).performTouchInput {
+            down(center)
+            moveBy(Offset(120f, 0f))
+            up()
+        }
+        val after = runBlocking { app.container.repository.snapshot()!!.commitments }
+        assertEquals(before, after)
+        capture("life-fidget-comet-trail")
+    }
+
     @Test fun tabTitlesCanBeStyledIndependently() {
         openSettings()
         scrollTo("Tab titles")
         tap("Tab titles")
-        awaitText("Choose a typeface, weight, and colour for each main tab.")
+        awaitText("Choose a typeface, weight, and colour for each tab title, including Settings.")
 
         tap("Book")
         tap("Bold")
@@ -1067,6 +1120,9 @@ class ScreenCaptureTest {
         tap("Mono")
         tap("Regular")
         tap("Accent")
+        compose.onAllNodesWithText("Settings").onLast().performClick()
+        tap("Bold")
+        tap("Dusk gradient")
 
         val styles = (RuntimeEnvironment.getApplication() as NumberedApp).container.titleStyles.styles.value
         assertEquals(TitleFont.Book, styles.getValue(TitleTab.Week).font)
@@ -1076,6 +1132,8 @@ class ScreenCaptureTest {
         assertEquals(TitleWeight.Regular, styles.getValue(TitleTab.Life).weight)
         assertEquals(TitleTreatment.Accent, styles.getValue(TitleTab.Life).treatment)
         assertEquals(TitleFont.Clean, styles.getValue(TitleTab.Someday).font)
+        assertEquals(TitleWeight.Bold, styles.getValue(TitleTab.Settings).weight)
+        assertEquals(TitleTreatment.Dusk, styles.getValue(TitleTab.Settings).treatment)
         capture("settings-tab-titles")
     }
 
@@ -1106,16 +1164,21 @@ class ScreenCaptureTest {
         val app = RuntimeEnvironment.getApplication() as NumberedApp
         assertEquals(com.numbered.app.ui.week.WeekProgressStyle.Circle, app.container.weekProgress.style.value)
         tap("Week")
+        compose.mainClock.advanceTimeBy(5_000)
+        compose.waitForIdle()
+        compose.onNodeWithText("OFFLINE").assertDoesNotExist()
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
         val week = compose.onAllNodes(hasScrollToNodeAction()).onFirst()
         week.performTouchInput {
             down(center)
             moveBy(Offset(0f, height * 0.65f))
         }
+        compose.onNodeWithText("OFFLINE").assertIsDisplayed()
         capture("week-progress-circle")
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsDisplayed()
         week.performTouchInput { up() }
         compose.waitForIdle()
+        compose.onNodeWithText("OFFLINE").assertDoesNotExist()
         compose.onNodeWithContentDescription("Week 40 of 53 in 2026", substring = true).assertIsNotDisplayed()
         compose.onNode(hasText("· age", substring = true)).assertDoesNotExist()
         tap("Life")

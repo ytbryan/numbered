@@ -13,7 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -33,47 +33,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.numbered.app.R
-import com.numbered.app.ui.week.WeekFidgetStyle
+import com.numbered.app.ui.life.LifeFidgetStyle
 import com.numbered.app.ui.week.WeekFidgetStrength
 
 @StringRes
-private fun WeekFidgetStyle.label(): Int = when (this) {
-    WeekFidgetStyle.Off -> R.string.fidget_off
-    WeekFidgetStyle.SoftPress -> R.string.fidget_soft_press
-    WeekFidgetStyle.PebbleWave -> R.string.fidget_pebble_wave
-    WeekFidgetStyle.ElasticWeek -> R.string.fidget_elastic_week
-    WeekFidgetStyle.RollingNumbers -> R.string.fidget_rolling_numbers
-    WeekFidgetStyle.MechanicalRotation -> R.string.fidget_mechanical_rotation
-    WeekFidgetStyle.MagneticSnap -> R.string.fidget_magnetic_snap
-    WeekFidgetStyle.BreathingTrail -> R.string.fidget_breathing_trail
+private fun LifeFidgetStyle.label(): Int = when (this) {
+    LifeFidgetStyle.Off -> R.string.fidget_off
+    LifeFidgetStyle.WeekPop -> R.string.life_fidget_week_pop
+    LifeFidgetStyle.RippleField -> R.string.life_fidget_ripple_field
+    LifeFidgetStyle.CometTrail -> R.string.life_fidget_comet_trail
+    LifeFidgetStyle.DominoRow -> R.string.life_fidget_domino_row
 }
 
 @StringRes
-private fun WeekFidgetStyle.description(): Int = when (this) {
-    WeekFidgetStyle.Off -> R.string.fidget_off_description
-    WeekFidgetStyle.SoftPress -> R.string.fidget_soft_press_description
-    WeekFidgetStyle.PebbleWave -> R.string.fidget_pebble_wave_description
-    WeekFidgetStyle.ElasticWeek -> R.string.fidget_elastic_week_description
-    WeekFidgetStyle.RollingNumbers -> R.string.fidget_rolling_numbers_description
-    WeekFidgetStyle.MechanicalRotation -> R.string.fidget_mechanical_rotation_description
-    WeekFidgetStyle.MagneticSnap -> R.string.fidget_magnetic_snap_description
-    WeekFidgetStyle.BreathingTrail -> R.string.fidget_breathing_trail_description
-}
-
-@StringRes
-internal fun WeekFidgetStrength.label(): Int = when (this) {
-    WeekFidgetStrength.Gentle -> R.string.fidget_strength_gentle
-    WeekFidgetStrength.Balanced -> R.string.fidget_strength_balanced
-    WeekFidgetStrength.Strong -> R.string.fidget_strength_strong
-    WeekFidgetStrength.Extreme -> R.string.fidget_strength_extreme
+private fun LifeFidgetStyle.description(): Int = when (this) {
+    LifeFidgetStyle.Off -> R.string.life_fidget_off_description
+    LifeFidgetStyle.WeekPop -> R.string.life_fidget_week_pop_description
+    LifeFidgetStyle.RippleField -> R.string.life_fidget_ripple_field_description
+    LifeFidgetStyle.CometTrail -> R.string.life_fidget_comet_trail_description
+    LifeFidgetStyle.DominoRow -> R.string.life_fidget_domino_row_description
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-internal fun FidgetStylePicker(
-    selected: WeekFidgetStyle,
+internal fun LifeFidgetStylePicker(
+    selected: LifeFidgetStyle,
     strength: WeekFidgetStrength,
-    onSelect: (WeekFidgetStyle) -> Unit,
+    onSelect: (LifeFidgetStyle) -> Unit,
     onStrength: (WeekFidgetStrength) -> Unit,
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
@@ -90,15 +76,15 @@ internal fun FidgetStylePicker(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Outlined.TouchApp, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Outlined.GridView, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(stringResource(R.string.week_fidget), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.life_fidget), style = MaterialTheme.typography.titleSmall)
                 Text(
-                    if (selected == WeekFidgetStyle.Off) {
-                        stringResource(selected.label())
-                    } else {
-                        stringResource(R.string.fidget_selection, stringResource(selected.label()), stringResource(strength.label()))
-                    },
+                    if (selected == LifeFidgetStyle.Off) stringResource(selected.label()) else stringResource(
+                        R.string.fidget_selection,
+                        stringResource(selected.label()),
+                        stringResource(strength.label()),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -109,20 +95,17 @@ internal fun FidgetStylePicker(
     if (open) {
         ModalBottomSheet(onDismissRequest = { open = false }, sheetState = sheetState) {
             Column(
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 32.dp),
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp).padding(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(stringResource(R.string.fidget_style_heading), style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.life_fidget_heading), style = MaterialTheme.typography.headlineSmall)
                 Text(
-                    stringResource(R.string.week_fidget_help),
+                    stringResource(R.string.life_fidget_help),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (selected != WeekFidgetStyle.Off) {
+                if (selected != LifeFidgetStyle.Off) {
                     Text(stringResource(R.string.fidget_strength), style = MaterialTheme.typography.titleSmall)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         WeekFidgetStrength.entries.forEach { option ->
@@ -134,17 +117,14 @@ internal fun FidgetStylePicker(
                         }
                     }
                 }
-                WeekFidgetStyle.entries.forEach { style ->
+                LifeFidgetStyle.entries.forEach { style ->
                     val chosen = selected == style
                     Surface(
                         onClick = { onSelect(style) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         color = if (chosen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                        border = BorderStroke(
-                            1.dp,
-                            if (chosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                        ),
+                        border = BorderStroke(1.dp, if (chosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Row(
                             Modifier.padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),

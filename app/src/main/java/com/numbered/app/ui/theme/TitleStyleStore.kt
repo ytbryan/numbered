@@ -1,11 +1,12 @@
 package com.numbered.app.ui.theme
 
 import android.content.Context
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class TitleTab { Week, Life, Someday }
+enum class TitleTab { Week, Life, Someday, Settings }
 
 enum class TitleFont { Clean, Book, Mono }
 
@@ -25,11 +26,11 @@ class TitleStyleStore(context: Context) {
     val styles: StateFlow<Map<TitleTab, TitleStyle>> = mutableStyles.asStateFlow()
 
     fun select(tab: TitleTab, style: TitleStyle) {
-        preferences.edit()
-            .putString("${tab.name}_font", style.font.name)
-            .putString("${tab.name}_weight", style.weight.name)
-            .putString("${tab.name}_treatment", style.treatment.name)
-            .apply()
+        preferences.edit {
+            putString("${tab.name}_font", style.font.name)
+            putString("${tab.name}_weight", style.weight.name)
+            putString("${tab.name}_treatment", style.treatment.name)
+        }
         mutableStyles.value = mutableStyles.value + (tab to style)
     }
 

@@ -17,17 +17,12 @@ internal class FidgetVibrator(context: Context) {
 
     fun click() {
         if (!vibrator.hasVibrator()) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createWaveform(
-                    longArrayOf(0, 18, 18, 24),
-                    intArrayOf(0, 255, 0, 230),
-                    -1,
-                ),
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(longArrayOf(0, 18, 18, 24), -1)
-        }
+        vibrator.vibrate(
+            VibrationEffect.createWaveform(
+                longArrayOf(0, 18, 18, 24),
+                intArrayOf(0, 255, 0, 230),
+                -1,
+            ),
+        )
     }
 }

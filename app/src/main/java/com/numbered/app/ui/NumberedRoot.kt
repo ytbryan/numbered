@@ -2,14 +2,32 @@ package com.numbered.app.ui
 
 import android.net.Uri
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarViewWeek
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Settings
@@ -20,18 +38,27 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -71,6 +98,7 @@ import java.text.NumberFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
 import kotlin.reflect.KClass
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -168,10 +196,12 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val onTab = Tabs.any { tab -> destination?.hasRoute(tab.routeClass) == true }
+    var offlinePullProgress by remember { mutableFloatStateOf(0f) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0),
+        topBar = { OfflineBanner(offlinePullProgress) },
         snackbarHost = {
             SnackbarHost(snackbar, if (onTab) Modifier else Modifier.navigationBarsPadding())
         },
@@ -194,7 +224,8 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
             week = calendarWeek,
             style = progressStyle,
             enabled = onTab,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+            onPullProgress = { offlinePullProgress = it },
         ) {
             NavHost(
                 navController = nav,
@@ -294,6 +325,78 @@ private fun MainScaffold(snackbar: SnackbarHostState) {
         }
     }
 }
+
+/** A persistent, rectangular reminder of the app's OS-enforced network boundary. */
+@Composable
+private fun OfflineBanner(pullProgress: Float) {
+    var collapsed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(OFFLINE_BANNER_READ_MILLIS)
+        collapsed = true
+    }
+    val pull = pullProgress.coerceIn(0f, 1f)
+    val targetHeight = when {
+        !collapsed -> OFFLINE_PANEL_HEIGHT
+        pull > 0f -> OFFLINE_STRIP_HEIGHT + (OFFLINE_PANEL_HEIGHT - OFFLINE_STRIP_HEIGHT) * pull
+        else -> OFFLINE_STRIP_HEIGHT
+    }
+    val panelHeight by animateDpAsState(
+        targetValue = targetHeight,
+        animationSpec = if (pull > 0f) {
+            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessHigh)
+        } else {
+            tween(OFFLINE_COLLAPSE_MILLIS)
+        },
+        label = "offline panel height",
+    )
+    val messageVisible = !collapsed || pull >= OFFLINE_MESSAGE_REVEAL_PROGRESS
+
+    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+        Spacer(Modifier.windowInsetsPadding(WindowInsets.statusBars))
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.fillMaxWidth().height(panelHeight).clipToBounds(),
+        ) {
+            AnimatedVisibility(
+                visible = messageVisible,
+                enter = fadeIn(tween(120)),
+                exit = fadeOut(tween(120)),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .heightIn(min = OFFLINE_PANEL_HEIGHT)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Outlined.CloudOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        stringResource(R.string.offline_status),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                    Text(
+                        stringResource(R.string.offline_status_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 10.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private const val OFFLINE_BANNER_READ_MILLIS = 4_000L
+private const val OFFLINE_COLLAPSE_MILLIS = 240
+private const val OFFLINE_MESSAGE_REVEAL_PROGRESS = 0.45f
+private val OFFLINE_PANEL_HEIGHT = 48.dp
+private val OFFLINE_STRIP_HEIGHT = 6.dp
 
 /** Switches tabs the standard way: one copy of each tab, with its scroll and state restored. */
 private fun NavHostController.openTab(route: Any) {

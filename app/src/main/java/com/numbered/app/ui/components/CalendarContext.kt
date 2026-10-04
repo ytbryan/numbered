@@ -82,9 +82,9 @@ fun TodayDate(today: LocalDate, modifier: Modifier = Modifier, showYear: Boolean
 fun WeekDays(
     weekStart: LocalDate,
     today: LocalDate,
+    modifier: Modifier = Modifier,
     fidgetStyle: WeekFidgetStyle = WeekFidgetStyle.Off,
     fidgetStrength: WeekFidgetStrength = WeekFidgetStrength.Balanced,
-    modifier: Modifier = Modifier,
 ) {
     val locale = locale()
     val formatter = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "EEEEMMMd"), locale)

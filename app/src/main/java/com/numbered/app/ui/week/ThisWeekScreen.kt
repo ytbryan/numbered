@@ -353,6 +353,12 @@ private fun WeekHeader(
             }
         }
         TodayDate(state.today, Modifier.padding(top = 4.dp, bottom = 4.dp))
-        WeekDays(state.weekStart, state.today, weekFidgetStyle, weekFidgetStrength, Modifier.padding(top = 12.dp))
+        WeekDays(
+            state.weekStart,
+            state.today,
+            modifier = Modifier.padding(top = 12.dp),
+            fidgetStyle = weekFidgetStyle,
+            fidgetStrength = weekFidgetStrength,
+        )
     }
 }

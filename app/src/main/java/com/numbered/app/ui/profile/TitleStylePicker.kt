@@ -47,6 +47,7 @@ private fun TitleTab.label(): Int = when (this) {
     TitleTab.Week -> R.string.this_week
     TitleTab.Life -> R.string.your_life
     TitleTab.Someday -> R.string.tab_someday
+    TitleTab.Settings -> R.string.settings
 }
 
 @StringRes
