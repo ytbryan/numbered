@@ -52,6 +52,10 @@ import com.numbered.app.domain.CommitmentStatus.Done
 import com.numbered.app.domain.CommitmentStatus.Open
 import com.numbered.app.ui.theme.ThemeOption
 import com.numbered.app.ui.theme.ThemeStore
+import com.numbered.app.ui.theme.TitleFont
+import com.numbered.app.ui.theme.TitleTab
+import com.numbered.app.ui.theme.TitleTreatment
+import com.numbered.app.ui.theme.TitleWeight
 import java.io.File
 import java.time.Clock
 import java.time.DayOfWeek
@@ -146,6 +150,7 @@ class ScreenCaptureTest {
             app.getSharedPreferences("theme", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("week_progress", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("age_display", Context.MODE_PRIVATE).edit().clear().commit()
+            app.getSharedPreferences("title_styles", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -979,9 +984,34 @@ class ScreenCaptureTest {
         compose.onNodeWithText("Done").performScrollTo().performClick()
         scrollTo("About Numbered")
         tap("About Numbered")
-        compose.onNodeWithText("Named after Psalm", substring = true).assertExists()
+        compose.onNodeWithText("Life is numbered, and it is short.", substring = true).assertExists()
         capture("settings-about")
         compose.onNodeWithText("Done").performScrollTo().performClick()
+    }
+
+    @Test fun tabTitlesCanBeStyledIndependently() {
+        openSettings()
+        scrollTo("Tab titles")
+        tap("Tab titles")
+        awaitText("Choose a typeface, weight, and colour for each main tab.")
+
+        tap("Book")
+        tap("Bold")
+        tap("Dawn gradient")
+        tap("Your life")
+        tap("Mono")
+        tap("Regular")
+        tap("Accent")
+
+        val styles = (RuntimeEnvironment.getApplication() as NumberedApp).container.titleStyles.styles.value
+        assertEquals(TitleFont.Book, styles.getValue(TitleTab.Week).font)
+        assertEquals(TitleWeight.Bold, styles.getValue(TitleTab.Week).weight)
+        assertEquals(TitleTreatment.Dawn, styles.getValue(TitleTab.Week).treatment)
+        assertEquals(TitleFont.Mono, styles.getValue(TitleTab.Life).font)
+        assertEquals(TitleWeight.Regular, styles.getValue(TitleTab.Life).weight)
+        assertEquals(TitleTreatment.Accent, styles.getValue(TitleTab.Life).treatment)
+        assertEquals(TitleFont.Clean, styles.getValue(TitleTab.Someday).font)
+        capture("settings-tab-titles")
     }
 
     @Test fun birthDateStartsHiddenAndCanBeRevealedAndHiddenAgain() {

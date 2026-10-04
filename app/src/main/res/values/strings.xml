@@ -278,7 +278,7 @@
     <string name="start_week">Start week %1$s</string>
     <string name="data_title">Your data</string>
     <string name="privacy_note">Your weeks stay on this phone and in your device backups. No account needed.</string>
-    <string name="name_origin">Named after Psalm 90:12. “So teach us to number our days, that we may apply our hearts unto wisdom.”</string>
+    <string name="name_origin">Life is numbered, and it is short. We can only do so much.\n\nNumbered helps you choose what matters, focus on what works, and let the rest go. The aim is not to fill every week. It is to make the weeks count.</string>
     <string name="week_starts_on">Weeks start on %1$s</string>
     <string name="week_starts_help">Set when you started, so saved weeks never shift.</string>
 
@@ -503,6 +503,24 @@
     <string name="theme_high_contrast_description">Strong black text and blue actions.</string>
     <string name="theme_preview_done">One thing finished</string>
     <string name="theme_preview_open">One thing to do</string>
+    <string name="title_style_setting">Tab titles</string>
+    <string name="title_style_summary">Style each title separately.</string>
+    <string name="title_style_heading">Tab titles</string>
+    <string name="title_style_help">Choose a typeface, weight, and colour for each main tab.</string>
+    <string name="title_font">Typeface</string>
+    <string name="title_font_clean">Clean</string>
+    <string name="title_font_book">Book</string>
+    <string name="title_font_mono">Mono</string>
+    <string name="title_weight">Weight</string>
+    <string name="title_weight_regular">Regular</string>
+    <string name="title_weight_medium">Medium</string>
+    <string name="title_weight_bold">Bold</string>
+    <string name="title_color">Colour</string>
+    <string name="title_color_ink">Ink</string>
+    <string name="title_color_accent">Accent</string>
+    <string name="title_color_warm">Warm</string>
+    <string name="title_gradient_dawn">Dawn gradient</string>
+    <string name="title_gradient_dusk">Dusk gradient</string>
     <string name="horizon_summary">A canvas, not a prediction.</string>
     <string name="reminders_summary">Plan and close your week.</string>
     <string name="week_starts_summary">Fixed at setup.</string>

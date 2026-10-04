@@ -39,6 +39,7 @@ Life offers both a whole-life overview and larger week squares for one calendar 
 The selected-week drawer has a [reusable interaction specification](docs/new-app-life-week-drawer.md) for new apps.
 This week names today and highlights it in a seven-day strip ordered by your chosen week start.
 Settings can add a circular or week-by-week bar view of calendar-year progress, revealed by pulling down at the top of any main tab.
+Settings can also give This week, Your life, and Someday their own typeface, weight, and solid or gradient colour treatment.
 New profiles start in Gentle mode, which hides future weeks; the setting can be changed later in Settings.
 Years with 53 calendar weeks show all 53 marks.
 Point-in-time ages show one decimal place by default, truncated so they never advance before a birthday.
@@ -66,7 +67,7 @@ Save the preview as a UTF-8 text file or share it using Android’s share sheet.
 Reviews use the same week-based years as Your lines and include recorded data through the current week.
 Saved and shared summaries contain the selected year’s previewed content without birth dates, drafts, or Someday items.
 
-Settings keeps short descriptions beside controls, including the weekly priority limit and Other things done, with fuller explanations in help sheets and the name’s origin under About Numbered.
+Settings keeps short descriptions beside controls, including the weekly priority limit and Other things done, with fuller explanations in help sheets and the product’s philosophy under About Numbered.
 Onboarding introduces the three steps briefly.
 The empty Chapters section offers a New chapter action for the selected week.
 Catch up marks reflection fields as optional even while typing.

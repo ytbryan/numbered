@@ -83,6 +83,7 @@ import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.domain.WeekTone
 import com.numbered.app.ui.components.CardShape
 import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.components.StyledTabTitle
 import com.numbered.app.ui.components.TodayDate
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.formatCount
@@ -91,6 +92,7 @@ import com.numbered.app.ui.locale
 import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
 import com.numbered.app.ui.theme.LocalWeekColors
+import com.numbered.app.ui.theme.TitleTab
 import com.numbered.app.ui.week.WeekProgressStyle
 import com.numbered.app.ui.weekRange
 import java.time.LocalDate
@@ -205,9 +207,9 @@ fun LifeScreen(
                 .padding(top = 24.dp, bottom = 24.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
+                StyledTabTitle(
+                    tab = TitleTab.Life,
                     text = stringResource(R.string.your_life),
-                    style = MaterialTheme.typography.headlineLarge,
                     modifier = Modifier
                         .weight(1f)
                         .semantics { heading() },

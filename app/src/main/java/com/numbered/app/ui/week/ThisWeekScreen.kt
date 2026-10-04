@@ -45,6 +45,7 @@ import com.numbered.app.ui.components.PromptCard
 import com.numbered.app.ui.components.RenameDialog
 import com.numbered.app.ui.components.commitmentSubtitle
 import com.numbered.app.ui.components.ScreenPadding
+import com.numbered.app.ui.components.StyledTabTitle
 import com.numbered.app.ui.components.TodayDate
 import com.numbered.app.ui.components.WeekDays
 import com.numbered.app.ui.containerViewModel
@@ -52,6 +53,7 @@ import com.numbered.app.ui.formatCount
 import com.numbered.app.ui.lifeWeekMomentText
 import com.numbered.app.ui.pluralString
 import com.numbered.app.ui.shortDate
+import com.numbered.app.ui.theme.TitleTab
 import com.numbered.app.ui.weekRange
 import java.time.LocalDate
 
@@ -237,9 +239,9 @@ private fun WeekHeader(state: ThisWeekState, onSearch: () -> Unit) {
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
+            StyledTabTitle(
+                tab = TitleTab.Week,
                 text = stringResource(R.string.this_week),
-                style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
             IconButton(onClick = onSearch) {

@@ -64,8 +64,10 @@ import com.numbered.app.ui.components.MenuAction
 import com.numbered.app.ui.components.OverflowMenu
 import com.numbered.app.ui.components.ScreenPadding
 import com.numbered.app.ui.components.SectionLabel
+import com.numbered.app.ui.components.StyledTabTitle
 import com.numbered.app.ui.containerViewModel
 import com.numbered.app.ui.pluralString
+import com.numbered.app.ui.theme.TitleTab
 import com.numbered.app.ui.theme.card
 
 @Composable
@@ -100,9 +102,9 @@ fun SomedayScreen(initialQuery: String = "") {
         item(key = "header") {
             Column(Modifier.padding(bottom = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        stringResource(R.string.tab_someday),
-                        style = MaterialTheme.typography.headlineLarge,
+                    StyledTabTitle(
+                        tab = TitleTab.Someday,
+                        text = stringResource(R.string.tab_someday),
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     IconButton(onClick = { searching = !searching; query = "" }) {

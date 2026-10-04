@@ -58,6 +58,8 @@ fun SettingsScreen() {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val themes = LocalContext.current.appContainer.themes
     val selectedTheme by themes.selection.collectAsStateWithLifecycle()
+    val titleStyles = LocalContext.current.appContainer.titleStyles
+    val selectedTitleStyles by titleStyles.styles.collectAsStateWithLifecycle()
     val weekProgress = LocalContext.current.appContainer.weekProgress
     val selectedWeekProgress by weekProgress.style.collectAsStateWithLifecycle()
     val ageDisplay = LocalContext.current.appContainer.ageDisplay
@@ -170,6 +172,7 @@ fun SettingsScreen() {
                 Switch(checked = current.otherThingsDoneEnabled, onCheckedChange = null)
             }
             ThemePicker(selectedTheme, themes::select)
+            TitleStylePicker(selectedTitleStyles, titleStyles::select)
             WeekProgressPicker(selectedWeekProgress, weekProgress::select)
             AppLockSetting()
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

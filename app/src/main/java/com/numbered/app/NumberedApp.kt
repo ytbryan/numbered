@@ -15,6 +15,7 @@ import com.numbered.app.security.KeystoreVault
 import com.numbered.app.security.PassphraseVault
 import com.numbered.app.ui.AgeDisplayStore
 import com.numbered.app.ui.theme.ThemeStore
+import com.numbered.app.ui.theme.TitleStyleStore
 import com.numbered.app.ui.week.WeekProgressStore
 import java.time.Clock
 import java.time.Instant
@@ -62,6 +63,7 @@ class AppContainer(
     val backupSafety = BackupSafety(context.applicationContext)
     val appLock = AppLock(context.applicationContext)
     val themes = ThemeStore(context.applicationContext)
+    val titleStyles = TitleStyleStore(context.applicationContext)
     val ageDisplay = AgeDisplayStore(context.applicationContext)
     val weekProgress = WeekProgressStore(context.applicationContext)
 
