@@ -4,6 +4,11 @@
     <issue id="AndroidGradlePluginVersion">
         <ignore regexp="com.android.application than 8.13.2" />
     </issue>
+    <!-- targetSdk stays on 36 with compileSdk. Lint only reports this where a newer platform is
+         installed, such as CI runner images, so it fails CI while passing locally. -->
+    <issue id="OldTargetApi">
+        <ignore path="build.gradle.kts" />
+    </issue>
     <issue id="GradleDependency">
         <ignore regexp="compose-bom|core-ktx|lifecycle-runtime-compose|lifecycle-viewmodel-compose|navigation-compose" />
     </issue>

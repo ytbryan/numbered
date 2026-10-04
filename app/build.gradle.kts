@@ -68,6 +68,10 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Robolectric builds a separate sandbox per graphics mode, and on macOS a second sandbox in
+        // the same JVM cannot load the native SQLite library again. One mode for every test keeps
+        // them in one sandbox, so the full suite runs locally as it does in CI.
+        unitTests.all { it.systemProperty("robolectric.graphicsMode", "NATIVE") }
     }
 
     // MigrationTestHelper reads the exported schemas from assets, and Robolectric only sees the

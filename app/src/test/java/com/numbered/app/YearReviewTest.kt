@@ -30,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.*
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -39,6 +40,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class YearReviewTest {
+    @get:Rule val fileProviderPaths = FreshFileProviderPaths()
+
     private val app = ApplicationProvider.getApplicationContext<android.app.Application>()
     private val week = LocalDate.of(2026, 9, 28)
     private val today = week.plusDays(3)

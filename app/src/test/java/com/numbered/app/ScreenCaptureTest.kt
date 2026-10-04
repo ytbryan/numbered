@@ -161,6 +161,9 @@ class ScreenCaptureTest {
     @get:Rule(order = 2)
     val files = TemporaryFolder()
 
+    @get:Rule(order = 3)
+    val fileProviderPaths = FreshFileProviderPaths()
+
     @Test fun movingCommitmentOffersUndo() {
         awaitText("Finish the grant draft")
         compose.onNodeWithContentDescription("More options for Finish the grant draft", useUnmergedTree = true).performClick()
