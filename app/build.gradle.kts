@@ -17,6 +17,20 @@ fun signingProperty(name: String): String? = providers.gradleProperty(name).orNu
 
 val releaseKeystore = signingProperty("numberedKeystore")
 
+/**
+ * The version lives once, in gradle.properties, and a release is tagged with it. versionCode is
+ * derived from it, so it rises with every release and an update can never be refused as older.
+ * scripts/check_release_artifact.py checks a release APK against the same rule.
+ */
+val numberedVersion: String = providers.gradleProperty("numberedVersion").get()
+
+fun versionCodeOf(version: String): Int {
+    val (major, minor, patch) = Regex("""(\d+)\.(\d+)\.(\d+)""").matchEntire(version)?.destructured
+        ?: error("numberedVersion must be major.minor.patch, not $version")
+    require(minor.toInt() < 1000 && patch.toInt() < 1000) { "Minor and patch must stay below 1000" }
+    return major.toInt() * 1_000_000 + minor.toInt() * 1_000 + patch.toInt()
+}
+
 android {
     namespace = "com.numbered.app"
     compileSdk = 36
@@ -25,8 +39,8 @@ android {
         applicationId = "com.numbered.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = versionCodeOf(numberedVersion)
+        versionName = numberedVersion
     }
 
     signingConfigs {

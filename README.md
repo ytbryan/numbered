@@ -8,6 +8,8 @@ Named after Psalm 90:12.
 
 Download the Android APK from the [latest GitHub release](https://github.com/ytbryan/numbered/releases/latest).
 On Android 8 or later, open the APK and allow installation from your browser or file manager when prompted.
+Each release also lists the APK's SHA-256, to check the download.
+To hear about updates, add this repository to an app that follows GitHub releases, such as Obtainium.
 
 The source code is available under the [MIT license](LICENSE).
 
@@ -108,10 +110,21 @@ These checks catch changes to those boundaries; they cannot prove that all appli
 Lint treats warnings as errors, and deliberate exceptions live in `app/lint.xml`.
 
 Release builds are unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.
-Bump `versionCode` and `versionName` in `app/build.gradle.kts` for every release.
-Keep the release signing key and its passwords backed up securely, since updates to an installed app must use the same key.
 
 `ScreenCaptureTest` drives the real app on seeded data with Robolectric and writes every screen to `app/build/screens/`, mostly at 366dp wide and 145% text.
+
+## Releasing
+
+The version lives only in `numberedVersion` in `gradle.properties`, and `versionCode` is derived from it as major × 1,000,000 + minor × 1,000 + patch, so it rises with every release.
+To release, bump `numberedVersion`, merge to `main`, and push a tag with the same version, such as `git tag 0.2.0 && git push origin 0.2.0`.
+The Release workflow (`.github/workflows/release.yml`) then runs every check, builds and signs the APK, and drafts a GitHub release with the APK and its SHA-256.
+Edit the draft's notes and publish it yourself.
+
+The workflow refuses a tag that does not match the version, and an APK not signed with the certificate of earlier releases, recorded in `scripts/check_release_artifact.py`.
+Android only installs an update signed with the same key, so a release signed with any other key would strand everyone who installed an earlier one.
+It needs these repository secrets: `NUMBERED_KEYSTORE_BASE64` (the keystore file, base64-encoded), `NUMBERED_KEYSTORE_PASSWORD`, `NUMBERED_KEY_ALIAS`, and `NUMBERED_KEY_PASSWORD`.
+Keep the keystore and its passwords backed up in at least two places outside this machine, such as a password manager.
+If the key is lost, no future release can update installed copies.
 
 The toolchain stays on AGP 8.13 and compileSdk 36, like Doerlist.
 Compose 1.12, Lifecycle 2.11, and Navigation 2.10 need compileSdk 37 and AGP 9.1, so move both projects together.
