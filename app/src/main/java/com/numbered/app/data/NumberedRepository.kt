@@ -41,9 +41,9 @@ class NumberedRepository(
     private val reviews = db.reviews()
     private val chapters = db.chapters()
 
-    fun profile(): Flow<Profile?> = profiles.observe()
+    fun profile(): Flow<Profile?> = profiles.observe().map { it?.withCurrentPriorityLimit() }
 
-    suspend fun currentProfile(): Profile? = profiles.get()
+    suspend fun currentProfile(): Profile? = profiles.get()?.withCurrentPriorityLimit()
 
     suspend fun setPrioritiesPerWeek(prioritiesPerWeek: Int) {
         require(prioritiesPerWeek in 1..MAX_PRIORITIES_PER_WEEK)
@@ -58,7 +58,8 @@ class NumberedRepository(
         }
     }
 
-    private suspend fun priorityLimit(): Int = profiles.get()?.prioritiesPerWeek ?: DEFAULT_PRIORITIES_PER_WEEK
+    private suspend fun priorityLimit(): Int = profiles.get()?.prioritiesPerWeek
+        ?.coerceAtMost(MAX_PRIORITIES_PER_WEEK) ?: DEFAULT_PRIORITIES_PER_WEEK
 
     suspend fun createProfile(birthDate: LocalDate, horizonYears: Int, firstDayOfWeek: DayOfWeek) {
         saveProfile(birthDate, horizonYears, gentle = true, firstDayOfWeek)
@@ -359,7 +360,7 @@ class NumberedRepository(
     /** Everything stored, read in one transaction so the copy is consistent. Null before setup. */
     suspend fun snapshot(): Snapshot? = db.withTransaction {
         profiles.get()?.let { profile ->
-            Snapshot(profile, commitments.all(), someday.all(), reviews.all(), chapters.all(),
+            Snapshot(profile.withCurrentPriorityLimit(), commitments.all(), someday.all(), reviews.all(), chapters.all(),
                 otherThingsDone = otherThingsDone.all(), savedAt = clock.millis())
         }
     }
@@ -372,7 +373,7 @@ class NumberedRepository(
             someday.deleteAll()
             reviews.deleteAll()
             chapters.deleteAll()
-            profiles.upsert(snapshot.profile)
+            profiles.upsert(snapshot.profile.withCurrentPriorityLimit())
             commitments.insertAll(snapshot.commitments)
             otherThingsDone.insertAll(snapshot.otherThingsDone)
             someday.insertAll(snapshot.someday)
@@ -402,6 +403,9 @@ class NumberedRepository(
         } else null
     }
 }
+
+private fun Profile.withCurrentPriorityLimit(): Profile =
+    if (prioritiesPerWeek <= MAX_PRIORITIES_PER_WEEK) this else copy(prioritiesPerWeek = MAX_PRIORITIES_PER_WEEK)
 
 /** Tidies spaces while keeping the line breaks written in the expanded editor. */
 internal fun String.cleanTitle(): String? = replace("\r\n", "\n")

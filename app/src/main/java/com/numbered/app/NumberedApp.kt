@@ -17,6 +17,7 @@ import com.numbered.app.ui.AgeDisplayStore
 import com.numbered.app.ui.theme.ThemeStore
 import com.numbered.app.ui.theme.TitleStyleStore
 import com.numbered.app.ui.week.WeekProgressStore
+import com.numbered.app.ui.week.WeekFidgetStore
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -66,6 +67,7 @@ class AppContainer(
     val titleStyles = TitleStyleStore(context.applicationContext)
     val ageDisplay = AgeDisplayStore(context.applicationContext)
     val weekProgress = WeekProgressStore(context.applicationContext)
+    val weekFidget = WeekFidgetStore(context.applicationContext)
 
     /** Work that outlives a screen, such as scheduling reminders. */
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

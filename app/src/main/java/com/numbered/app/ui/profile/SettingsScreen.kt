@@ -4,13 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -32,9 +35,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.numbered.app.BuildConfig
 import com.numbered.app.R
 import com.numbered.app.ui.components.ExplanationHelp
 import com.numbered.app.security.AppLockSetting
@@ -52,6 +58,7 @@ import java.time.format.TextStyle
 @Composable
 fun SettingsScreen() {
     var birthDateVisible by remember { mutableStateOf(false) }
+    var doerlistIntroVisible by remember { mutableStateOf(false) }
     val viewModel = containerViewModel { SettingsViewModel(it) }
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
@@ -62,6 +69,9 @@ fun SettingsScreen() {
     val selectedTitleStyles by titleStyles.styles.collectAsStateWithLifecycle()
     val weekProgress = LocalContext.current.appContainer.weekProgress
     val selectedWeekProgress by weekProgress.style.collectAsStateWithLifecycle()
+    val weekFidget = LocalContext.current.appContainer.weekFidget
+    val weekFidgetStyle by weekFidget.style.collectAsStateWithLifecycle()
+    val weekFidgetStrength by weekFidget.strength.collectAsStateWithLifecycle()
     val ageDisplay = LocalContext.current.appContainer.ageDisplay
     val decimalAgeEnabled by ageDisplay.decimalEnabled.collectAsStateWithLifecycle()
     val resolver = LocalContext.current.applicationContext.contentResolver
@@ -147,8 +157,13 @@ fun SettingsScreen() {
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                     TextButton(
-                        onClick = { viewModel.setPrioritiesPerWeek(current.prioritiesPerWeek + 1) },
-                        enabled = current.prioritiesPerWeek < MAX_PRIORITIES_PER_WEEK,
+                        onClick = {
+                            if (current.prioritiesPerWeek < MAX_PRIORITIES_PER_WEEK) {
+                                viewModel.setPrioritiesPerWeek(current.prioritiesPerWeek + 1)
+                            } else {
+                                doerlistIntroVisible = true
+                            }
+                        },
                         modifier = Modifier.semantics { contentDescription = increaseLabel },
                     ) { Text(stringResource(R.string.action_increase)) }
                 }
@@ -174,6 +189,12 @@ fun SettingsScreen() {
             ThemePicker(selectedTheme, themes::select)
             TitleStylePicker(selectedTitleStyles, titleStyles::select)
             WeekProgressPicker(selectedWeekProgress, weekProgress::select)
+            FidgetStylePicker(
+                selected = weekFidgetStyle,
+                strength = weekFidgetStrength,
+                onSelect = weekFidget::setStyle,
+                onStrength = weekFidget::setStrength,
+            )
             AppLockSetting()
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             RemindersSection(
@@ -225,7 +246,51 @@ fun SettingsScreen() {
                 title = stringResource(R.string.about_numbered),
                 body = stringResource(R.string.name_origin),
                 buttonLabel = stringResource(R.string.about_numbered),
+                artwork = R.drawable.ic_launcher_artwork,
             )
+            AppSignature(Modifier.padding(top = 8.dp))
         }
+    }
+    if (doerlistIntroVisible) {
+        AlertDialog(
+            onDismissRequest = { doerlistIntroVisible = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_doerlist_artwork),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(44.dp),
+                )
+            },
+            title = { Text(stringResource(R.string.doerlist_intro_title)) },
+            text = { Text(stringResource(R.string.doerlist_intro_body)) },
+            confirmButton = {
+                TextButton(onClick = { doerlistIntroVisible = false }) {
+                    Text(stringResource(R.string.action_done))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun AppSignature(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.version_short, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Icon(
+            painter = painterResource(R.drawable.ic_doerlist_artwork),
+            contentDescription = null,
+            modifier = Modifier.size(44.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f),
+        )
     }
 }

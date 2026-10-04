@@ -19,6 +19,7 @@ EXPECTED_PERMISSIONS = {
     "android.permission.RECEIVE_BOOT_COMPLETED",
     "android.permission.USE_BIOMETRIC",
     "android.permission.USE_FINGERPRINT",
+    "android.permission.VIBRATE",
     "android.permission.WAKE_LOCK",
     "com.numbered.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
 }

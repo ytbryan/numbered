@@ -45,7 +45,10 @@ import androidx.compose.ui.zIndex
 import com.numbered.app.R
 import com.numbered.app.domain.CalendarWeek
 import com.numbered.app.ui.components.ScreenPadding
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 @Composable
 internal fun YearProgressPull(
@@ -100,6 +103,7 @@ private fun WeekProgressVisual(week: CalendarWeek, style: WeekProgressStyle, vis
     val description = stringResource(R.string.week_visual_accessibility, week.number, week.total, week.year)
     val accent = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.colorScheme.onSurfaceVariant
+    val quarterMarker = MaterialTheme.colorScheme.error
 
     Surface(
         modifier = Modifier
@@ -129,6 +133,16 @@ private fun WeekProgressVisual(week: CalendarWeek, style: WeekProgressStyle, vis
                                 cornerRadius = radius,
                             )
                         }
+                        repeat(3) { quarter ->
+                            val x = size.width * (quarter + 1) / 4f
+                            drawLine(
+                                color = quarterMarker,
+                                start = Offset(x, 0f),
+                                end = Offset(x, size.height),
+                                strokeWidth = 1.dp.toPx(),
+                                cap = StrokeCap.Butt,
+                            )
+                        }
                     }
                     Text(
                         position,
@@ -149,6 +163,24 @@ private fun WeekProgressVisual(week: CalendarWeek, style: WeekProgressStyle, vis
                                 style = Stroke(stroke, cap = StrokeCap.Round))
                             drawArc(accent, -90f, 360f * week.number / week.total, false, Offset(inset, inset), arcSize,
                                 style = Stroke(stroke, cap = StrokeCap.Round))
+                            repeat(4) { quarter ->
+                                val angle = quarter * PI / 2.0 - PI / 2.0
+                                val innerRadius = size.minDimension / 2f - stroke - 2.dp.toPx()
+                                val outerRadius = size.minDimension / 2f + 2.dp.toPx()
+                                drawLine(
+                                    color = quarterMarker,
+                                    start = Offset(
+                                        center.x + cos(angle).toFloat() * innerRadius,
+                                        center.y + sin(angle).toFloat() * innerRadius,
+                                    ),
+                                    end = Offset(
+                                        center.x + cos(angle).toFloat() * outerRadius,
+                                        center.y + sin(angle).toFloat() * outerRadius,
+                                    ),
+                                    strokeWidth = 1.dp.toPx(),
+                                    cap = StrokeCap.Butt,
+                                )
+                            }
                         }
                         Text(
                             stringResource(R.string.week_visual_fraction, week.number, week.total),

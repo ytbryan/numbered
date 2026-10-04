@@ -56,6 +56,8 @@ import com.numbered.app.ui.theme.TitleFont
 import com.numbered.app.ui.theme.TitleTab
 import com.numbered.app.ui.theme.TitleTreatment
 import com.numbered.app.ui.theme.TitleWeight
+import com.numbered.app.ui.week.WeekFidgetStyle
+import com.numbered.app.ui.week.WeekFidgetStrength
 import java.io.File
 import java.time.Clock
 import java.time.DayOfWeek
@@ -151,6 +153,7 @@ class ScreenCaptureTest {
             app.getSharedPreferences("week_progress", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("age_display", Context.MODE_PRIVATE).edit().clear().commit()
             app.getSharedPreferences("title_styles", Context.MODE_PRIVATE).edit().clear().commit()
+            app.getSharedPreferences("week_fidget", Context.MODE_PRIVATE).edit().clear().commit()
             database = NumberedDatabase.inMemory(app)
             app.replaceContainer(AppContainer(app, database, clock))
             if (description.getAnnotation(FreshInstall::class.java) == null) {
@@ -1010,6 +1013,45 @@ class ScreenCaptureTest {
         compose.onNodeWithText("Life is numbered, and it is short.", substring = true).assertExists()
         capture("settings-about")
         compose.onNodeWithText("Done").performScrollTo().performClick()
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        val version = app.packageManager.getPackageInfo(app.packageName, 0).versionName
+        scrollTo("v$version")
+        compose.onNodeWithText("v$version").assertIsDisplayed()
+        compose.onAllNodesWithText("Psalm", substring = true).assertCountEquals(0)
+    }
+
+    @Test fun fidgetWeekStripIsOptionalAndRemembered() {
+        val app = RuntimeEnvironment.getApplication() as NumberedApp
+        assertEquals(WeekFidgetStyle.Off, app.container.weekFidget.style.value)
+        openSettings()
+        scrollTo("Fidget week strip")
+        capture("settings-fidget-week-strip")
+        tap("Fidget week strip")
+        listOf(
+            "Pebble Wave",
+            "Elastic Week",
+            "Rolling Numbers",
+            "Mechanical Rotation",
+            "Magnetic Snap",
+            "Breathing Trail",
+        ).forEach(::awaitText)
+        capture("settings-fidget-styles")
+        tap("Mechanical Rotation")
+        assertEquals(WeekFidgetStyle.MechanicalRotation, app.container.weekFidget.style.value)
+        tap("Extreme")
+        assertEquals(WeekFidgetStrength.Extreme, app.container.weekFidget.strength.value)
+        capture("settings-fidget-strength")
+        compose.activity.onBackPressedDispatcher.onBackPressed()
+        tap("Week")
+        awaitText("This week")
+        val before = runBlocking { app.container.repository.snapshot()!!.commitments }
+        compose.onAllNodesWithContentDescription("Today", substring = true).onLast().performTouchInput {
+            down(center)
+            moveBy(Offset(100f, 0f))
+            up()
+        }
+        val after = runBlocking { app.container.repository.snapshot()!!.commitments }
+        assertEquals(before, after)
     }
 
     @Test fun tabTitlesCanBeStyledIndependently() {
@@ -1131,6 +1173,20 @@ class ScreenCaptureTest {
         scrollTo("Helped a neighbour")
         capture("week-other-things-done")
         assertEquals(1, runBlocking { repository.otherThingsDone(defaultToday.with(DayOfWeek.MONDAY)).first().size })
+    }
+
+    @Test fun weeklyPriorityLimitIntroducesDoerlistAtSeven() {
+        val repository = (RuntimeEnvironment.getApplication() as NumberedApp).container.repository
+        runBlocking { repository.setPrioritiesPerWeek(7) }
+        openSettings()
+        scrollTo("Priorities per week")
+
+        compose.onNodeWithContentDescription("More priorities per week").performClick()
+
+        awaitText("Seven is enough for a week")
+        compose.onNodeWithText("Doerlist is a marvelous to-do list", substring = true).assertIsDisplayed()
+        assertEquals(7, runBlocking { repository.currentProfile()!!.prioritiesPerWeek })
+        capture("settings-doerlist-introduction")
     }
 
     @Test fun themePickerShowsFiveChoicesAndSavesSelection() {

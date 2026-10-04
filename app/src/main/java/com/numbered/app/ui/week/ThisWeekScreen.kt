@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.numbered.app.R
+import com.numbered.app.appContainer
 import com.numbered.app.data.Commitment
 import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.ui.NoticeEffect
@@ -80,6 +82,8 @@ fun ThisWeekScreen(
 ) {
     val viewModel = containerViewModel { ThisWeekViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val weekFidgetStyle by LocalContext.current.appContainer.weekFidget.style.collectAsStateWithLifecycle()
+    val weekFidgetStrength by LocalContext.current.appContainer.weekFidget.strength.collectAsStateWithLifecycle()
     NoticeEffect(viewModel.notices)
     val current = state ?: return
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -106,7 +110,7 @@ fun ThisWeekScreen(
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, top = 24.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-            item(key = "header") { WeekHeader(current, onSearch) }
+            item(key = "header") { WeekHeader(current, weekFidgetStyle, weekFidgetStrength, onSearch) }
             current.catchUp?.let { catchUp ->
                 item(key = "catch-up") {
                     PromptCard(
@@ -324,7 +328,12 @@ fun ThisWeekScreen(
 }
 
 @Composable
-private fun WeekHeader(state: ThisWeekState, onSearch: () -> Unit) {
+private fun WeekHeader(
+    state: ThisWeekState,
+    weekFidgetStyle: WeekFidgetStyle,
+    weekFidgetStrength: WeekFidgetStrength,
+    onSearch: () -> Unit,
+) {
     Column(Modifier.padding(bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         state.moment?.let {
             Text(
@@ -344,6 +353,6 @@ private fun WeekHeader(state: ThisWeekState, onSearch: () -> Unit) {
             }
         }
         TodayDate(state.today, Modifier.padding(top = 4.dp, bottom = 4.dp))
-        WeekDays(state.weekStart, state.today, Modifier.padding(top = 12.dp))
+        WeekDays(state.weekStart, state.today, weekFidgetStyle, weekFidgetStrength, Modifier.padding(top = 12.dp))
     }
 }

@@ -3,7 +3,6 @@ package com.numbered.app.data
 import com.numbered.app.domain.CommitmentStatus
 import com.numbered.app.domain.LifeCalendar
 import com.numbered.app.domain.DEFAULT_PRIORITIES_PER_WEEK
-import com.numbered.app.domain.MAX_PRIORITIES_PER_WEEK
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Base64
@@ -207,13 +206,13 @@ object BackupFormat {
                 (parent == null || (parent.status == CommitmentStatus.Carried && parent.weekStart == entry.carriedFrom))
         } && commitments.mapNotNull { it.carriedFromId }.let { it.toSet().size == it.size }
         return validLinks && profile.horizonYears in LifeCalendar.HORIZON_CHOICES &&
-            profile.prioritiesPerWeek in 1..MAX_PRIORITIES_PER_WEEK &&
+            profile.prioritiesPerWeek in 1..LEGACY_MAX_PRIORITIES_PER_WEEK &&
             (version >= 4 || (profile.prioritiesPerWeek == DEFAULT_PRIORITIES_PER_WEEK &&
                 !profile.otherThingsDoneEnabled && otherThingsDone.isEmpty())) &&
             !profile.birthDate.isAfter(profile.startedOn) &&
             commitments.all { it.weekStart.startsWeek() && it.carriedFrom?.startsWeek() != false && it.title.isCleanTitle() } &&
             commitments.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
-            occupiedPerWeek.values.all { it <= if (version < 4) DEFAULT_PRIORITIES_PER_WEEK else MAX_PRIORITIES_PER_WEEK } &&
+            occupiedPerWeek.values.all { it <= if (version < 4) DEFAULT_PRIORITIES_PER_WEEK else LEGACY_MAX_PRIORITIES_PER_WEEK } &&
             otherThingsDone.all { it.weekStart.startsWeek() && it.title.isCleanTitle() } &&
             otherThingsDone.map { it.id }.let { ids -> ids.all { it > 0 } && ids.toSet().size == ids.size } &&
             someday.all { it.title.isCleanTitle() } &&
@@ -228,6 +227,8 @@ object BackupFormat {
     }
 
     private fun String.isCleanTitle() = cleanTitle() == this
+
+    private const val LEGACY_MAX_PRIORITIES_PER_WEEK = 10
 
     // Explicit names keep the file stable if the Kotlin enums are ever renamed.
     private val DayOfWeek.key: String get() = name.lowercase()

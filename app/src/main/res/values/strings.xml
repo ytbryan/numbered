@@ -7,6 +7,7 @@
     <string name="tab_life">Life</string>
     <string name="tab_someday">Someday</string>
     <string name="settings">Settings</string>
+    <string name="version_short">v%1$s</string>
 
     <!-- Actions -->
     <string name="action_add">Add</string>
@@ -64,7 +65,7 @@
     <string name="week_visual_bars">Week bars</string>
     <string name="week_visual_position">%1$d of %2$d</string>
     <string name="week_visual_fraction">%1$d/%2$d</string>
-    <string name="week_visual_accessibility">Week %1$d of %2$d in %3$d</string>
+    <string name="week_visual_accessibility">Week %1$d of %2$d in %3$d. Quarter markers divide the year into four parts.</string>
     <string name="last_day">Last day</string>
     <plurals name="days_left">
         <item quantity="one">%d day left</item>
@@ -73,7 +74,9 @@
     <string name="add_first">Add something that matters</string>
     <string name="add_another">Add another</string>
     <string name="priorities_per_week">Priorities per week</string>
-    <string name="priorities_per_week_help">Choose 1 to 10. Reducing the limit keeps what you already planned.</string>
+    <string name="priorities_per_week_help">Choose 1 to 7. Reducing the limit keeps what you already planned.</string>
+    <string name="doerlist_intro_title">Seven is enough for a week</string>
+    <string name="doerlist_intro_body">Numbered keeps your week focused on what matters most. For everything else, Doerlist is a marvelous to-do list built to hold the rest.</string>
     <string name="other_things_done">Other things done</string>
     <string name="other_things_done_help">Keep track of completed extras. Someday is for later ideas.</string>
     <string name="add_other_thing_done">Add something done</string>
@@ -522,6 +525,31 @@
     <string name="title_color_warm">Warm</string>
     <string name="title_gradient_dawn">Dawn gradient</string>
     <string name="title_gradient_dusk">Dusk gradient</string>
+    <string name="week_fidget">Fidget week strip</string>
+    <string name="week_fidget_help">Choose how the days respond when you touch or drag across them. These effects never change your plans.</string>
+    <string name="fidget_style_heading">Fidget style</string>
+    <string name="fidget_selection">%1$s · %2$s</string>
+    <string name="fidget_strength">Strength</string>
+    <string name="fidget_strength_gentle">Gentle</string>
+    <string name="fidget_strength_balanced">Balanced</string>
+    <string name="fidget_strength_strong">Strong</string>
+    <string name="fidget_strength_extreme">Extreme</string>
+    <string name="fidget_off">Off</string>
+    <string name="fidget_off_description">Keep the week strip still.</string>
+    <string name="fidget_soft_press">Soft Press</string>
+    <string name="fidget_soft_press_description">Days press inward with a gentle haptic tick.</string>
+    <string name="fidget_pebble_wave">Pebble Wave</string>
+    <string name="fidget_pebble_wave_description">A small wave rolls into neighbouring days.</string>
+    <string name="fidget_elastic_week">Elastic Week</string>
+    <string name="fidget_elastic_week_description">Days stretch toward your finger and spring back.</string>
+    <string name="fidget_rolling_numbers">Rolling Numbers</string>
+    <string name="fidget_rolling_numbers_description">Date numbers turn like a mechanical counter.</string>
+    <string name="fidget_mechanical_rotation">Mechanical Rotation</string>
+    <string name="fidget_mechanical_rotation_description">The selected day completes a crisp mechanical turn.</string>
+    <string name="fidget_magnetic_snap">Magnetic Snap</string>
+    <string name="fidget_magnetic_snap_description">The nearest day pulls toward your finger and snaps.</string>
+    <string name="fidget_breathing_trail">Breathing Trail</string>
+    <string name="fidget_breathing_trail_description">Days expand softly and leave a slow colour trail.</string>
     <string name="horizon_summary">A canvas, not a prediction.</string>
     <string name="reminders_summary">Plan and close your week.</string>
     <string name="week_starts_summary">Fixed at setup.</string>

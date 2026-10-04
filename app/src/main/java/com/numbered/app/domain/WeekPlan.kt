@@ -4,7 +4,7 @@ import java.time.Duration
 
 /** Three is the starting point; a person can choose a different weekly limit in Settings. */
 const val DEFAULT_PRIORITIES_PER_WEEK = 3
-const val MAX_PRIORITIES_PER_WEEK = 10
+const val MAX_PRIORITIES_PER_WEEK = 7
 
 /** Someday items untouched for this long ask whether they still deserve a square. */
 val SOMEDAY_REVIEW_AFTER: Duration = Duration.ofDays(12 * 7)
