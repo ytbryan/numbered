@@ -78,6 +78,10 @@ Catch up marks reflection fields as optional even while typing.
 - Settings can export everything to a JSON file, optionally protected with a passphrase, and import it again. Setup offers to restore one on a new phone.
 Importing replaces all data in one transaction, after showing what the file holds.
 Before replacing existing data, the app saves one private recovery copy on this phone.
+- Settings can also save a copy automatically each day, only when something changed, to a folder chosen in the system folder picker, such as one a cloud service keeps in sync.
+It keeps the newest 7 copies and the newest from each of the last 12 months, and only deletes copies it made.
+An optional passphrase protects these copies, kept on this phone with Android Keystore.
+If the folder cannot be reached, Settings says so at once, and a notification follows after two days.
 Settings shows the last successful export date and can restore the data saved before the last import.
 Recovery copies and unfinished reflection drafts stay on this phone and are not included in exports or device backups.
 - The export format (`BackupFormat`) has its own types and version, separate from the database, so files people keep stay readable.

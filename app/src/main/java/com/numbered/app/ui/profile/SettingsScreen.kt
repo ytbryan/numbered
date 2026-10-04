@@ -67,6 +67,8 @@ fun SettingsScreen() {
     val lastExport by data.lastExport.collectAsStateWithLifecycle()
     val recoveryDate by data.recoveryDate.collectAsStateWithLifecycle()
     NoticeEffect(data.notices)
+    val autoBackup = containerViewModel { AutoBackupViewModel(it) }
+    NoticeEffect(autoBackup.notices)
     val import = rememberImport(data)
     ExportDialog(data)
     ImportDialog(data, replacing = true)
@@ -205,6 +207,7 @@ fun SettingsScreen() {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                AutoBackupSetting(autoBackup)
                 DataAction(Icons.Outlined.Restore, stringResource(R.string.import_title), stringResource(R.string.import_body), import)
                 recoveryDate?.let { savedAt ->
                     DataAction(

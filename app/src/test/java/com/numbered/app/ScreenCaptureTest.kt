@@ -54,6 +54,9 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
+import androidx.work.Configuration
+import androidx.work.testing.SynchronousExecutor
+import androidx.work.testing.WorkManagerTestInitHelper
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -316,6 +319,15 @@ class ScreenCaptureTest {
             activity.receiveResult(request.intent, Activity.RESULT_OK, Intent().setData(Uri.fromFile(file)))
         }
         return request.intent
+    }
+
+    /** Serves [folder] as a pickable folder, with WorkManager, which Robolectric does not start, running. */
+    private fun startWorkManagerAndServe(folder: File): Uri {
+        WorkManagerTestInitHelper.initializeTestWorkManager(
+            RuntimeEnvironment.getApplication(),
+            Configuration.Builder().setExecutor(SynchronousExecutor()).build(),
+        )
+        return FolderDocumentsProvider.register(folder)
     }
 
     private fun openSettings() {
@@ -1113,6 +1125,50 @@ class ScreenCaptureTest {
         awaitText("Draft the conference talk")
         compose.onAllNodesWithText("3 weeks to close").assertCountEquals(0)
         capture("after-catch-up")
+    }
+
+    // The setup dialog is not opened here: like Export's, its passphrase field never lets Compose
+    // go idle under Robolectric. AutoBackupTest covers setup itself, through the same code.
+    @Test fun automaticBackupsShowTheirStateAndCanBeRunOrTurnedOff() {
+        val folder = files.newFolder("Backups")
+        val tree = startWorkManagerAndServe(folder)
+        val backup = (RuntimeEnvironment.getApplication() as NumberedApp).container.autoBackup
+        openSettings()
+        scrollTo("Automatic backups")
+        compose.onNodeWithText("Save a copy to a folder you choose, every day.").assertIsDisplayed()
+        capture("settings-auto-backup-off")
+        runBlocking { backup.enable(tree, passphrase = null) }
+        awaitText("Every day to Backups. Last saved Oct 1.")
+        assertEquals(listOf("numbered-auto-2026-10-01-100000.json"), folder.list()!!.toList())
+        assertTrue(File(folder, folder.list()!!.single()).readText().contains("Finish the grant draft"))
+        capture("settings-auto-backup-on")
+        tap("Automatic backups")
+        awaitText("Back up now")
+        capture("auto-backup-manage")
+        tap("Back up now")
+        awaitText("Nothing has changed since the last copy")
+        awaitGone("Nothing has changed since the last copy")
+        tap("Automatic backups")
+        awaitText("Change folder")
+        tap("Turn off")
+        awaitText("Automatic backups are off. Saved copies stay in the folder.")
+        awaitText("Save a copy to a folder you choose, every day.")
+        assertEquals(1, folder.list()!!.size)
+    }
+
+    @Test fun automaticBackupsSayWhenTheFolderIsGone() {
+        val folder = files.newFolder("Backups")
+        val tree = startWorkManagerAndServe(folder)
+        val backup = (RuntimeEnvironment.getApplication() as NumberedApp).container.autoBackup
+        runBlocking {
+            backup.enable(tree, passphrase = null)
+            folder.deleteRecursively()
+            backup.run()
+        }
+        openSettings()
+        scrollTo("Automatic backups")
+        awaitText("Could not save to Backups. Tap to choose the folder again.")
+        capture("settings-auto-backup-problem")
     }
 
     @Test fun importRefusesOtherFiles() {

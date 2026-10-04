@@ -259,7 +259,7 @@ class DataViewModel(private val container: AppContainer, private val resolver: C
 }
 
 /** The fewest characters a passphrase may have. */
-private const val MIN_PASSPHRASE_LENGTH = 8
+internal const val MIN_PASSPHRASE_LENGTH = 8
 
 /** Offers a passphrase, then opens the system's save dialog and writes the export there. */
 @Composable
@@ -436,7 +436,7 @@ private fun ConfirmImportDialog(pending: Snapshot, viewModel: DataViewModel, rep
 
 /** A hidden text field with a show button, for passphrases. */
 @Composable
-private fun PassphraseField(
+internal fun PassphraseField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -470,9 +470,9 @@ private fun PassphraseField(
     )
 }
 
-/** A tappable row in Settings for one data action. */
+/** A tappable row in Settings for one data action. [problem] shows the body as something to fix. */
 @Composable
-fun DataAction(icon: ImageVector, title: String, body: String, onClick: () -> Unit) {
+fun DataAction(icon: ImageVector, title: String, body: String, onClick: () -> Unit, problem: Boolean = false) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -486,10 +486,18 @@ fun DataAction(icon: ImageVector, title: String, body: String, onClick: () -> Un
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            )
             Column {
                 Text(title, style = MaterialTheme.typography.titleSmall)
-                Text(body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    body,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

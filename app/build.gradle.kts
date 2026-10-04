@@ -112,6 +112,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.work.runtime)
     implementation(libs.kotlinx.serialization.json)
     ksp(libs.androidx.room.compiler)
 
@@ -123,6 +124,7 @@ dependencies {
     testImplementation(libs.androidx.glance.appwidget.testing)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.work.testing)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
 }

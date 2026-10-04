@@ -3,6 +3,7 @@ package com.numbered.app
 import android.app.Application
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import com.numbered.app.backup.AutoBackup
 import com.numbered.app.data.NumberedDatabase
 import com.numbered.app.data.NumberedRepository
 import com.numbered.app.data.ReflectionDrafts
@@ -10,6 +11,8 @@ import com.numbered.app.data.BackupSafety
 import com.numbered.app.reminders.Reminders
 import com.numbered.app.widget.keepWidgetsCurrent
 import com.numbered.app.security.AppLock
+import com.numbered.app.security.KeystoreVault
+import com.numbered.app.security.PassphraseVault
 import com.numbered.app.ui.AgeDisplayStore
 import com.numbered.app.ui.theme.ThemeStore
 import com.numbered.app.ui.week.WeekProgressStore
@@ -37,6 +40,7 @@ class NumberedApp : Application() {
         started.reminders.createChannel()
         started.scope.launch { started.reminders.reschedule() }
         started.scope.launch { keepWidgetsCurrent(this@NumberedApp, started) }
+        started.autoBackup.keepScheduled()
     }
 
     @VisibleForTesting
@@ -46,7 +50,12 @@ class NumberedApp : Application() {
     }
 }
 
-class AppContainer(context: Context, val database: NumberedDatabase, val clock: Clock) {
+class AppContainer(
+    context: Context,
+    val database: NumberedDatabase,
+    val clock: Clock,
+    vault: PassphraseVault = KeystoreVault(),
+) {
     val repository = NumberedRepository(database, clock)
     val today = Today(clock)
     val drafts = ReflectionDrafts(context.applicationContext)
@@ -59,6 +68,7 @@ class AppContainer(context: Context, val database: NumberedDatabase, val clock: 
     /** Work that outlives a screen, such as scheduling reminders. */
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val reminders = Reminders(context.applicationContext, repository, clock)
+    val autoBackup = AutoBackup(context.applicationContext, repository, clock, vault)
 }
 
 /**
