@@ -41,6 +41,7 @@ android {
         targetSdk = 36
         versionCode = versionCodeOf(numberedVersion)
         versionName = numberedVersion
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -141,4 +142,11 @@ dependencies {
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+
+    // Device tests, run on emulators in CI: what Robolectric cannot stand in for, like Android Keystore.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

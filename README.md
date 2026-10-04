@@ -111,6 +111,11 @@ Lint treats warnings as errors, and deliberate exceptions live in `app/lint.xml`
 
 Release builds are unsigned unless these Gradle properties are set, for example in `~/.gradle/gradle.properties` or as `ORG_GRADLE_PROJECT_<name>` environment variables: `numberedKeystore`, `numberedKeystorePassword`, `numberedKeyAlias`, and `numberedKeyPassword`.
 
+Device tests in `app/src/androidTest` cover what Robolectric cannot stand in for, such as Android Keystore and the weekly loop on a real Android system.
+CI runs them on emulators at API 26 and 35 with `./gradlew connectedDebugAndroidTest`.
+That task uninstalls the app afterwards, deleting its data, so on a personal phone install both APKs with `adb install -r` and run `adb shell am instrument -w com.numbered.app.test/androidx.test.runner.AndroidJUnitRunner` instead.
+The tests use an in-memory database and never change the weeks stored on the device.
+
 `ScreenCaptureTest` drives the real app on seeded data with Robolectric and writes every screen to `app/build/screens/`, mostly at 366dp wide and 145% text.
 
 ## Releasing
